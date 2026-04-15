@@ -442,7 +442,7 @@ async def _chat_llm(req: ChatRequest) -> dict:
 
     from shared.tool_definitions import SYSTEM_PROMPT, TOOL_DEFINITIONS
 
-    model = req.model or "gpt-4o-mini"
+    model = req.model or "deepseek/deepseek-chat"
     if not req.api_key:
         raise HTTPException(400, "api_key is required")
 

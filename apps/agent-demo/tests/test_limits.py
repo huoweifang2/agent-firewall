@@ -161,7 +161,7 @@ class TestTokenTracking:
         assert abs(result["cost_delta"] - expected_cost) < 1e-8
 
     def test_cost_estimation_local_model_free(self):
-        result = self.svc.track_token_usage("s1", 1000, 1000, "llama3.1:8b")
+        result = self.svc.track_token_usage("s1", 1000, 1000, "deepseek/deepseek-chat")
         assert result["cost_delta"] == 0.0
 
     def test_cost_estimation_cumulative(self):

@@ -20,7 +20,7 @@ class ChatMessage(BaseModel):
 class ChatCompletionRequest(BaseModel):
     """OpenAI-compatible chat completion request."""
 
-    model: str = "llama3.1:8b"
+    model: str = "deepseek/deepseek-chat"
     messages: list[ChatMessage] = Field(..., min_length=1)
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: int | None = Field(default=None, ge=1, le=32768)

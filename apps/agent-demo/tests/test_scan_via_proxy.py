@@ -19,7 +19,7 @@ _BASE_KWARGS = {
     "policy": "balanced",
     "api_key": None,
     "scan_messages": [{"role": "user", "content": "hello"}],
-    "model_name": "llama3.1:8b",
+    "model_name": "deepseek/deepseek-chat",
     "temperature": 0.3,
     "max_tokens": 1024,
 }
@@ -206,7 +206,7 @@ class TestScanRequestHeaders:
             policy="strict",
             api_key=None,
             scan_messages=[{"role": "user", "content": "hi"}],
-            model_name="llama3.1:8b",
+            model_name="deepseek/deepseek-chat",
             temperature=0.3,
             max_tokens=1024,
         )
@@ -250,7 +250,7 @@ class TestScanRequestHeaders:
             policy="balanced",
             api_key=None,
             scan_messages=messages,
-            model_name="gpt-4o",
+            model_name="deepseek/deepseek-chat",
             temperature=0.7,
             max_tokens=512,
         )
@@ -259,7 +259,7 @@ class TestScanRequestHeaders:
 
         req = httpx_mock.get_request()
         body = json.loads(req.content)
-        assert body["model"] == "gpt-4o"
+        assert body["model"] == "deepseek/deepseek-chat"
         assert body["messages"] == messages
         assert body["temperature"] == 0.7
         assert body["max_tokens"] == 512

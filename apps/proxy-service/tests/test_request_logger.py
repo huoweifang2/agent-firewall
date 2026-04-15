@@ -85,7 +85,7 @@ class TestLogRequest:
         await log_request(
             client_id="test-client",
             policy_name="balanced",
-            model="llama3.1:8b",
+            model="deepseek/deepseek-chat",
             messages=[{"role": "user", "content": "Hello"}],
             decision="ALLOW",
             latency_ms=150,
@@ -120,7 +120,7 @@ class TestLogRequest:
         await log_request(
             client_id=None,
             policy_name="balanced",
-            model="llama3.1:8b",
+            model="deepseek/deepseek-chat",
             messages=[{"role": "user", "content": "Hi"}],
         )
 
@@ -156,7 +156,7 @@ class TestLogRequest:
         await log_request(
             client_id="test",
             policy_name="balanced",
-            model="llama3.1:8b",
+            model="deepseek/deepseek-chat",
             messages=[{"role": "user", "content": "Hi"}],
         )
 
@@ -170,7 +170,7 @@ def _sample_state() -> dict:
         "request_id": "req-1",
         "client_id": "client-1",
         "policy_name": "balanced",
-        "model": "llama3.1:8b",
+        "model": "deepseek/deepseek-chat",
         "messages": [{"role": "user", "content": "Hi"}],
         "prompt_hash": "abc123",
         "decision": "ALLOW",
@@ -231,7 +231,7 @@ class TestLogRequestFromState:
         await log_request(
             client_id="legacy",
             policy_name="balanced",
-            model="llama3.1:8b",
+            model="deepseek/deepseek-chat",
             messages=[{"role": "user", "content": "test"}],
         )
 

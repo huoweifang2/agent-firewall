@@ -89,10 +89,9 @@ async def llm_completion(
     litellm_model = format_litellm_model(model, provider)
 
     kwargs: dict[str, Any] = {}
-    else:
-        if not api_key:
-            raise LLMError(f"API key required for provider '{provider}'. Add your key in Settings → API Keys.")
-        kwargs["api_key"] = api_key
+    if not api_key:
+        raise LLMError(f"API key required for provider '{provider}'. Add your key in Settings → API Keys.")
+    kwargs["api_key"] = api_key
 
     logger.debug(
         "llm_request",

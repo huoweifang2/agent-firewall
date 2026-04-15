@@ -19,7 +19,7 @@ class TestChatCompletionRequest:
 
     def test_minimal_valid(self):
         req = ChatCompletionRequest(messages=[ChatMessage(role="user", content="Hello")])
-        assert req.model == "llama3.1:8b"
+        assert req.model == "deepseek/deepseek-chat"
         assert req.stream is False
         assert req.temperature == 0.7
         assert len(req.messages) == 1
@@ -83,7 +83,7 @@ class TestChatCompletionResponse:
         resp = ChatCompletionResponse(
             id="chatcmpl-abc123",
             created=1700000000,
-            model="llama3.1:8b",
+            model="deepseek/deepseek-chat",
             choices=[
                 ChatChoice(
                     index=0,
@@ -107,7 +107,7 @@ class TestChatCompletionResponse:
         resp = ChatCompletionResponse(
             id="chatcmpl-abc123",
             created=1700000000,
-            model="llama3.1:8b",
+            model="deepseek/deepseek-chat",
             choices=[
                 ChatChoice(
                     index=0,

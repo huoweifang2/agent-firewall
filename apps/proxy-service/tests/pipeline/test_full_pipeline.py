@@ -28,7 +28,7 @@ def _initial_state(
             "thresholds": {"max_risk": 0.7},
             "nodes": ["output_filter", "memory_hygiene", "logging"],
         },
-        "model": "openai/gpt-4o",
+        "model": "openai/deepseek/deepseek-chat",
         "messages": [{"role": "user", "content": user_content}],
         "user_message": "",
         "prompt_hash": "",

@@ -55,7 +55,10 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/agent_firewall"
 
     # Redis
-    redis_url: str = "redis://localhost:6379/0"    default_model: str = "llama3.1:8b"
+    redis_url: str = "redis://localhost:6379/0"
+
+    # Default model
+    default_model: str = "deepseek/deepseek-chat"
 
     # Langfuse
     langfuse_host: str = "http://localhost:3001"

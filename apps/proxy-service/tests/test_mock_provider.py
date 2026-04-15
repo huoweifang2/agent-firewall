@@ -130,7 +130,7 @@ class TestModeRouting:
 
         resp = await llm_completion(
             messages=[{"role": "user", "content": "hi"}],
-            model="llama3.1:8b",
+            model="deepseek/deepseek-chat",
             intent="qa",
         )
         assert resp["_mock"] is True
@@ -153,7 +153,7 @@ class TestModeRouting:
         with pytest.raises((LLMError, Exception)):
             await llm_completion(
                 messages=[{"role": "user", "content": "hi"}],
-                model="gpt-4o",
+                model="deepseek/deepseek-chat",
                 api_key="sk-fake-key-for-test",
                 intent="qa",
             )
@@ -173,7 +173,7 @@ class TestModeRouting:
 
         result = await llm_completion(
             messages=[{"role": "user", "content": "hi"}],
-            model="llama3.1:8b",
+            model="deepseek/deepseek-chat",
             stream=True,
             intent="qa",
         )

@@ -25,9 +25,9 @@ logger = structlog.get_logger()
 
 TOKEN_PRICING: dict[str, dict[str, float]] = {
     "default": {"input": 0.0005, "output": 0.0015},
-    "llama3.1:8b": {"input": 0.0, "output": 0.0},  # Local model, free
-    "gpt-4o": {"input": 0.005, "output": 0.015},
-    "gpt-4o-mini": {"input": 0.00015, "output": 0.0006},
+    "deepseek/deepseek-chat": {"input": 0.0, "output": 0.0},  # Local model, free
+    "deepseek/deepseek-chat": {"input": 0.005, "output": 0.015},
+    "deepseek/deepseek-chat": {"input": 0.00015, "output": 0.0006},
     "claude-sonnet-4-6": {"input": 0.003, "output": 0.015},
     "claude-haiku-4-5": {"input": 0.0008, "output": 0.004},
     "claude-opus-4-6": {"input": 0.015, "output": 0.075},

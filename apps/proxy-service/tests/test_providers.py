@@ -13,8 +13,8 @@ class TestDetectProvider:
     @pytest.mark.parametrize(
         "model, expected",
         [
-            ("gpt-4o", "openai"),
-            ("gpt-4o-mini", "openai"),
+            ("deepseek/deepseek-chat", "openai"),
+            ("deepseek/deepseek-chat", "openai"),
             ("gpt-4-turbo", "openai"),
             ("GPT-4o", "openai"),  # case-insensitive
             ("o1", "openai"),
@@ -72,7 +72,7 @@ class TestDetectProvider:
 
 
     async def test_openai_no_prefix(self) -> None:
-        assert format_litellm_model("gpt-4o", "openai") == "gpt-4o"
+        assert format_litellm_model("deepseek/deepseek-chat", "openai") == "deepseek/deepseek-chat"
 
     @pytest.mark.asyncio
 

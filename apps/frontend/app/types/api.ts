@@ -246,7 +246,7 @@ export interface IntentCount {
 
 // ─── Models catalog ───
 export interface ModelInfo {
-  id: string        // "gpt-4o"
+  id: string        // "deepseek/deepseek-chat"
   provider: string  // "openai", "anthropic", "google", "mistral"
   name: string      // "GPT-4o", "Llama 3.1 8B"
   available?: boolean  // Set client-side: true if provider has a key

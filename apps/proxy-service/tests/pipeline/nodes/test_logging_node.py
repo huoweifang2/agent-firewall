@@ -32,14 +32,14 @@ def _base_state(
     if response_content is not None:
         llm_response = {
             "choices": [{"message": {"role": "assistant", "content": response_content}}],
-            "model": "llama3.1:8b",
+            "model": "deepseek/deepseek-chat",
         }
     return {
         "request_id": "test-log-1",
         "client_id": "client-1",
         "policy_name": policy,
         "policy_config": {"nodes": ["output_filter", "memory_hygiene", "logging"], "thresholds": {}},
-        "model": "llama3.1:8b",
+        "model": "deepseek/deepseek-chat",
         "messages": [{"role": "user", "content": "test"}],
         "user_message": "test",
         "prompt_hash": "abc123",

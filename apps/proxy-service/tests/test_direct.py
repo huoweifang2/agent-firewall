@@ -30,7 +30,7 @@ async def test_direct_returns_response():
             resp = await client.post(
                 "/v1/chat/direct",
                 json={
-                    "model": "llama3.1:8b",
+                    "model": "deepseek/deepseek-chat",
                     "messages": [{"role": "user", "content": "hi"}],
                 },
             )
@@ -76,7 +76,7 @@ async def test_direct_streaming():
             resp = await client.post(
                 "/v1/chat/direct",
                 json={
-                    "model": "llama3.1:8b",
+                    "model": "deepseek/deepseek-chat",
                     "messages": [{"role": "user", "content": "hi"}],
                     "stream": True,
                 },
@@ -102,7 +102,7 @@ async def test_direct_disabled():
             resp = await client.post(
                 "/v1/chat/direct",
                 json={
-                    "model": "llama3.1:8b",
+                    "model": "deepseek/deepseek-chat",
                     "messages": [{"role": "user", "content": "hi"}],
                 },
             )

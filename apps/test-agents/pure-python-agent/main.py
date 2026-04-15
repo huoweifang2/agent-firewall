@@ -266,7 +266,7 @@ class ChatRequest(BaseModel):
     tool_args: dict | None = None
     confirmed: bool = False
     mode: Literal["mock", "llm"] = "mock"
-    model: str = "gpt-4o-mini"
+    model: str = "deepseek/deepseek-chat"
     api_key: str | None = None
 
 
@@ -505,7 +505,7 @@ async def _chat_llm(req: ChatRequest) -> dict:
         tc_trace.start(
             session_id="llm",
             user_role=req.role,
-            model=req.model or "gpt-4o-mini",
+            model=req.model or "deepseek/deepseek-chat",
             user_message=req.message,
         )
     # ═══════════════════════════════════════════════════════════════════
@@ -522,7 +522,7 @@ async def _chat_llm(req: ChatRequest) -> dict:
     except ImportError as exc:
         raise HTTPException(501, "litellm not installed") from exc
 
-    model = req.model or "gpt-4o-mini"
+    model = req.model or "deepseek/deepseek-chat"
     if not req.api_key:
         raise HTTPException(400, "api_key is required")
 

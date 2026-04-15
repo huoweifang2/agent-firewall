@@ -26,7 +26,7 @@ def _llm_response(content: str) -> dict:
                 "finish_reason": "stop",
             }
         ],
-        "model": "llama3.1:8b",
+        "model": "deepseek/deepseek-chat",
         "usage": {"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30},
     }
 
