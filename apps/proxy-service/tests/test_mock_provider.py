@@ -160,28 +160,7 @@ class TestModeRouting:
         get_settings.cache_clear()
 
     @pytest.mark.asyncio
-    async def test_real_mode_no_key_uses_ollama(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """MODE=real + no api_key + ollama model → tries Ollama (not mock)."""
-        monkeypatch.setenv("MODE", "real")
-        monkeypatch.setenv("REQUEST_TIMEOUT", "2")  # Short timeout for test
 
-        from src.config import get_settings
-
-        get_settings.cache_clear()
-
-        from src.llm.client import llm_completion
-        from src.llm.exceptions import LLMTimeoutError, LLMUpstreamError
-
-        # Should try Ollama (not mock) and fail because Ollama isn't running
-        with pytest.raises((LLMUpstreamError, LLMTimeoutError, Exception)):
-            await llm_completion(
-                messages=[{"role": "user", "content": "hi"}],
-                model="llama3.1:8b",
-                intent="qa",
-            )
-        get_settings.cache_clear()
-
-    @pytest.mark.asyncio
     async def test_demo_mode_stream_returns_async_gen(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """MODE=demo + stream=True → returns async generator from MockProvider."""
         monkeypatch.setenv("MODE", "demo")

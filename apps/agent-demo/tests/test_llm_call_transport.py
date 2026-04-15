@@ -124,20 +124,6 @@ class TestAcompletionModelRouting:
         assert call_kwargs.kwargs["api_key"] == "sk-ant"
 
     @pytest.mark.asyncio
-    async def test_ollama_model_gets_prefix_and_api_base(self, httpx_mock):
-        """Ollama models should get 'ollama/' prefix + api_base (no api_key)."""
-        httpx_mock.add_response(json=_scan_allow_json(), status_code=200)
-        llm = _mock_llm_response()
-
-        with patch(_ACOMPLETION_PATCH, return_value=llm) as mock_acomp:
-            await llm_call_node(_base_state(model="llama3.1:8b", api_key="irrelevant"))
-
-        call_kwargs = mock_acomp.call_args
-        assert call_kwargs.kwargs["model"] == "ollama/llama3.1:8b"
-        assert "api_base" in call_kwargs.kwargs
-        assert "api_key" not in call_kwargs.kwargs
-
-    @pytest.mark.asyncio
     async def test_mistral_model_gets_prefix(self, httpx_mock):
         httpx_mock.add_response(json=_scan_allow_json(), status_code=200)
         llm = _mock_llm_response()

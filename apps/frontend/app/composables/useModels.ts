@@ -5,7 +5,7 @@
  * to avoid SSR issues — the frontend Docker container cannot reach the proxy
  * at localhost:8000 during server rendering.
  *
- * Models for providers with a browser-stored API key (or ollama) are "available".
+ * Models for providers with a browser-stored API key are "available".
  * Others are hidden from dropdowns.
  */
 import { computed, ref, type Ref } from 'vue'
@@ -46,11 +46,11 @@ export function useModels() {
     if (!rawModels.value) return []
     return rawModels.value.map((m) => ({
       ...m,
-      available: m.provider === 'ollama' || m.provider === 'mock' || hasKeyForProvider(m.provider),
+      available: m.provider === 'mock' || hasKeyForProvider(m.provider),
     }))
   })
 
-  /** Only models for providers that have a key (or ollama). */
+  /** Only models for providers that have a key. */
   const availableModels = computed<ModelInfo[]>(() =>
     groupedModels.value.filter((m) => m.available),
   )

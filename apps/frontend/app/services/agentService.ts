@@ -23,7 +23,7 @@ export const agentService = {
     // Inject API key for external providers
     if (request.model) {
       const provider = detectProviderClient(request.model)
-      if (provider !== 'ollama') {
+      if (true) {
         const apiKey = getKey(provider)
         if (apiKey) {
           headers['x-api-key'] = apiKey

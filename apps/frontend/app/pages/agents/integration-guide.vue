@@ -20,7 +20,6 @@
         Agent-Firewall runs on a single machine via Docker Compose.
         Core stack (proxy + DB + cache) uses ~280 MB.
         With all ML scanners (LLM Guard, NeMo, Presidio) loaded: ~1.2 GB.
-        No GPU needed unless you use local LLM inference via Ollama.
       </p>
     </v-alert>
 
@@ -344,7 +343,6 @@ docker compose --profile full up -d
 #   db             → :5432  (PostgreSQL)
 #   redis          → :6379  (cache)
 #   langfuse       → :3001  (tracing, optional)
-#   ollama         → :11434 (local LLM, optional)</code></pre>
       </v-sheet>
 
       <v-table density="compact" class="guide-table mb-4">
@@ -425,9 +423,7 @@ const services = [
   { name: 'PostgreSQL', ram: '~100 MB', required: true, notes: 'Database for agents, traces, policies' },
   { name: 'Redis', ram: '~30 MB', required: true, notes: 'Cache and rate limiting' },
   { name: 'frontend', ram: '~150 MB', required: false, notes: 'Management UI (optional for headless use)' },
-  { name: 'Langfuse', ram: '~200 MB', required: false, notes: 'Request tracing and observability' },
-  { name: 'Ollama', ram: '2–4 GB', required: false, notes: 'Only if using local LLM inference' },
-]
+  { name: 'Langfuse', ram: '~200 MB', required: false, notes: 'Request tracing and observability' },]
 </script>
 
 <style lang="scss" scoped>

@@ -5,7 +5,6 @@ from __future__ import annotations
 # Pattern → Provider mapping (order matters: first match wins)
 PROVIDER_RULES: list[tuple[str, str]] = [
     # Explicit prefixes (user-provided)
-    ("ollama/", "ollama"),
     ("anthropic/", "anthropic"),
     ("gemini/", "google"),
     ("mistral/", "mistral"),
@@ -49,13 +48,13 @@ EXTERNAL_MODELS: list[dict[str, str]] = [
 def detect_provider(model: str) -> str:
     """Detect LLM provider from model name.
 
-    Returns ``"ollama"`` as default for unrecognized models (backward compatible).
+    Returns `"openai"` as default for unrecognized models.
     """
     model_lower = model.lower()
     for pattern, provider in PROVIDER_RULES:
         if model_lower.startswith(pattern):
             return provider
-    return "ollama"
+    return "openai"
 
 
 def format_litellm_model(model: str, provider: str) -> str:
@@ -65,10 +64,7 @@ def format_litellm_model(model: str, provider: str) -> str:
     - OpenAI: ``"gpt-4o"`` (as-is, no prefix)
     - Anthropic: ``"anthropic/claude-sonnet-4-6"`` (needs prefix if not present)
     - Google: ``"gemini/gemini-2.5-flash"`` (as-is if prefixed)
-    - Ollama: ``"ollama/llama3.1:8b"`` (needs prefix if not present)
-    """
-    if provider == "ollama" and not model.startswith("ollama/"):
-        return f"ollama/{model}"
+        """
     if provider == "anthropic" and not model.startswith("anthropic/"):
         return f"anthropic/{model}"
     if provider == "google" and not model.startswith("gemini/"):

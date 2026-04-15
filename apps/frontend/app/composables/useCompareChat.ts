@@ -86,7 +86,7 @@ export function useCompareChat() {
 
     // Verify API key exists for the selected model's provider
     const provider = detectProviderClient(config.model)
-    if (provider !== 'ollama' && provider !== 'mock' && !getKey(provider)) {
+    if (provider !== 'mock' && !getKey(provider)) {
       error.value = `No API key for provider "${provider}". Add one in Settings → API Keys.`
       return
     }

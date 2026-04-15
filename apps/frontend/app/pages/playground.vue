@@ -116,7 +116,6 @@ const scenarioDecisionColor = computed(() => {
  * Auto-select model:
  * 1. Restore remembered model from localStorage (if still available)
  * 2. Otherwise pick first available external model
- * 3. Fallback to Ollama
  */
 watch(
   groupedModels,
@@ -131,7 +130,7 @@ watch(
       const current = models.find((m) => m.id === config.model)
       if (current?.available) return
     }
-    const firstExternal = models.find((m) => m.available && m.provider !== 'ollama')
+    const firstExternal = models.find((m) => m.available)
     if (firstExternal) { config.model = firstExternal.id; return }
     const firstAny = models.find((m) => m.available)
     config.model = firstAny?.id ?? ''

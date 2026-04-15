@@ -113,24 +113,6 @@
           </v-card-text>
         </v-card>
 
-        <!-- Ollama info -->
-        <v-card variant="outlined" class="mt-4 provider-card">
-          <v-card-text class="d-flex align-center">
-            <v-icon icon="mdi-server" class="mr-3" size="28" />
-            <div class="flex-grow-1">
-              <div class="d-flex align-center ga-2">
-                <span class="text-subtitle-1 font-weight-medium">Ollama</span>
-                <v-chip size="x-small" variant="outlined" label prepend-icon="mdi-laptop" class="text-medium-emphasis">
-                  Local
-                </v-chip>
-              </div>
-              <span class="text-caption text-medium-emphasis">Always available — runs locally, no API key needed</span>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-
     <!-- Add Key Dialog -->
     <v-dialog v-model="addDialog" max-width="480" persistent>
       <v-card>

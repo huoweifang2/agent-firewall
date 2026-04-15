@@ -55,11 +55,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/agent_firewall"
 
     # Redis
-    redis_url: str = "redis://localhost:6379/0"
-
-    # Ollama / LLM
-    ollama_base_url: str = "http://localhost:11434"
-    default_model: str = "llama3.1:8b"
+    redis_url: str = "redis://localhost:6379/0"    default_model: str = "llama3.1:8b"
 
     # Langfuse
     langfuse_host: str = "http://localhost:3001"

@@ -522,10 +522,9 @@ async def _chat_llm(req: ChatRequest) -> dict:
     except ImportError as exc:
         raise HTTPException(501, "litellm not installed") from exc
 
-    model = req.model or "ollama/llama3.2:3b"
-    needs_key = not model.startswith("ollama/")
-    if needs_key and not req.api_key:
-        raise HTTPException(400, "api_key is required for cloud models")
+    model = req.model or "gpt-4o-mini"
+    if not req.api_key:
+        raise HTTPException(400, "api_key is required")
 
     role_context = (
         f"The current user's role is '{req.role}'. "
@@ -578,8 +577,6 @@ async def _chat_llm(req: ChatRequest) -> dict:
         "tools": TOOL_DEFINITIONS,
         "tool_choice": "auto",
     }
-    if model.startswith("ollama/"):
-        kwargs["api_base"] = os.environ.get("OLLAMA_HOST", "http://ollama:11434")
     if req.api_key:
         kwargs["api_key"] = req.api_key
 
@@ -797,10 +794,6 @@ async def _chat_llm(req: ChatRequest) -> dict:
         )
 
         final_kwargs: dict = {"model": model, "messages": messages}
-        if model.startswith("ollama/"):
-            final_kwargs["api_base"] = os.environ.get(
-                "OLLAMA_HOST", "http://ollama:11434"
-            )
         if req.api_key:
             final_kwargs["api_key"] = req.api_key
 

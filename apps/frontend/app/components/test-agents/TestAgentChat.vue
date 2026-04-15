@@ -125,7 +125,6 @@
 
       <v-col v-if="chatMode === 'llm'" cols="auto" class="d-flex align-center ga-2">
         <v-chip
-          v-if="selectedModelProvider === 'ollama'"
           size="small"
           color="success"
           variant="tonal"
@@ -458,21 +457,19 @@ const PROVIDER_LABELS: Record<string, string> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic',
   google: 'Google AI',
-  mistral: 'Mistral',
-  ollama: 'Ollama (local)',
-  mock: 'Demo',
+  mistral: 'Mistral',  mock: 'Demo',
 }
 
 /** Build LiteLLM-compatible model string (prefix for non-OpenAI providers). */
 function toLitellmId(modelId: string, provider: string): string {
-  if (provider === 'openai' || provider === 'ollama' || provider === 'mock') return modelId
+  if (provider === 'openai' || provider === 'mock') return modelId
   // anthropic → anthropic/claude-..., google → gemini/..., mistral → mistral/...
   const prefixMap: Record<string, string> = { anthropic: 'anthropic', google: 'gemini', mistral: 'mistral', groq: 'groq', deepseek: 'deepseek' }
   const prefix = prefixMap[provider] ?? provider
   return modelId.startsWith(`${prefix}/`) ? modelId : `${prefix}/${modelId}`
 }
 
-/** Only show available models (Ollama + providers with key). */
+/** Only show available models (providers with key). */
 const modelItems = computed(() =>
   (availableModels.value ?? []).map((m) => ({
     title: `${m.name}  ·  ${PROVIDER_LABELS[m.provider] ?? m.provider}`,
@@ -490,7 +487,7 @@ watch(modelItems, (items) => {
     if (mem) { llmModel.value = mem.value; return }
   }
   if (llmModel.value && items.find((m) => m.value === llmModel.value)) return
-  const firstExternal = items.find((m) => m.provider !== 'ollama' && m.provider !== 'mock')
+  const firstExternal = items.find((m) => m.provider !== 'mock')
   if (firstExternal) { llmModel.value = firstExternal.value; return }
   llmModel.value = items[0]!.value
 }, { immediate: true })
@@ -505,7 +502,7 @@ const selectedModelProvider = computed(() => {
 
 const hasKeyForSelectedModel = computed(() => {
   const prov = selectedModelProvider.value
-  return prov === 'ollama' || hasKeyForProvider(prov)
+  return hasKeyForProvider(prov)
 })
 
 interface ChatMsg {

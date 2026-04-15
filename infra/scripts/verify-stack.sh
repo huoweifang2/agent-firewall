@@ -30,9 +30,6 @@ check "Langfuse DB exists" \
 check "Redis (6379)" \
   "redis-cli -h localhost ping 2>/dev/null | grep -q PONG || docker compose exec -T redis redis-cli ping | grep -q PONG"
 
-# Ollama
-check "Ollama (11434)" \
-  "curl -sf http://localhost:11434/api/tags"
 
 # Langfuse
 check "Langfuse (3001)" \

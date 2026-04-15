@@ -52,24 +52,6 @@ async def _check_redis() -> ServiceHealth:
         return ServiceHealth(status="error", detail=_safe_detail(exc))
 
 
-async def _check_ollama(base_url: str) -> ServiceHealth:
-    """Lightweight Ollama check — HEAD-like GET to /api/tags.
-
-    NOTE: Even though /api/tags is cheap, calling it every N seconds
-    from the frontend health poller can keep the Ollama model loaded in
-    memory, preventing the keep-alive timer from expiring.
-    Consider disabling this in production or using a longer interval.
-    """
-    try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
-            resp = await client.get(f"{base_url}/api/tags")
-            if resp.status_code == 200:
-                return ServiceHealth(status="ok")
-            return ServiceHealth(status="error", detail=f"HTTP {resp.status_code}")
-    except Exception as exc:
-        logger.warning("health_ollama_error", error_type=type(exc).__name__)
-        return ServiceHealth(status="error", detail=_safe_detail(exc))
-
 
 async def _check_langfuse(host: str) -> ServiceHealth:
     try:
@@ -129,12 +111,9 @@ async def health(
         "redis": await _check_redis(),
     }
 
-    # In demo mode Ollama and Langfuse are not started — skip checks
     if settings.mode == "demo":
-        services["ollama"] = ServiceHealth(status="skipped")
         services["langfuse"] = ServiceHealth(status="skipped")
     else:
-        services["ollama"] = await _check_ollama(settings.ollama_base_url)
         services["langfuse"] = await _check_langfuse(settings.langfuse_host)
 
     overall = "ok" if all(s.status in ("ok", "skipped") for s in services.values()) else "degraded"

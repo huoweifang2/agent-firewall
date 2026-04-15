@@ -261,7 +261,7 @@ class TestErrorHandling:
     async def test_upstream_error_returns_502(self, mock_run, client: AsyncClient):
         from src.llm.exceptions import LLMUpstreamError
 
-        mock_run.side_effect = LLMUpstreamError("Ollama is down")
+        mock_run.side_effect = LLMUpstreamError("Upstream is down")
 
         resp = await client.post("/v1/chat/completions", json=CHAT_BODY)
 

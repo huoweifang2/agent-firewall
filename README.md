@@ -55,7 +55,7 @@ Run curated attack scenarios against an OpenAI-compatible endpoint. Pick an atta
 | **Presidio PII** | Entity scrubbing (names, emails, cards, phone numbers) |
 | **NeMo Guardrails** | Semantic similarity via FastEmbed embeddings |
 
-Supported providers: OpenAI, Anthropic, Google Gemini, Mistral, Azure, Ollama via [LiteLLM](https://docs.litellm.ai/docs/providers). → [Full proxy pipeline](docs/architecture/PROXY_FIREWALL_PIPELINE.md)
+Supported providers: OpenAI, Anthropic, Google Gemini, Mistral, Azure. → [Full proxy pipeline](docs/architecture/PROXY_FIREWALL_PIPELINE.md)
 
 ### Agent-level enforcement
 
@@ -99,3 +99,16 @@ Agent-Firewall reduces practical risk but does not eliminate it (e.g. semantic a
 ## License
 
 [Apache-2.0](LICENSE)
+
+---
+
+## Local Development
+
+We use [uv](https://github.com/astral-sh/uv) to manage Python dependencies.
+
+1. **Install uv**: `curl -LsSf https://astral.sh/uv/install.sh | sh` (or `brew install uv`)
+2. **Install dependencies**: `make setup`
+3. **Start infrastructure**: `make dev`
+4. **Run apps using uv run**:
+   - `cd apps/proxy-service && uv run uvicorn src.main:app --reload --port 8000`
+   - `cd apps/agent-demo && uv run uvicorn src.main:app --reload --port 8002`

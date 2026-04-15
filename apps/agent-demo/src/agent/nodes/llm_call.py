@@ -26,7 +26,6 @@ logger = structlog.get_logger()
 
 # ── Provider detection rules (mirrors proxy-service/src/llm/providers.py) ──
 _PROVIDER_RULES: list[tuple[str, str]] = [
-    ("ollama/", "ollama"),
     ("anthropic/", "anthropic"),
     ("gemini/", "google"),
     ("mistral/", "mistral"),
@@ -48,20 +47,17 @@ def _resolve_direct_llm(
 ) -> tuple[str, dict[str, Any]]:
     """Resolve model name and kwargs for a direct LLM call (bypassing proxy).
 
-    Returns ``(litellm_model, extra_kwargs)``.  For Ollama the kwargs contain
-    ``api_base``; for external providers they carry ``api_key``.
+    Returns ``(litellm_model, extra_kwargs)``.  For external providers they carry ``api_key``.
     """
     model_lower = model_name.lower()
-    provider = "ollama"
+    provider = "openai"
     for pattern, prov in _PROVIDER_RULES:
         if model_lower.startswith(pattern):
             provider = prov
             break
 
     # Format model for LiteLLM (add provider prefix where required)
-    if provider == "ollama" and not model_name.startswith("ollama/"):
-        litellm_model = f"ollama/{model_name}"
-    elif provider == "anthropic" and not model_name.startswith("anthropic/"):
+    if provider == "anthropic" and not model_name.startswith("anthropic/"):
         litellm_model = f"anthropic/{model_name}"
     elif provider == "google" and not model_name.startswith("gemini/"):
         litellm_model = f"gemini/{model_name}"
@@ -70,8 +66,6 @@ def _resolve_direct_llm(
     else:
         litellm_model = model_name  # openai: no prefix
 
-    if provider == "ollama":
-        return litellm_model, {"api_base": settings.ollama_base_url}
     return litellm_model, {"api_key": api_key}
 
 

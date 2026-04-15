@@ -64,9 +64,9 @@
 | Step | Name | What it does | Status |
 |------|------|-------------|--------|
 | 01 | **Project Scaffolding** | Monorepo (`apps/proxy-service`, `apps/frontend`, `apps/agent-demo`), linters, configs | ✅ Done |
-| 02 | **Infrastructure** | Docker Compose: PostgreSQL 16, Redis 7, Ollama, Langfuse — one `docker compose up` | ✅ Done |
+| 02 | **Infrastructure** | Docker Compose: PostgreSQL 16, Redis 7, Langfuse — one `docker compose up` | ✅ Done |
 | 03 | **Proxy Service Foundation** | FastAPI skeleton, SQLAlchemy models, Alembic migrations, health endpoint, seed data | ✅ Done |
-| 04 | **Basic LLM Proxy** | `POST /v1/chat/completions` → Ollama via LiteLLM, SSE streaming, request logging | ✅ Done |
+| 04 | **Basic LLM Proxy** | `POST /v1/chat/completions` → external providers via LiteLLM, SSE streaming, request logging | ✅ Done |
 | 05 | **Frontend Shell** | Nuxt 4 + Vuetify 3 layout, navigation drawer, dark/light theme, health indicator | ✅ Done |
 
 ### Phase 2: Firewall Pipeline ✅

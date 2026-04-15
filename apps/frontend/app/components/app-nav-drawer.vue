@@ -117,10 +117,8 @@ const MODE_CHIPS: Record<string, ModeChip> = {
     color: 'green',
     icon: 'mdi-shield-check-outline',
     tooltip:
-      '<strong>Production mode</strong> — real LLM inference via Ollama ' +
       '(local) or external providers (Gemini, Mistral, OpenAI).<br /><br />' +
       '<strong>Active services:</strong><br />' +
-      '• <strong>Ollama</strong> — local LLM (llama3.2:3b)<br />' +
       '• <strong>Security pipeline</strong> — LLM Guard, NeMo Guardrails, Presidio PII, output filter<br />' +
       '• <strong>Langfuse</strong> — request tracing &amp; observability<br />' +
       '• <strong>PostgreSQL + Redis</strong> — persistence &amp; caching<br /><br />' +

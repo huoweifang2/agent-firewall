@@ -17,9 +17,8 @@ from src.agent.nodes.llm_call import _PROVIDER_RULES, _resolve_direct_llm
 # ── Helpers ──────────────────────────────────────────────────
 
 
-def _settings(ollama_base_url: str = "http://localhost:11434") -> MagicMock:
+def _settings() -> MagicMock:
     s = MagicMock()
-    s.ollama_base_url = ollama_base_url
     return s
 
 
@@ -31,7 +30,6 @@ class TestProviderRules:
 
     # The authoritative list from proxy-service
     PROXY_RULES = [
-        ("ollama/", "ollama"),
         ("anthropic/", "anthropic"),
         ("gemini/", "google"),
         ("mistral/", "mistral"),
@@ -55,34 +53,6 @@ class TestProviderRules:
             "Agent _PROVIDER_RULES diverged from proxy-service PROVIDER_RULES! "
             "Update apps/agent-demo/src/agent/nodes/llm_call.py to match."
         )
-
-
-# ── Ollama models (local, no API key) ───────────────────────
-
-
-class TestOllamaModels:
-    """Ollama models → prefix with 'ollama/' + use api_base."""
-
-    def test_bare_model_name(self):
-        model, kwargs = _resolve_direct_llm("llama3.1:8b", None, _settings())
-        assert model == "ollama/llama3.1:8b"
-        assert kwargs == {"api_base": "http://localhost:11434"}
-
-    def test_already_prefixed(self):
-        model, kwargs = _resolve_direct_llm("ollama/llama3.1:8b", None, _settings())
-        assert model == "ollama/llama3.1:8b"
-        assert kwargs == {"api_base": "http://localhost:11434"}
-
-    def test_custom_ollama_url(self):
-        model, kwargs = _resolve_direct_llm("mistral:7b", None, _settings("http://gpu-box:11434"))
-        assert model == "ollama/mistral:7b"
-        assert kwargs == {"api_base": "http://gpu-box:11434"}
-
-    def test_unknown_model_defaults_ollama(self):
-        """Unrecognized model names default to ollama provider."""
-        model, kwargs = _resolve_direct_llm("my-custom-model", None, _settings())
-        assert model == "ollama/my-custom-model"
-        assert "api_base" in kwargs
 
 
 # ── OpenAI models (no prefix needed) ────────────────────────
@@ -175,12 +145,6 @@ class TestMistralModels:
 
 class TestAPIKeyForwarding:
     """Verify api_key is correctly forwarded for external providers."""
-
-    def test_no_api_key_ollama(self):
-        """Ollama should work without API key."""
-        _, kwargs = _resolve_direct_llm("llama3.1:8b", None, _settings())
-        assert "api_key" not in kwargs
-        assert "api_base" in kwargs
 
     def test_api_key_forwarded_to_openai(self):
         _, kwargs = _resolve_direct_llm("gpt-4o", "sk-real-key-123", _settings())

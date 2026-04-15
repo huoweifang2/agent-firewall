@@ -100,12 +100,10 @@ const PROVIDER_LABELS: Record<string, string> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic',
   google: 'Google AI',
-  mistral: 'Mistral',
-  ollama: 'Ollama (local)',
-  mock: 'Demo',
+  mistral: 'Mistral',  mock: 'Demo',
 }
 
-/** Only show models that are available (Ollama always + providers with key). */
+/** Only show models that are available (providers with key). */
 const modelItems = computed(() =>
   (groupedModels.value ?? [])
     .filter((m) => m.available)

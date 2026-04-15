@@ -21,7 +21,7 @@ def _initial_state(
         "client_id": "test",
         "policy_name": "balanced",
         "policy_config": policy_config or {"thresholds": {"max_risk": 0.7}},
-        "model": "ollama/llama3",
+        "model": "openai/gpt-4o",
         "messages": [{"role": "user", "content": user_content}],
         "user_message": "",
         "prompt_hash": "",

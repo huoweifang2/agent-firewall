@@ -31,5 +31,5 @@ Agent-Firewall is itself a security tool (LLM Firewall), and we take security se
 This security policy covers the Agent-Firewall codebase itself. It does **not** cover:
 
 - The security of the LLM models you run behind the firewall
-- Third-party services (Ollama, Langfuse, PostgreSQL) — those have their own security policies
+- Third-party services (Langfuse, PostgreSQL) — those have their own security policies
 - Attack scenarios in the demo panel — those are intentionally malicious prompts for testing purposes

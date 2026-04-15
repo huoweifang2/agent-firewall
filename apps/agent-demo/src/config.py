@@ -17,8 +17,6 @@ class Settings(BaseSettings):
     agent_id: str = ""
 
     # Direct LLM access (used for full-context call after firewall scan)
-    ollama_base_url: str = "http://localhost:11434"
-
     # LLM
     default_model: str = "llama3.1:8b"
     default_model_prefix: str = "openai"

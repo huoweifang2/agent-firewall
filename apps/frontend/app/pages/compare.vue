@@ -353,7 +353,7 @@ const hasAvailableModel = computed(() =>
   allModels.value.some((m) => m.available),
 )
 
-/** Only show models that are available (Ollama always + providers with key). */
+/** Only show models that are available (providers with key). */
 const modelItems = computed(() =>
   allModels.value
     .filter((m) => m.available)
@@ -376,7 +376,6 @@ const rememberedModel = useRememberedModel('compare')
  * Auto-select model:
  * 1. Restore remembered model from localStorage (if still available)
  * 2. Otherwise pick first available external model
- * 3. Fallback to Ollama
  */
 watch(
   allModels,
@@ -390,7 +389,7 @@ watch(
       const current = models.find((m) => m.id === config.model)
       if (current?.available) return
     }
-    const firstExternal = models.find((m) => m.available && m.provider !== 'ollama')
+    const firstExternal = models.find((m) => m.available)
     if (firstExternal) { config.model = firstExternal.id; return }
     const firstAny = models.find((m) => m.available)
     config.model = firstAny?.id ?? ''

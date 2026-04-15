@@ -43,7 +43,7 @@ async def llm_completion(
 
     Provider is detected from the model name (e.g. ``"gpt-4o"`` → OpenAI).
     For external providers the ``api_key`` parameter is required and comes
-    from the ``x-api-key`` request header.  Ollama calls need no key.
+    from the ``x-api-key`` request header.
 
     In **demo mode** (``MODE=demo``) with no API key the call is routed to
     :mod:`src.llm.mock_provider` which returns deterministic fixture
@@ -89,8 +89,6 @@ async def llm_completion(
     litellm_model = format_litellm_model(model, provider)
 
     kwargs: dict[str, Any] = {}
-    if provider == "ollama":
-        kwargs["api_base"] = settings.ollama_base_url
     else:
         if not api_key:
             raise LLMError(f"API key required for provider '{provider}'. Add your key in Settings → API Keys.")

@@ -23,7 +23,7 @@ async def test_health_endpoint(client: AsyncClient):
     assert data["status"] in ("ok", "degraded")
     assert "services" in data
     assert "version" in data
-    assert set(data["services"].keys()) == {"db", "redis", "ollama", "langfuse"}
+    assert set(data["services"].keys()) == {"db", "redis", "langfuse"}
 
 
 @pytest.mark.asyncio
