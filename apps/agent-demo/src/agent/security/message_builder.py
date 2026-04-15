@@ -13,6 +13,7 @@ Ensures:
 from __future__ import annotations
 
 from typing import Any
+import json
 
 from src.agent.security.sanitizer import sanitize_chat_history, sanitize_user_input
 from src.agent.state import AgentState
@@ -73,22 +74,34 @@ def wrap_user_message(raw_message: str) -> dict[str, str]:
     return {"role": "user", "content": content}
 
 
-def wrap_tool_results(tool_calls: list[dict[str, Any]]) -> dict[str, str] | None:
-    """Wrap tool results in [TOOL_OUTPUT] delimiters.
-
-    Returns a system message with all tool results, or None if no calls.
-    Each result is individually wrapped with anti-instruction markers.
-    Uses sanitized_result when available (from post-tool gate).
-    """
+def wrap_tool_results(tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
     if not tool_calls:
-        return None
+        return []
 
-    parts: list[str] = []
+    messages = []
+    
+    assistant_tool_calls = []
     for tc in tool_calls:
+        call_id = tc.get("id") or "call_unknown"
+        assistant_tool_calls.append({
+            "id": call_id,
+            "type": "function",
+            "function": {
+                "name": tc.get("tool", "unknown"),
+                "arguments": json.dumps(tc.get("args", {}))
+            }
+        })
+    
+    messages.append({
+        "role": "assistant",
+        "content": None,
+        "tool_calls": assistant_tool_calls
+    })
+
+    for tc in tool_calls:
+        call_id = tc.get("id") or "call_unknown"
         tool_name = tc.get("tool", "unknown")
         allowed = tc.get("allowed", False)
-
-        # Use sanitized_result from post-tool gate (spec 03); fall back to raw
         result_text = tc.get("sanitized_result", tc.get("result", ""))
 
         post_gate = tc.get("post_gate")
@@ -100,11 +113,16 @@ def wrap_tool_results(tool_calls: list[dict[str, Any]]) -> dict[str, str] | None
             status = "OK"
 
         prefix = TOOL_OUTPUT_PREFIX.format(tool_name=tool_name)
-        part = f"{prefix}[Status: {status}]\n{result_text}{TOOL_OUTPUT_SUFFIX}"
-        parts.append(part)
+        content = f"{prefix}[Status: {status}]\n{result_text}{TOOL_OUTPUT_SUFFIX}"
 
-    content = "Tool execution results:\n\n" + "\n\n".join(parts)
-    return {"role": "system", "content": content}
+        messages.append({
+            "role": "tool",
+            "tool_call_id": call_id,
+            "name": tool_name,
+            "content": content
+        })
+    
+    return messages
 
 
 def build_messages(state: AgentState) -> list[dict[str, str]]:
@@ -134,8 +152,8 @@ def build_messages(state: AgentState) -> list[dict[str, str]]:
 
     # 4. Tool results — wrapped with anti-instruction markers
     tool_calls = state.get("tool_calls", [])
-    tool_msg = wrap_tool_results(tool_calls)
-    if tool_msg:
-        messages.append(tool_msg)
+    tool_msgs = wrap_tool_results(tool_calls)
+    if tool_msgs:
+        messages.extend(tool_msgs)
 
     return messages

@@ -20,6 +20,14 @@ export const agentService = {
   async chat(request: AgentChatRequest): Promise<AgentChatResponse> {
     const headers: Record<string, string> = {}
 
+    // Retrieve middleware config from localStorage
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('middleware-config')
+      if (stored) {
+        headers['x-middlewares'] = stored
+      }
+    }
+
     // Inject API key for external providers
     if (request.model) {
       const provider = detectProviderClient(request.model)

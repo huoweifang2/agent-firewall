@@ -25,6 +25,7 @@ router = APIRouter(tags=["agent"])
 async def agent_chat(
     body: AgentChatRequest,
     x_api_key: str | None = Header(default=None),
+    x_middlewares: str | None = Header(default=None),
 ) -> AgentChatResponse:
     """Run the agent graph and return structured response."""
     settings = get_settings()
@@ -38,6 +39,7 @@ async def agent_chat(
         "policy": body.policy or settings.default_policy,
         "model": body.model or settings.default_model,
         "api_key": x_api_key,
+        "x_middlewares": x_middlewares,
     }
 
     # Run the agent graph

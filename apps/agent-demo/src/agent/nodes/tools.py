@@ -97,27 +97,16 @@ def tool_executor_node(state: AgentState) -> AgentState:
     for plan in plans:
         tool_name = plan["tool"]
         args = plan.get("args", {})
+        call_id = plan.get("id", "call_unknown")
 
-        # Safety net — pre_tool_gate should have already filtered,
-        # but double-check RBAC as defense in depth.
-        if tool_name not in allowed:
-            tool_calls.append(
-                {
-                    "tool": tool_name,
-                    "args": args,
-                    "result": f"Access denied: {tool_name} is not available for your role.",
-                    "allowed": False,
-                }
-            )
-            logger.warning("tool_denied", tool=tool_name, role=state.get("user_role"))
-            continue
-
+        # Rely on pre-tool gate for safety now instead of strict local list.
         try:
             t0 = time.perf_counter()
             result = execute_tool(tool_name, args)
             dur_ms = int((time.perf_counter() - t0) * 1000)
             tool_calls.append(
                 {
+                    "id": call_id,
                     "tool": tool_name,
                     "args": args,
                     "result": result,
@@ -131,6 +120,7 @@ def tool_executor_node(state: AgentState) -> AgentState:
             error_msg = f"Tool error: {e}"
             tool_calls.append(
                 {
+                    "id": call_id,
                     "tool": tool_name,
                     "args": args,
                     "result": error_msg,

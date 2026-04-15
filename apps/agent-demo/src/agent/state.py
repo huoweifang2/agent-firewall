@@ -62,6 +62,7 @@ class AgentState(TypedDict, total=False):
     policy: str  # Policy name for proxy
     model: str  # LLM model to use
     api_key: str | None  # External provider API key (from browser)
+    x_middlewares: str | None  # Composio active middlewares config
 
     # ── Analysis ───────────────────────────────────────────
     intent: str  # greeting, order_query, knowledge_search, admin_action, unknown
