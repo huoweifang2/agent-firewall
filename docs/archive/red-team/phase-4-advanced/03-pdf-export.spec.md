@@ -12,7 +12,7 @@ Branded PDF report suitable for sharing with stakeholders, compliance teams, and
 
 ### Step 1: PDF template
 
-- Branded header with AI Protector logo
+- Branded header with Agent-Firewall logo
 - Executive summary, score badge, category breakdown charts
 - Top failures with details
 - Appendix: full scenario list

@@ -124,7 +124,7 @@
         >
           <div class="text-center mb-4">
             <h2 class="text-h6 font-weight-bold mb-1">Before → After</h2>
-            <p class="text-body-2 text-medium-emphasis">Same attacks, with AI Protector enabled</p>
+            <p class="text-body-2 text-medium-emphasis">Same attacks, with Agent-Firewall enabled</p>
           </div>
 
           <v-row align="center" justify="center" class="text-center">
@@ -154,7 +154,7 @@
 
             <!-- After -->
             <v-col cols="5">
-              <div class="text-caption text-medium-emphasis text-uppercase mb-1">With AI Protector</div>
+              <div class="text-caption text-medium-emphasis text-uppercase mb-1">With Agent-Firewall</div>
               <div class="text-h4 font-weight-bold" :style="{ color: scoreMeta.color }">
                 {{ comparison.run_b.score_simple ?? 0 }}<span class="text-h6 text-medium-emphasis">/100</span>
               </div>
@@ -225,7 +225,7 @@
             <span class="text-subtitle-2 font-weight-bold">All tested attacks were blocked in this run</span>
           </div>
           <p class="text-body-2 text-medium-emphasis mb-3">
-            Deploy AI Protector in front of your production endpoint to get the same protection at runtime.
+            Deploy Agent-Firewall in front of your production endpoint to get the same protection at runtime.
           </p>
           <div class="d-flex flex-wrap ga-2">
             <v-btn variant="outlined" size="small" prepend-icon="mdi-file-pdf-box" :loading="isExporting" @click="onExport">
@@ -280,10 +280,10 @@
                 </div>
               </div>
               <p v-if="failedCount > 0" class="text-body-2 text-medium-emphasis mb-0" data-testid="score-interpretation">
-                These attacks got through without any firewall in place. Enable AI Protector and re-run to see how many get blocked.
+                These attacks got through without any firewall in place. Enable Agent-Firewall and re-run to see how many get blocked.
               </p>
               <p v-else class="text-body-2 text-medium-emphasis mb-0" data-testid="score-interpretation">
-                The model resisted all attacks on its own — but model behavior changes over time. Enable AI Protector for enforced protection.
+                The model resisted all attacks on its own — but model behavior changes over time. Enable Agent-Firewall for enforced protection.
               </p>
             </v-col>
 
@@ -359,7 +359,7 @@
                 </v-btn>
               </div>
               <p v-if="isDemoTarget" class="text-caption text-medium-emphasis mt-2 mb-2">
-                One click — AI Protector will filter every attack and re-run the same scan.
+                One click — Agent-Firewall will filter every attack and re-run the same scan.
               </p>
               <!-- Demoted secondary actions -->
               <div class="d-flex flex-wrap ga-3 mt-2">
@@ -439,7 +439,7 @@
             <v-icon icon="mdi-robot-happy" color="blue-grey" size="48" class="mb-2" />
             <p class="text-body-1 font-weight-medium">No attacks got through</p>
             <p class="text-body-2 text-medium-emphasis mb-3">
-              The model resisted all attacks on its own. But model behavior changes — enable AI Protector for enforced runtime protection.
+              The model resisted all attacks on its own. But model behavior changes — enable Agent-Firewall for enforced runtime protection.
             </p>
             <v-btn
               v-if="isDemoTarget"
@@ -485,7 +485,7 @@
             <v-col cols="12" sm="6">
               <div class="d-flex align-center mb-2">
                 <v-icon icon="mdi-shield-check" color="success" size="small" class="mr-2" />
-                <span class="text-subtitle-2 font-weight-medium">With AI Protector</span>
+                <span class="text-subtitle-2 font-weight-medium">With Agent-Firewall</span>
               </div>
               <ul class="text-body-2 text-medium-emphasis pl-4" style="list-style: disc;">
                 <li class="mb-1">Every request is inspected before reaching the model</li>
@@ -667,7 +667,7 @@
 
           <!-- Intro -->
           <p class="text-body-2 text-medium-emphasis px-6 pb-3 mb-0">
-            AI Protector inspects every request before it reaches the model. Blocked attacks never hit the LLM.
+            Agent-Firewall inspects every request before it reaches the model. Blocked attacks never hit the LLM.
             Choose the integration that fits your API format:
           </p>
 
@@ -684,7 +684,7 @@
               </div>
               <p class="text-body-2 text-medium-emphasis mb-3 pl-1">
                 If your backend calls an OpenAI-compatible endpoint (<code>/v1/chat/completions</code>),
-                just swap the base URL to point at AI Protector. It acts as a transparent proxy —
+                just swap the base URL to point at Agent-Firewall. It acts as a transparent proxy —
                 inspects the request, blocks attacks, and forwards clean requests to your original model.
               </p>
 

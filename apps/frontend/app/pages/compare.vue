@@ -5,7 +5,7 @@
       <div class="d-flex align-center flex-wrap ga-3 px-4 py-2">
         <v-icon size="20" color="primary">mdi-compare</v-icon>
         <span class="text-subtitle-2 font-weight-bold">Protection Compare</span>
-        <span class="text-caption text-medium-emphasis ml-1 d-none d-md-inline">See how the same scenario behaves with AI Protector enabled and without protection.</span>
+        <span class="text-caption text-medium-emphasis ml-1 d-none d-md-inline">See how the same scenario behaves with Agent-Firewall enabled and without protection.</span>
 
         <v-divider vertical class="mx-1" />
 
@@ -185,7 +185,7 @@
         <v-icon size="56" color="grey-darken-1" class="mb-3">mdi-compare</v-icon>
         <p class="text-h6 text-grey-lighten-1 mb-1">Compare protected vs direct model behavior</p>
         <p class="text-body-2 text-medium-emphasis mb-5" style="max-width: 480px">
-          Run the same scenario through AI Protector and an unprotected model path to see the difference in blocking, output, and policy enforcement.
+          Run the same scenario through Agent-Firewall and an unprotected model path to see the difference in blocking, output, and policy enforcement.
         </p>
         <div class="d-flex flex-wrap justify-center ga-2">
           <v-chip

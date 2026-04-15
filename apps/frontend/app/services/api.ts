@@ -12,7 +12,7 @@ export interface AppError {
 function mapApiError(error: AxiosError<ApiError>): AppError {
   if (!error.response) {
     return {
-      message: 'Cannot reach AI Protector service',
+      message: 'Cannot reach Agent-Firewall service',
       status: null,
       code: 'NETWORK_ERROR',
     }

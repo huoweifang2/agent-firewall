@@ -22,8 +22,8 @@ export const chatService = {
  * (CORS-enabled, OpenAI-compatible streaming format).
  *
  * The Protection Compare's right panel calls these directly from the
- * browser — completely bypassing the AI Protector proxy — to prove
- * the raw model accepts prompts that AI Protector would block.
+ * browser — completely bypassing the Agent-Firewall proxy — to prove
+ * the raw model accepts prompts that Agent-Firewall would block.
  */
 /**
  * Build provider → base URL map from runtime env vars.

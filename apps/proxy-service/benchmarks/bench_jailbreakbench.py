@@ -1,7 +1,7 @@
 """JailbreakBench benchmark — detection rate against the NeurIPS 2024 dataset.
 
 Downloads jailbreak attack prompts from https://github.com/JailbreakBench/artifacts
-and runs them through the AI Protector pre-LLM pipeline.
+and runs them through the Agent-Firewall pre-LLM pipeline.
 
 Dataset: 100 harmful behaviors × 4 attack methods × multiple target models.
   - PAIR (black-box, iterative)
@@ -10,7 +10,7 @@ Dataset: 100 harmful behaviors × 4 attack methods × multiple target models.
   - prompt_with_random_search (black-box, random search)
 
 Each prompt is a real jailbreak that successfully bypassed a target model.
-AI Protector's job is to catch them BEFORE they reach any model.
+Agent-Firewall's job is to catch them BEFORE they reach any model.
 
 Usage:
     cd apps/proxy-service
@@ -217,7 +217,7 @@ def print_results(results: list[JBBResult]) -> None:
     """Print JailbreakBench results."""
     w = 85
     print(f"\n{'=' * w}")
-    print("  AI Protector × JailbreakBench (NeurIPS 2024)")
+    print("  Agent-Firewall × JailbreakBench (NeurIPS 2024)")
     print(f"{'=' * w}")
 
     header = f"{'Policy':<10} {'Method':<28} {'Total':>6} {'Blocked':>8} {'Detection':>10}"
@@ -268,7 +268,7 @@ def generate_jbb_report(results: list[dict], machine: dict) -> str:
 
     lines.extend(
         [
-            "# AI Protector — Pre-LLM Detection Results on JailbreakBench",
+            "# Agent-Firewall — Pre-LLM Detection Results on JailbreakBench",
             "",
             "> External validation against published jailbreak artifacts from",
             "> [JailbreakBench](https://jailbreakbench.github.io/) (NeurIPS 2024 Datasets & Benchmarks Track).",
@@ -437,7 +437,7 @@ def generate_jbb_report(results: list[dict], machine: dict) -> str:
 
 
 async def main() -> None:
-    parser = argparse.ArgumentParser(description="AI Protector × JailbreakBench benchmark")
+    parser = argparse.ArgumentParser(description="Agent-Firewall × JailbreakBench benchmark")
     parser.add_argument("--policy", type=str, default="balanced", choices=POLICIES.keys())
     parser.add_argument("--all-policies", action="store_true")
     parser.add_argument(

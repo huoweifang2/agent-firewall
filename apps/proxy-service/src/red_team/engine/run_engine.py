@@ -629,7 +629,7 @@ class RunEngine:
                 eval_result = EvalResult(
                     passed=True,
                     confidence=1.0,
-                    detail="Blocked by AI Protector firewall — attack never reached the model",
+                    detail="Blocked by Agent-Firewall firewall — attack never reached the model",
                     detector_type="proxy_block",
                 )
             elif proxy_blocked and scenario.expected == ExpectedAction.ALLOW:
@@ -637,7 +637,7 @@ class RunEngine:
                 eval_result = EvalResult(
                     passed=False,
                     confidence=1.0,
-                    detail="False positive — AI Protector blocked a benign request",
+                    detail="False positive — Agent-Firewall blocked a benign request",
                     detector_type="proxy_false_positive",
                 )
             else:

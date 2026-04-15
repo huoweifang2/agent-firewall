@@ -2,12 +2,12 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in AI Protector, please report it responsibly.
+If you discover a security vulnerability in Agent-Firewall, please report it responsibly.
 
 **Do NOT open a public GitHub issue for security vulnerabilities.**
 
 Instead, please email the maintainer directly or use GitHub's
-[private vulnerability reporting](https://github.com/Szesnasty/ai-protector/security/advisories/new).
+[private vulnerability reporting](https://github.com/Szesnasty/agent-firewall/security/advisories/new).
 
 ## Supported Versions
 
@@ -19,7 +19,7 @@ Instead, please email the maintainer directly or use GitHub's
 
 ## Security Measures in This Project
 
-AI Protector is itself a security tool (LLM Firewall), and we take security seriously:
+Agent-Firewall is itself a security tool (LLM Firewall), and we take security seriously:
 
 - **Dependency scanning**: Dependabot monitors all dependencies weekly
 - **Static analysis**: CodeQL runs on every push and weekly
@@ -28,7 +28,7 @@ AI Protector is itself a security tool (LLM Firewall), and we take security seri
 
 ## Scope
 
-This security policy covers the AI Protector codebase itself. It does **not** cover:
+This security policy covers the Agent-Firewall codebase itself. It does **not** cover:
 
 - The security of the LLM models you run behind the firewall
 - Third-party services (Ollama, Langfuse, PostgreSQL) — those have their own security policies

@@ -1,7 +1,7 @@
 # Red Team Module — User Journey Spec
 
 > **Status:** draft
-> **Author:** AI Protector team
+> **Author:** Agent-Firewall team
 > **Date:** 2026-03-24
 > **Depends on:** proxy-service (scenarios, pipeline), frontend (Vuetify 3)
 
@@ -376,7 +376,7 @@ After clicking "Local Agent" or "Hosted Endpoint" → [Configure]:
 │                              [ Test Connection ]             │
 │                                                              │
 │  ┌────────────────────────────────────────────────────────┐  │
-│  │  ✅  200 OK  │  340ms  │  AI Protector can reach your  │  │
+│  │  ✅  200 OK  │  340ms  │  Agent-Firewall can reach your  │  │
 │  │              │         │  endpoint                     │  │
 │  └────────────────────────────────────────────────────────┘  │
 │                                                              │
@@ -718,7 +718,7 @@ The user has an already-protected target. The CTA leads to quick hardening.
 │  │                                                        │  │
 │  │  🛡️  Want to improve this score?                       │  │
 │  │                                                        │  │
-│  │  AI Protector detected 3 unprotected attack vectors.   │  │
+│  │  Agent-Firewall detected 3 unprotected attack vectors.   │  │
 │  │  Apply recommended policies to harden your agent.      │  │
 │  │                                                        │  │
 │  │  [ Apply Recommended Profile ]   [ Open Policies ]     │  │
@@ -738,12 +738,12 @@ The user tested a bare endpoint. The CTA leads to **protection** — this is the
 │  │  🛡️  Protect this endpoint                             │  │
 │  │                                                        │  │
 │  │  Your agent has 4 critical security gaps.               │  │
-│  │  AI Protector can help you block most of these          │  │
+│  │  Agent-Firewall can help you block most of these          │  │
 │  │  attack paths with minimal setup.                       │  │
 │  │                                                        │  │
 │  │  ┌──────────────────────────────────────────────────┐  │  │
 │  │  │  ⚡ Quick — Proxy Setup                          │  │  │
-│  │  │  Route traffic through AI Protector.             │  │  │
+│  │  │  Route traffic through Agent-Firewall.             │  │  │
 │  │  │  No code changes. Fastest path to protection.    │  │  │
 │  │  │                    [ Set up Proxy → ]             │  │  │
 │  │  └──────────────────────────────────────────────────┘  │  │
@@ -768,7 +768,7 @@ The user tested a bare endpoint. The CTA leads to **protection** — this is the
 
 1. User clicks [Set up Proxy]
 2. Sees instructions: "Change your agent's base URL from `https://my-agent.company.com/chat` to `https://protector.company.com/proxy/my-agent`"
-3. AI Protector becomes the intermediary — all traffic flows through the pipeline (keyword classifier, LLM Guard, NeMo, Presidio)
+3. Agent-Firewall becomes the intermediary — all traffic flows through the pipeline (keyword classifier, LLM Guard, NeMo, Presidio)
 4. User returns to Red Team, clicks Re-run → score goes up
 
 **For whom:** users who want protection without code changes to the agent. Fastest path.
@@ -928,7 +928,7 @@ Today's `/` redirects to `/playground`. After the change:
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                                                              │
-│     🛡️ AI Protector                                         │
+│     🛡️ Agent-Firewall                                         │
 │                                                              │
 │     Ship agents with guardrails — not prayers.               │
 │                                                              │
@@ -1066,7 +1066,7 @@ Two entry points (Local Agent / Hosted Endpoint) lead to the same flow.
     ┌─────────────────────────────────────────────┐
     │  ℹ️  External scan — based on response       │
     │  analysis. For deeper analysis, route        │
-    │  traffic through AI Protector proxy.         │
+    │  traffic through Agent-Firewall proxy.         │
     │                  [ Learn more → ]            │
     └─────────────────────────────────────────────┘
 
@@ -1089,7 +1089,7 @@ Two entry points (Local Agent / Hosted Endpoint) lead to the same flow.
 
     ────── Path A: Quick (Proxy) ──────
     Clicks: [Set up Proxy]
-    Changes agent's base URL to AI Protector proxy.
+    Changes agent's base URL to Agent-Firewall proxy.
     Zero code changes. Traffic flows through the pipeline.
 
     ────── Path B: Deep (Wizard) ──────

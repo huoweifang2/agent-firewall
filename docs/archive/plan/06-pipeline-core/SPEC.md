@@ -74,7 +74,7 @@ curl -s http://localhost:8000/v1/chat/completions \
 # → 403 + policy_violation
 
 # DB check
-psql -U postgres -d ai_protector -c "SELECT decision, intent, risk_score FROM requests ORDER BY created_at DESC LIMIT 3;"
+psql -U postgres -d agent_firewall -c "SELECT decision, intent, risk_score FROM requests ORDER BY created_at DESC LIMIT 3;"
 ```
 
 ---

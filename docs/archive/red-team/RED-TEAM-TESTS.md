@@ -1,7 +1,7 @@
 Build a minimal but production-like AI backend for benchmarking with Gemini inside an existing monorepo.
 
 Goal:
-Create a thin FastAPI service that behaves like a realistic modern LLM application, so it can be used as a target for security benchmarking. It must support both a raw model path and a protected path through AI Protector.
+Create a thin FastAPI service that behaves like a realistic modern LLM application, so it can be used as a target for security benchmarking. It must support both a raw model path and a protected path through Agent-Firewall.
 
 Important repository placement requirements:
 - This service must live INSIDE the existing monorepo.
@@ -56,7 +56,7 @@ High-level product requirements:
    - optional retrieval/tool use
 3. It must be easy to run locally and easy to switch between:
    - direct Gemini calls
-   - calls routed through AI Protector
+   - calls routed through Agent-Firewall
 4. It should feel like a realistic benchmark target, not an artificial benchmark-only endpoint.
 5. It should be usable as:
    - a raw target for benchmark runs
@@ -67,8 +67,8 @@ Environment variables:
 - GEMINI_API_KEY=
 - GEMINI_MODEL=gemini-2.5-flash
 - APP_MODE=raw   # raw or protected
-- AI_PROTECTOR_BASE_URL=
-- AI_PROTECTOR_API_KEY=
+- AGENT_FIREWALL_BASE_URL=
+- AGENT_FIREWALL_API_KEY=
 - ENABLE_STREAMING=true
 - ENABLE_RETRIEVAL=true
 - ENABLE_TOOLS=false
@@ -155,7 +155,7 @@ Create a realistic system instruction for a business assistant that:
 
 Raw vs protected mode:
 - In raw mode, call Gemini directly via Google GenAI SDK.
-- In protected mode, route model requests through AI Protector if configured.
+- In protected mode, route model requests through Agent-Firewall if configured.
 - Keep the public API of this app the same in both modes.
 - Make switching mode possible only via APP_MODE env var.
 - Do not change the external request/response contract between modes.
@@ -298,6 +298,6 @@ README requirements:
 - explain that it is intentionally simple but production-like
 
 apps/reference-chat-target/README.md
-This app is a realistic benchmark target for AI Protector.
+This app is a realistic benchmark target for Agent-Firewall.
 It exists to test, demo, and compare raw vs protected LLM behavior.
 It is not part of the core runtime protection service.

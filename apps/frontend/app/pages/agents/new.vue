@@ -134,7 +134,7 @@ onMounted(async () => {
   }
   else {
     // Fresh wizard entry — always start clean
-    localStorage.removeItem('ai-protector-wizard-state')
+    localStorage.removeItem('agent-firewall-wizard-state')
     currentStep.value = 1
     agentId.value = null
     editAgent.value = null
@@ -144,7 +144,7 @@ onMounted(async () => {
 
 const onComplete = () => {
   // Clear wizard state and navigate to agent detail
-  localStorage.removeItem('ai-protector-wizard-state')
+  localStorage.removeItem('agent-firewall-wizard-state')
   if (agentId.value) {
     navigateTo(`/agents/${agentId.value}`)
   }

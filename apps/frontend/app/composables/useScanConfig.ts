@@ -6,7 +6,7 @@
  * — it describes the *shape* of requests/responses, not secrets.
  */
 
-const STORAGE_KEY = 'ai-protector:scan-config'
+const STORAGE_KEY = 'agent-firewall:scan-config'
 
 export interface ScanConfig {
   /** JSON template with {{PROMPT}} placeholder */

@@ -142,7 +142,7 @@ npm run dev
 # ✅ Dark theme by default
 # ✅ Navigation drawer with 5 items (Playground, Agent Demo, Policies, Request Log, Analytics)
 # ✅ Clicking nav items navigates to placeholder pages
-# ✅ App bar with "AI Protector" title
+# ✅ App bar with "Agent-Firewall" title
 # ✅ Theme toggle switches dark ↔ light and persists on reload
 # ✅ Health indicator shows green dot (Vue Query polling) when proxy-service is running
 # ✅ Health indicator shows red dot when proxy-service is down

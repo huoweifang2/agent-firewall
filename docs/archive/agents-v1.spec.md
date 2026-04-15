@@ -1,14 +1,14 @@
-# AI Protector — Agents v1 Specification
+# Agent-Firewall — Agents v1 Specification
 
 > **Scope:** Agents as a standalone product pillar — registration, protection, validation, rollout, observability
 > **Prerequisite:** MVP (proxy firewall, playground, agent demo) — done
-> **Minimum product truth:** "AI Protector helps you register an agent, define tool permissions, generate deterministic guardrails, validate them with attack tests, and roll them out with visibility."
+> **Minimum product truth:** "Agent-Firewall helps you register an agent, define tool permissions, generate deterministic guardrails, validate them with attack tests, and roll them out with visibility."
 
 ---
 
 ## Product pillar: Agents
 
-Agents is a **separate section** in AI Protector — not scattered across Policies, Demo, or Analytics.
+Agents is a **separate section** in Agent-Firewall — not scattered across Policies, Demo, or Analytics.
 
 Everything that answers "how do I secure this specific agent?" lives here.
 
@@ -138,7 +138,7 @@ After configuration, user must get a real artifact: rbac.yaml, limits config, ba
 - [ ] **UI — Integration tab:** Shows generated configs with copy/download
 - [ ] **Test:** Register agent with 3 tools + 2 roles → generate config → YAML is valid and contains all tools/roles → download works
 
-> **Architectural principle — source of truth:** The database is the source of truth inside AI Protector. Generated files (rbac.yaml, limits.yaml, policy.yaml, .env.protector, etc.) are **deployment artifacts** derived from DB state — not the other way around. The UI edits the DB; the "Generate" / "Download" actions produce files from DB state. This prevents UI ↔ YAML ↔ runtime divergence.
+> **Architectural principle — source of truth:** The database is the source of truth inside Agent-Firewall. Generated files (rbac.yaml, limits.yaml, policy.yaml, .env.protector, etc.) are **deployment artifacts** derived from DB state — not the other way around. The UI edits the DB; the "Generate" / "Download" actions produce files from DB state. This prevents UI ↔ YAML ↔ runtime divergence.
 
 ---
 
@@ -216,7 +216,7 @@ User must see after integration: unauthorized → BLOCK, PII → REDACT, injecti
 - [ ] **UI — Wizard step 6:** Run validation after integration, see results inline
 - [ ] **UI — Validation tab:** Full validation history, re-run button, scorecard
 - [ ] **Over-budget WARN:** Limits check returns WARN (not just BLOCK) when budget is close to exhaustion
-- [ ] **Source of truth:** Validation tests run against the **generated config + AI Protector runtime** (gates, RBAC service, limits service), NOT against the user's live agent. This means: tests prove that the policy model works correctly. They do NOT prove that the user integrated it correctly. The UI must clearly state: "These tests validate your AI Protector configuration. To verify end-to-end integration, use the smoke tests in your integration kit." This distinction prevents users from thinking "I tested my agent" when they only tested the policy model.
+- [ ] **Source of truth:** Validation tests run against the **generated config + Agent-Firewall runtime** (gates, RBAC service, limits service), NOT against the user's live agent. This means: tests prove that the policy model works correctly. They do NOT prove that the user integrated it correctly. The UI must clearly state: "These tests validate your Agent-Firewall configuration. To verify end-to-end integration, use the smoke tests in your integration kit." This distinction prevents users from thinking "I tested my agent" when they only tested the policy model.
 - [ ] **Test properties:** Basic pack tests must be: (a) **deterministic** — same config → same results, no LLM randomness in basic pack, (b) **versioned** — each test has a version number, results reference test version, (c) **tied to policy pack version** — when the policy pack changes, the test pack version bumps. This enables cross-version comparison ("did v1.2 of finance pack break anything?").
 - [ ] **Test:** Register agent with demo config → run validation → all 12 basic tests pass
 
@@ -231,7 +231,7 @@ Nobody wants hard blocks on day one. Progressive rollout is critical for adoptio
 | Aspect | Status |
 |--------|--------|
 | Working code | **None** — zero implementation |
-| Config | **None** — no `AI_PROTECTOR_MODE` env var, no `rollout_mode` field |
+| Config | **None** — no `AGENT_FIREWALL_MODE` env var, no `rollout_mode` field |
 | Gate behavior | Always enforces — pre-tool gate always BLOCKs, no observe/warn bypass |
 | Documentation | `07-rollout-modes.md` — full spec (385 lines) |
 

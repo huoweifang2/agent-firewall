@@ -24,7 +24,7 @@ export interface RunClassification {
  * Classify a run based on available signals.
  *
  * - protection_detected → protected (proxy detected from response headers/blocks)
- * - registered_agent → protected (routed through AI Protector proxy)
+ * - registered_agent → protected (routed through Agent-Firewall proxy)
  * - Everything else → baseline (direct to model, no proxy protection)
  */
 export function classifyRun(run: RunDetail): RunClassification {
@@ -34,7 +34,7 @@ export function classifyRun(run: RunDetail): RunClassification {
       label: 'Protected',
       icon: 'mdi-shield-check',
       color: 'success',
-      explanation: 'This run was routed through AI Protector. Results reflect active protection.',
+      explanation: 'This run was routed through Agent-Firewall. Results reflect active protection.',
     }
   }
   return {
@@ -42,7 +42,7 @@ export function classifyRun(run: RunDetail): RunClassification {
     label: 'Baseline',
     icon: 'mdi-shield-off-outline',
     color: 'grey',
-    explanation: 'This run went directly to the model without AI Protector. Results show baseline behavior only.',
+    explanation: 'This run went directly to the model without Agent-Firewall. Results show baseline behavior only.',
   }
 }
 
@@ -183,7 +183,7 @@ export interface LiveResultMeta {
 
 const LIVE_RESULT_META: Record<LiveResultStatus, LiveResultMeta> = {
   blocked: {
-    label: 'Blocked by AI Protector',
+    label: 'Blocked by Agent-Firewall',
     baselineLabel: 'No breach detected',
     icon: '🛡️',
     mdiIcon: 'mdi-shield-check',

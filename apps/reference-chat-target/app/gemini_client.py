@@ -150,14 +150,14 @@ class GeminiDirectBackend(ModelBackend):
                 yield chunk.text
 
 
-# ── Protected HTTP (OpenAI-compatible via AI Protector) ──
+# ── Protected HTTP (OpenAI-compatible via Agent-Firewall) ──
 
 
 class ProtectedHTTPBackend(ModelBackend):
     def __init__(self, settings: Settings) -> None:
-        base = settings.ai_protector_base_url.rstrip("/")
+        base = settings.agent_firewall_base_url.rstrip("/")
         self._url = f"{base}/v1/chat/completions"
-        self._api_key = settings.ai_protector_api_key
+        self._api_key = settings.agent_firewall_api_key
         self._model = settings.gemini_model
         self._timeout = settings.model_timeout
 
@@ -206,7 +206,7 @@ class ProtectedHTTPBackend(ModelBackend):
         async with httpx.AsyncClient(timeout=self._timeout) as client:
             resp = await client.post(self._url, headers=self._headers(), json=payload)
 
-            # Handle proxy-level block (403 from AI Protector)
+            # Handle proxy-level block (403 from Agent-Firewall)
             if resp.status_code == 403:
                 try:
                     err_data = resp.json()
@@ -266,7 +266,7 @@ class ProtectedHTTPBackend(ModelBackend):
             async with client.stream(
                 "POST", self._url, headers=self._headers(), json=payload
             ) as resp:
-                # Handle proxy-level block (403 from AI Protector)
+                # Handle proxy-level block (403 from Agent-Firewall)
                 if resp.status_code == 403:
                     body = await resp.aread()
                     try:
@@ -298,9 +298,9 @@ class ProtectedHTTPBackend(ModelBackend):
 
 def create_backend(settings: Settings) -> ModelBackend:
     if settings.app_mode == "protected":
-        if not settings.ai_protector_base_url:
+        if not settings.agent_firewall_base_url:
             raise ValueError(
-                "APP_MODE=protected requires AI_PROTECTOR_BASE_URL to be set"
+                "APP_MODE=protected requires AGENT_FIREWALL_BASE_URL to be set"
             )
         return ProtectedHTTPBackend(settings)
     if not settings.gemini_api_key:

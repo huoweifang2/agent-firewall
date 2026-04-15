@@ -8,7 +8,7 @@
 
 ## Why this step matters
 
-You don't flip security on overnight. AI Protector uses **rollout
+You don't flip security on overnight. Agent-Firewall uses **rollout
 modes** to let you deploy safely:
 
 1. **Observe** — log everything, block nothing
@@ -38,7 +38,7 @@ You start in observe, watch for false positives, then promote.
 
 ```yaml
 # .env.protector
-AI_PROTECTOR_MODE=observe
+AGENT_FIREWALL_MODE=observe
 ```
 
 ### Per-environment
@@ -294,7 +294,7 @@ exceptions:
 ### 3. Re-validate
 
 ```bash
-ai-protector validate --agent customer-support-copilot --include-exceptions
+agent-firewall validate --agent customer-support-copilot --include-exceptions
 ```
 
 ---
@@ -304,10 +304,10 @@ ai-protector validate --agent customer-support-copilot --include-exceptions
 ### Setting mode at startup
 
 ```python
-from ai_protector import ProtectorConfig
+from agent_firewall import ProtectorConfig
 
 config = ProtectorConfig(
-    mode="observe",             # or from env: AI_PROTECTOR_MODE
+    mode="observe",             # or from env: AGENT_FIREWALL_MODE
     fail_open=True,             # allow on error (observe/warn)
     on_would_block=log_would_block,  # callback for observe mode
     on_warn=send_alert,              # callback for warn mode

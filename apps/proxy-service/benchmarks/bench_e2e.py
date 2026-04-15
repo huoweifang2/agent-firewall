@@ -1,6 +1,6 @@
 """End-to-end overhead benchmark — real LLM calls through the proxy vs direct.
 
-Measures the ACTUAL overhead AI Protector adds by comparing:
+Measures the ACTUAL overhead Agent-Firewall adds by comparing:
   1. Direct LLM call (LiteLLM → Gemini)
   2. Same call routed through the proxy (→ security pipeline → Gemini)
 
@@ -236,7 +236,7 @@ def print_results(results: dict) -> None:
     """Print e2e benchmark results."""
     w = 72
     print(f"\n{'=' * w}")
-    print("  AI Protector — End-to-End Overhead Benchmark")
+    print("  Agent-Firewall — End-to-End Overhead Benchmark")
     print(f"  Model: {results['model']}")
     print(f"{'=' * w}")
 
@@ -267,7 +267,7 @@ def print_results(results: dict) -> None:
 
 
 async def main() -> None:
-    parser = argparse.ArgumentParser(description="AI Protector end-to-end overhead benchmark")
+    parser = argparse.ArgumentParser(description="Agent-Firewall end-to-end overhead benchmark")
     parser.add_argument("--iterations", type=int, default=5, help="Iterations per prompt (default: 5)")
     parser.add_argument("--warmup", type=int, default=2, help="Warmup iterations (default: 2)")
     parser.add_argument("--model", type=str, default=None, help="Model name (default: auto-detect from API key)")

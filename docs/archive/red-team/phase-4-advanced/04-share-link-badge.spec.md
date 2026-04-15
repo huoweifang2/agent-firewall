@@ -21,7 +21,7 @@ Public sharing: shareable URL to results and an embeddable badge (like CI/CD bad
 
 - Endpoint: `GET /v1/badge/run/{id}` → SVG badge image
 - Format: `![Security Score](https://protector.../badge/run/123)`
-- Shows: "AI Protector | 84/100" with color
+- Shows: "Agent-Firewall | 84/100" with color
 
 ### Step 3: Badge customization
 

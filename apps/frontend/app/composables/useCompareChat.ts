@@ -2,11 +2,11 @@
  * Composable for the Compare Playground.
  *
  * Fires the SAME prompt through two paths IN PARALLEL:
- *   1. Protected  — POST proxy/v1/chat/completions (full AI Protector pipeline)
+ *   1. Protected  — POST proxy/v1/chat/completions (full Agent-Firewall pipeline)
  *   2. Unprotected — DIRECT to provider API (browser → api.openai.com etc.)
  *
  * The right panel proves the raw model accepts dangerous prompts.
- * The left panel proves AI Protector blocks them.  One-line URL change.
+ * The left panel proves Agent-Firewall blocks them.  One-line URL change.
  *
  * For providers without browser CORS support (Anthropic, Google), the
  * right panel falls back to the proxy's /v1/chat/direct endpoint

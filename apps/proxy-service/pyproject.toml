@@ -1,5 +1,5 @@
 [project]
-name = "ai-protector-proxy"
+name = "agent-firewall-proxy"
 version = "0.2.5" # x-release-please-version
 description = "Blue Team LLM Firewall — agentic security pipeline"
 requires-python = ">=3.12"

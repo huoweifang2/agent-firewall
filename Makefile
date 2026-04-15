@@ -19,7 +19,7 @@ demo:
 	$(ensure-benchmark-key)
 	cd infra && MODE=demo docker compose --profile demo --profile test-agents up --build -d
 	@echo ""
-	@echo "🚀  AI Protector Demo is starting..."
+	@echo "🚀  Agent-Firewall Demo is starting..."
 	@echo "    Frontend:          http://localhost:3000"
 	@echo "    Proxy API:         http://localhost:8000"
 	@echo "    Agent Demo:        http://localhost:8002"
@@ -35,7 +35,7 @@ up:
 	$(ensure-benchmark-key)
 	cd infra && MODE=real docker compose --profile full --profile test-agents up --build -d
 	@echo ""
-	@echo "🚀  AI Protector is starting (full stack)..."
+	@echo "🚀  Agent-Firewall is starting (full stack)..."
 	@echo "    Frontend:       http://localhost:3000"
 	@echo "    Proxy API:      http://localhost:8000"
 	@echo "    Agent Demo:     http://localhost:8002"
@@ -47,7 +47,7 @@ up:
 
 init: up pull-model
 	@echo ""
-	@echo "✅  AI Protector is ready! Open http://localhost:3000"
+	@echo "✅  Agent-Firewall is ready! Open http://localhost:3000"
 
 dev:
 	cd infra && docker compose up db redis ollama langfuse -d

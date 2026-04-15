@@ -90,7 +90,7 @@ def print_results(results: list[dict]) -> None:
     sep = "-" * len(header)
 
     print(f"\n{'=' * len(header)}")
-    print("  AI Protector — Memory Benchmark (RSS, MB)")
+    print("  Agent-Firewall — Memory Benchmark (RSS, MB)")
     print(f"{'=' * len(header)}")
     print(header)
     print(sep)

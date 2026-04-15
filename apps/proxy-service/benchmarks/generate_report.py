@@ -39,7 +39,7 @@ def generate() -> str:
     # ── Header ────────────────────────────────────────────────────
     lines.extend(
         [
-            "# AI Protector — Benchmark Results",
+            "# Agent-Firewall — Benchmark Results",
             "",
         ]
     )

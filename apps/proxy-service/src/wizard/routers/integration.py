@@ -90,7 +90,7 @@ async def download_kit(
     buf.seek(0)
 
     slug = _slugify(agent.name)
-    zip_filename = f"ai-protector-{slug}.zip"
+    zip_filename = f"agent-firewall-{slug}.zip"
 
     return StreamingResponse(
         buf,

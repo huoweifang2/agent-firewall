@@ -7,11 +7,11 @@ export const useAppTheme = () => {
 
   const toggle = () => {
     theme.global.name.value = isDark.value ? 'light' : 'dark'
-    localStorage.setItem('ai-protector-theme', theme.global.name.value)
+    localStorage.setItem('agent-firewall-theme', theme.global.name.value)
   }
 
   onMounted(() => {
-    const saved = localStorage.getItem('ai-protector-theme')
+    const saved = localStorage.getItem('agent-firewall-theme')
     if (saved && ['dark', 'light'].includes(saved)) {
       theme.global.name.value = saved
     }

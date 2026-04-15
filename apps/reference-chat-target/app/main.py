@@ -48,7 +48,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Reference Chat Target",
-    description="Realistic benchmark target for AI Protector security testing.",
+    description="Realistic benchmark target for Agent-Firewall security testing.",
     version="0.1.0",
     lifespan=lifespan,
 )

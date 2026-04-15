@@ -15,7 +15,7 @@ The CTA section on the results page, the re-run flow, and the mini Before/After 
 For demo agent (already protected): the CTA focuses on policy optimization.
 
 - "Want to improve this score?"
-- "AI Protector detected N unprotected attack vectors. Apply recommended policies to harden your agent."
+- "Agent-Firewall detected N unprotected attack vectors. Apply recommended policies to harden your agent."
 - Buttons:
   - [Apply Recommended Profile] — dialog: "Switch to Strict? Enables stricter thresholds." → apply
   - [Open Policies] → navigate to `/policies`

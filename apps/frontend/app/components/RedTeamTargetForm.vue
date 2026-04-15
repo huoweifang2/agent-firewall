@@ -99,7 +99,7 @@
         class="mb-4"
       >
         <span class="text-caption">
-          Requests to localhost are sent from your local AI Protector instance
+          Requests to localhost are sent from your local Agent-Firewall instance
           running on this machine.
         </span>
       </v-alert>

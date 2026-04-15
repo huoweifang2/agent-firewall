@@ -558,7 +558,7 @@ async def test_raw_python_has_protected_call(client):
 
 @pytest.mark.asyncio
 async def test_raw_python_standalone_imports(client):
-    """Only imports pydantic/pyyaml/structlog (no ai_protector SDK)."""
+    """Only imports pydantic/pyyaml/structlog (no agent_firewall SDK)."""
     agent = await _create_agent(client, framework="raw_python", policy_pack="customer_support")
     await _create_tool(client, agent["id"], name="bTool")
 
@@ -567,7 +567,7 @@ async def test_raw_python_standalone_imports(client):
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(agent["id"]), db)
         code = kit["files"]["protected_agent.py"]
-        assert "ai_protector" not in code.lower().replace("ai protector", "")
+        assert "agent_firewall" not in code.lower().replace("ai protector", "")
         assert "import structlog" in code
         break
 
@@ -703,14 +703,14 @@ async def test_env_parseable(client):
             f.write(content)
             f.flush()
             values = dotenv_values(f.name)
-        assert "AI_PROTECTOR_URL" in values
-        assert "AI_PROTECTOR_AGENT_ID" in values
+        assert "AGENT_FIREWALL_URL" in values
+        assert "AGENT_FIREWALL_AGENT_ID" in values
         break
 
 
 @pytest.mark.asyncio
 async def test_env_has_required_vars(client):
-    """AI_PROTECTOR_URL, AGENT_ID, POLICY, MODE present."""
+    """AGENT_FIREWALL_URL, AGENT_ID, POLICY, MODE present."""
     ref = await _seed_ref_agent(client)
 
     from src.db.session import get_db
@@ -718,7 +718,7 @@ async def test_env_has_required_vars(client):
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
         content = kit["files"][".env.protector"]
-        for var in ["AI_PROTECTOR_URL", "AI_PROTECTOR_AGENT_ID", "AI_PROTECTOR_POLICY", "AI_PROTECTOR_MODE"]:
+        for var in ["AGENT_FIREWALL_URL", "AGENT_FIREWALL_AGENT_ID", "AGENT_FIREWALL_POLICY", "AGENT_FIREWALL_MODE"]:
             assert var in content, f"Missing env var: {var}"
         break
 
@@ -941,12 +941,12 @@ async def test_kit_download_zip_has_7_files(client):
 
 @pytest.mark.asyncio
 async def test_kit_download_filename_slugified(client):
-    """Filename = ai-protector-{slug}.zip."""
+    """Filename = agent-firewall-{slug}.zip."""
     ref = await _seed_ref_agent(client)
     await client.post(f"/v1/agents/{ref['id']}/integration-kit")
     resp = await client.get(f"/v1/agents/{ref['id']}/integration-kit/download")
     cd = resp.headers.get("content-disposition", "")
-    assert "ai-protector-" in cd
+    assert "agent-firewall-" in cd
     assert ".zip" in cd
 
 
@@ -1038,7 +1038,7 @@ async def _e2e_flow(client: AsyncClient, framework: str) -> None:
 
         # Validate .env.protector
         env_content = zf.read(".env.protector").decode()
-        assert "AI_PROTECTOR_URL" in env_content
+        assert "AGENT_FIREWALL_URL" in env_content
 
         # Validate README
         readme = zf.read("README.md").decode()

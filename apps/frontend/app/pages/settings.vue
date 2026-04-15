@@ -12,7 +12,7 @@
           </v-chip>
         </div>
         <p class="text-body-2 text-medium-emphasis mb-4">
-          Your API keys let AI Protector call LLM providers on your behalf.
+          Your API keys let Agent-Firewall call LLM providers on your behalf.
         </p>
 
         <!-- Security explainer -->
@@ -46,8 +46,8 @@
         <!-- Local-only callout -->
         <p class="text-caption text-medium-emphasis mb-6 ml-1">
           <v-icon size="12" class="mr-1">mdi-information-outline</v-icon>
-          All keys are stored only in this browser and never persisted on AI Protector servers.
-          <a href="https://github.com/Szesnasty/ai-protector/blob/main/SECURITY.md" target="_blank" rel="noopener" class="text-primary text-decoration-none security-link">
+          All keys are stored only in this browser and never persisted on Agent-Firewall servers.
+          <a href="https://github.com/Szesnasty/agent-firewall/blob/main/SECURITY.md" target="_blank" rel="noopener" class="text-primary text-decoration-none security-link">
             How key storage works
             <v-icon size="10" class="ml-0">mdi-open-in-new</v-icon>
           </a>

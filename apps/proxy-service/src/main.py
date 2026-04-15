@@ -1,4 +1,4 @@
-"""AI Protector Proxy Service — FastAPI application."""
+"""Agent-Firewall Proxy Service — FastAPI application."""
 
 import os
 from collections.abc import AsyncGenerator
@@ -138,7 +138,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 settings = get_settings()
 
 app = FastAPI(
-    title="AI Protector — Proxy Service",
+    title="Agent-Firewall — Proxy Service",
     description="LLM Firewall with agentic security pipeline",
     version=settings.app_version,
     lifespan=lifespan,

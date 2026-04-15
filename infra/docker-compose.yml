@@ -1,4 +1,4 @@
-# AI Protector — Docker Compose
+# Agent-Firewall — Docker Compose
 #
 # Quick start:
 #   make demo    → demo mode (mock LLM, no Ollama)
@@ -14,7 +14,7 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-ai_protector}
+      POSTGRES_DB: ${POSTGRES_DB:-agent_firewall}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
@@ -25,7 +25,7 @@ services:
       timeout: 3s
       retries: 10
     networks:
-      - ai-protector
+      - agent-firewall
 
   # ── Redis ─────────────────────────────────────────────
   redis:
@@ -38,7 +38,7 @@ services:
       timeout: 3s
       retries: 10
     networks:
-      - ai-protector
+      - agent-firewall
 
   # ── Ollama ────────────────────────────────────────────
   ollama:
@@ -49,7 +49,7 @@ services:
     volumes:
       - ollama_models:/root/.ollama
     networks:
-      - ai-protector
+      - agent-firewall
 
   # ── Langfuse ──────────────────────────────────────────
   # Pinned to v2 — v3 requires ClickHouse + MinIO (overkill for local dev)
@@ -73,7 +73,7 @@ services:
       retries: 15
       start_period: 30s
     networks:
-      - ai-protector
+      - agent-firewall
 
   # ── App Services ───────────────────────────────────────
   proxy-service:
@@ -87,7 +87,7 @@ services:
         required: false
     environment:
       MODE: ${MODE:-demo}
-      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/ai_protector}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/agent_firewall}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       DEFAULT_POLICY: ${DEFAULT_POLICY:-balanced}
       BENCHMARK_SECRET_KEY: ${BENCHMARK_SECRET_KEY:-}
@@ -97,7 +97,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - ai-protector
+      - agent-firewall
 
   agent-demo:
     build:
@@ -117,7 +117,7 @@ services:
     depends_on:
       - proxy-service
     networks:
-      - ai-protector
+      - agent-firewall
 
   frontend:
     build:
@@ -136,7 +136,7 @@ services:
       - proxy-service
       - agent-demo
     networks:
-      - ai-protector
+      - agent-firewall
 
   # ── Test Agents (wizard go-live) ──────────────────────
 
@@ -161,7 +161,7 @@ services:
       timeout: 5s
       retries: 3
     networks:
-      - ai-protector
+      - agent-firewall
 
   test-agent-langgraph:
     build:
@@ -184,7 +184,7 @@ services:
       timeout: 5s
       retries: 3
     networks:
-      - ai-protector
+      - agent-firewall
 
   # ── Reference Chat Target ─────────────────────────────
   reference-chat-target:
@@ -197,7 +197,7 @@ services:
       - path: ../apps/reference-chat-target/.env
         required: false
     environment:
-      AI_PROTECTOR_BASE_URL: http://proxy-service:8000
+      AGENT_FIREWALL_BASE_URL: http://proxy-service:8000
       PORT: "8010"
     depends_on:
       - proxy-service
@@ -208,7 +208,7 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - ai-protector
+      - agent-firewall
 
   # ── Model pull (run-once init container) ──────────────
   model-pull:
@@ -229,7 +229,7 @@ services:
         echo ''
         echo '✅ Model ready.'
     networks:
-      - ai-protector
+      - agent-firewall
     profiles: ["init"]
 
 volumes:
@@ -237,5 +237,5 @@ volumes:
   ollama_models:
 
 networks:
-  ai-protector:
+  agent-firewall:
     driver: bridge

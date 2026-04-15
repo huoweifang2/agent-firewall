@@ -64,7 +64,7 @@ Build the FastAPI application skeleton for the proxy service: configuration, dat
   ```python
   class Settings(BaseSettings):
       # Database
-      database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/ai_protector"
+      database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/agent_firewall"
 
       # Redis
       redis_url: str = "redis://localhost:6379/0"
@@ -261,7 +261,7 @@ Every request gets a UUID that flows through all logs, Langfuse traces, and DB r
 - [x] Structlog outputs JSON logs with correlation_id
 - [x] `ruff check src/` → 0 errors
 - [x] `pytest tests/` → test_health passes
-- [x] Dockerfile builds: `docker build -t ai-protector-proxy .`
+- [x] Dockerfile builds: `docker build -t agent-firewall-proxy .`
 - [x] Uncomment `proxy-service` in docker-compose.yml → service starts and connects to DB
 
 ---

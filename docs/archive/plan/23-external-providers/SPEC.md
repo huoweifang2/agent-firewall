@@ -12,7 +12,7 @@
 
 ## Goal
 
-Transform AI Protector from a **local-Ollama-only proxy** into a **universal LLM firewall**
+Transform Agent-Firewall from a **local-Ollama-only proxy** into a **universal LLM firewall**
 that can protect traffic to **any commercial LLM provider** (OpenAI, Anthropic, Google, Mistral)
 while keeping all security scanners running locally at zero cost.
 
@@ -24,18 +24,18 @@ After this step:
 
 ### Why This Matters
 
-Today AI Protector works only with Ollama (local, slow on CPU). Real-world adoption requires:
+Today Agent-Firewall works only with Ollama (local, slow on CPU). Real-world adoption requires:
 
 ```
 ┌──────────────────────────────────────────────────────┐
 │  Client app (Java, Python, JS, curl...)              │
-│  base_url = "https://ai-protector.company.com/v1"    │
+│  base_url = "https://agent-firewall.company.com/v1"    │
 │  model = "gpt-4o"  ← just change this string         │
 └──────────────┬───────────────────────────────────────┘
                │  x-api-key: sk-proj-abc...
                ▼
 ┌──────────────────────────────────────────────────────┐
-│  AI Protector Proxy :8000                            │
+│  Agent-Firewall Proxy :8000                            │
 │  ┌─────────────────────────────────────────────────┐ │
 │  │  NeMo Guardrails (7ms) │ Presidio │ LLM Guard  │ │
 │  │  ← all local, free, fast                        │ │

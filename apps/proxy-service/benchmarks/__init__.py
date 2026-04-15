@@ -1,1 +1,1 @@
-"""AI Protector benchmark suite — latency, security detection, memory."""
+"""Agent-Firewall benchmark suite — latency, security detection, memory."""

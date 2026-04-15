@@ -1,4 +1,4 @@
-# AI Protector — Agent Security Pipeline: Action Plan
+# Agent-Firewall — Agent Security Pipeline: Action Plan
 
 > **Priority:** 1 (most critical) → 10 (least urgent)
 > **Context:** extending the existing two-level security model with full tool-calling agent protection

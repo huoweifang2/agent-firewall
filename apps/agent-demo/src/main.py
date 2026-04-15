@@ -1,4 +1,4 @@
-"""AI Protector Agent Demo — Customer Support Copilot."""
+"""Agent-Firewall Agent Demo — Customer Support Copilot."""
 
 from __future__ import annotations
 
@@ -126,8 +126,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 settings = get_settings()
 
 app = FastAPI(
-    title="AI Protector — Agent Demo",
-    description="Customer Support Copilot — demo agent behind the AI Protector firewall",
+    title="Agent-Firewall — Agent Demo",
+    description="Customer Support Copilot — demo agent behind the Agent-Firewall firewall",
     version=settings.app_version,
     lifespan=lifespan,
 )

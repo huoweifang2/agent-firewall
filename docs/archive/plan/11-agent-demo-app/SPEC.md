@@ -15,7 +15,7 @@
 
 Build the **Customer Support Copilot** — a LangGraph-based agent with tool-calling and role-based access control, exposed via a FastAPI endpoint at `POST /agent/chat`.
 
-The agent proves that AI Protector can protect **real agentic workloads**, not just one-shot prompts. It classifies user intent, gates tool access by role, orchestrates tool calls (ReAct loop), generates a response through the firewall proxy, manages session memory, and returns a structured result with trace data.
+The agent proves that Agent-Firewall can protect **real agentic workloads**, not just one-shot prompts. It classifies user intent, gates tool access by role, orchestrates tool calls (ReAct loop), generates a response through the firewall proxy, manages session memory, and returns a structured result with trace data.
 
 > This step focuses on the **agent skeleton and tools** — standalone, with a mock LLM client.
 > Step 12 wires it to the real firewall proxy.

@@ -1,7 +1,7 @@
 """Security detection benchmark — measures attack detection rate.
 
 Tests the pre-LLM pipeline against:
-1. Internal AI Protector scenarios (358 attacks, 23 categories)
+1. Internal Agent-Firewall scenarios (358 attacks, 23 categories)
 2. JailbreakBench dataset (100 harmful behaviors, NeurIPS 2024)
 
 Usage:
@@ -45,7 +45,7 @@ def load_internal_scenarios() -> list[dict]:
                 scenarios.append(
                     {
                         "id": item.get("id", "?"),
-                        "source": f"ai-protector/{source}",
+                        "source": f"agent-firewall/{source}",
                         "category": category,
                         "prompt": item["prompt"],
                         "expected": item.get("expectedDecision", "ALLOW"),
@@ -243,7 +243,7 @@ def print_results(results: list[DetectionResult]) -> None:
     sep = "-" * len(header)
 
     print(f"\n{'=' * len(header)}")
-    print("  AI Protector — Security Detection Benchmark")
+    print("  Agent-Firewall — Security Detection Benchmark")
     print(f"{'=' * len(header)}")
     print(header)
     print(sep)
@@ -278,7 +278,7 @@ def print_results(results: list[DetectionResult]) -> None:
 
 
 async def main() -> None:
-    parser = argparse.ArgumentParser(description="AI Protector security detection benchmark")
+    parser = argparse.ArgumentParser(description="Agent-Firewall security detection benchmark")
     parser.add_argument("--policy", type=str, default="balanced", choices=POLICIES.keys())
     parser.add_argument("--all-policies", action="store_true")
     parser.add_argument("--include-jailbreakbench", action="store_true", help="Include JailbreakBench dataset")
@@ -303,7 +303,7 @@ async def main() -> None:
 
         # Internal scenarios
         print(f"  Running {len(internal)} internal scenarios...")
-        r = await run_security_bench(internal, policy, "ai-protector/internal")
+        r = await run_security_bench(internal, policy, "agent-firewall/internal")
         all_results.append(r.to_dict())
 
         # JailbreakBench

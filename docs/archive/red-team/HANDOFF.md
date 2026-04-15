@@ -165,7 +165,7 @@ if not body_text:
 **Problem**: Docker Compose users don't know when to enter `http://my-service:8080` (orchestration network) vs `http://localhost:8080` vs `http://host.docker.internal:8080`.
 
 **Plan**:
-1. Docs section: "Connecting to your endpoint from AI Protector"
+1. Docs section: "Connecting to your endpoint from Agent-Firewall"
 2. Table: launch mode (native / Docker / Docker Compose) × service location (same host / same network / external)
 3. UI warning when URL = localhost and proxy is in a container: "This will be routed via host.docker.internal"
 
@@ -266,7 +266,7 @@ target_config = {
 ## Continuation Prompt (paste forward)
 
 ```
-You are a developer in the ai-protector repository.
+You are a developer in the agent-firewall repository.
 Red team / wizard must support real integrations: arbitrary request and
 response JSON, not just one open-standard chat format.
 

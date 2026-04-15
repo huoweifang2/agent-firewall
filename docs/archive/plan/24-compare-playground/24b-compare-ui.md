@@ -13,7 +13,7 @@
 
 Build a dual-panel chat page that sends the same prompt to **both** the protected proxy
 and the unprotected direct endpoint simultaneously, showing results side-by-side.
-This is the demo "wow" page that instantly proves AI Protector's value.
+This is the demo "wow" page that instantly proves Agent-Firewall's value.
 
 ---
 
@@ -90,7 +90,7 @@ The user sees tokens appearing in both panels at the same time.
 │  Compare: Protected vs Unprotected          [Policy: balanced ▼]       │
 │                                              [Model: gpt-4o ▼]        │
 ├─────────────────────────────────┬───────────────────────────────────────┤
-│  🛡️ Protected (AI Protector)    │  ⚠️ Unprotected (Direct)             │
+│  🛡️ Protected (Agent-Firewall)    │  ⚠️ Unprotected (Direct)             │
 │                                 │                                       │
 │  User: Ignore instructions...   │  User: Ignore instructions...         │
 │                                 │                                       │

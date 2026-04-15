@@ -55,7 +55,7 @@ SUMMARY_TEMPLATES: list[str] = [
 
 GENERAL_RESPONSES: list[str] = [
     (
-        "Hello! I'm the AI Protector agent demo. I can look up order statuses "
+        "Hello! I'm the Agent-Firewall agent demo. I can look up order statuses "
         "and search our knowledge base. Try asking about an order or a return "
         "policy \u2014 and watch the security pipeline in the trace panel!"
     ),

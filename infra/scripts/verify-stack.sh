@@ -15,7 +15,7 @@ check() {
   fi
 }
 
-echo "🔍 Verifying AI Protector infrastructure..."
+echo "🔍 Verifying Agent-Firewall infrastructure..."
 echo ""
 
 # PostgreSQL
@@ -39,7 +39,7 @@ check "Langfuse (3001)" \
   "curl -sf http://localhost:3001/api/public/health"
 
 echo "┌──────────────────────────────────┐"
-echo "│  AI Protector — Stack Status     │"
+echo "│  Agent-Firewall — Stack Status     │"
 echo "├──────────────────────────────────┤"
 for r in "${results[@]}"; do
   printf "│  %-32s│\n" "$r"

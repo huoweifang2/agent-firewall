@@ -6,7 +6,7 @@
 
 ## Goal
 
-Allow AI Protector to run without any LLM backend (no Ollama, no API keys). The security pipeline runs for real. Only the final LLM call is replaced by a MockProvider that returns deterministic fixture responses based on the pipeline's intent classification.
+Allow Agent-Firewall to run without any LLM backend (no Ollama, no API keys). The security pipeline runs for real. Only the final LLM call is replaced by a MockProvider that returns deterministic fixture responses based on the pipeline's intent classification.
 
 ---
 

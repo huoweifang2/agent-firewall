@@ -1,4 +1,4 @@
-# AI Protector — MVP Implementation Diagram
+# Agent-Firewall — MVP Implementation Diagram
 
 > 20 steps across 7 phases. **All core phases complete (1–5 + 7).**
 > Next milestone: **Agents v1**.

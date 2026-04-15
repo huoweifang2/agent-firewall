@@ -1,4 +1,4 @@
-# AI Protector — MVP Specification
+# Agent-Firewall — MVP Specification
 
 > **Scope:** Blue Team Firewall (agentic pipeline) + Agent Demo App + Frontend Dashboard
 > **Timeline:** 6–8 weeks
@@ -72,7 +72,7 @@ Documentation includes **Level 0** (no security — agent → LLM directly) as a
 ### 2.2. Repository Structure
 
 ```
-ai-protector/
+agent-firewall/
 ├── apps/
 │   ├── frontend/              # Nuxt 4 + Vuetify 3 (dashboard, playground)
 │   ├── proxy-service/         # Python FastAPI — Blue Team firewall
@@ -83,7 +83,7 @@ ai-protector/
 ├── docs/
 │   ├── MVP.spec.md            # This file
 │   ├── ROADMAP.spec.md        # Post-MVP roadmap
-│   └── securing-agents.md     # "How to plug any agent behind AI Protector"
+│   └── securing-agents.md     # "How to plug any agent behind Agent-Firewall"
 ├── README.md
 └── .gitignore
 ```
@@ -364,7 +364,7 @@ A **working agent** running behind the firewall. It proves:
 │                              ▼                          │
 │                   ┌──────────────────┐                  │
 │                   │  LLM Call        │ ── Goes through  │
-│                   │  (LiteLLM →      │    AI Protector  │
+│                   │  (LiteLLM →      │    Agent-Firewall  │
 │                   │   proxy-service) │    firewall!     │
 │                   └──────────────────┘                  │
 │                              │                          │
@@ -410,7 +410,7 @@ Level 1: Agent (with PolicyCheckNode) → LLM directly
          ⚠️ Tool access controlled. But injection / PII / jailbreak
          still possible at LLM level.
 
-Level 2: Agent (with PolicyCheckNode) → AI Protector Proxy → LLM
+Level 2: Agent (with PolicyCheckNode) → Agent-Firewall Proxy → LLM
          ✅ Full protection. Agent-level + proxy-level security.
          Injection blocked. PII masked. Jailbreaks caught.
 ```
@@ -567,7 +567,7 @@ services:
     build: ../apps/proxy-service
     ports: ["8000:8000"]
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/ai_protector
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/agent_firewall
       REDIS_URL: redis://redis:6379/0
       OLLAMA_BASE_URL: http://ollama:11434
       LANGFUSE_HOST: http://langfuse:3001
@@ -590,7 +590,7 @@ services:
     image: pgvector/pgvector:pg16
     ports: ["5432:5432"]
     environment:
-      POSTGRES_DB: ai_protector
+      POSTGRES_DB: agent_firewall
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes: [pgdata:/var/lib/postgresql/data]

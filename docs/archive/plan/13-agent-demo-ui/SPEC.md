@@ -15,7 +15,7 @@
 
 Build the **Agent Demo** page — a chat interface for the Customer Support Copilot that showcases tool-calling, RBAC, and firewall integration. Users can switch roles (customer / admin), see tool call annotations inline, and inspect the full agent trace + firewall decision in a side panel.
 
-This page is the **centrepiece of the portfolio demo**: it proves that AI Protector secures real agentic workloads, not just raw prompts.
+This page is the **centrepiece of the portfolio demo**: it proves that Agent-Firewall secures real agentic workloads, not just raw prompts.
 
 ---
 
@@ -35,7 +35,7 @@ This page is the **centrepiece of the portfolio demo**: it proves that AI Protec
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  v-app-bar: AI Protector   [health ●]   [☀/🌙]                │
+│  v-app-bar: Agent-Firewall   [health ●]   [☀/🌙]                │
 ├──────────┬──────────────────────────────────────┬───────────────┤
 │          │                                      │               │
 │  nav     │         Chat Area                    │  Config &     │

@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════
-# AI Protector — Harmful Content Rails (Colang 1.0)
+# Agent-Firewall — Harmful Content Rails (Colang 1.0)
 # Catches harmful content requests including roleplay-framed
 # attacks (e.g. PAIR-style jailbreaks that wrap harmful requests
 # in academic/professional scenarios).

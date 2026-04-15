@@ -21,7 +21,7 @@ When the user runs a benchmark on an unprotected custom endpoint, the CTA sectio
 - "Protect this endpoint"
 - "Your agent has {N} critical security gaps."
 - Two path cards:
-  - **Quick — Proxy Setup**: "Route traffic through AI Protector. No code changes." → [Set up Proxy →]
+  - **Quick — Proxy Setup**: "Route traffic through Agent-Firewall. No code changes." → [Set up Proxy →]
   - **Deep — Agent Wizard**: "Register tools, roles, RBAC. Most precise protection." → [Open Wizard →]
 - Plus: [Re-run Benchmark] and [Export Report] buttons
 

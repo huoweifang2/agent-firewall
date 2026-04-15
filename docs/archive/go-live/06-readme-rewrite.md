@@ -6,7 +6,7 @@
 
 ## Goal
 
-Rewrite the README hero section for GitHub landing page conversion. A visitor should understand what AI Protector does and have it running in 60 seconds.
+Rewrite the README hero section for GitHub landing page conversion. A visitor should understand what Agent-Firewall does and have it running in 60 seconds.
 
 ---
 
@@ -23,7 +23,7 @@ The README is thorough but optimized for someone who already decided to use the 
 ## 2. New README structure
 
 ```
-# AI Protector
+# Agent-Firewall
 
 [one-line description]
 [badges]
@@ -54,7 +54,7 @@ The README is thorough but optimized for someone who already decided to use the 
 ## 3. Hero section (new)
 
 ```markdown
-# AI Protector
+# Agent-Firewall
 
 Self-hosted **LLM Firewall** with an agentic security pipeline.
 Drop-in OpenAI-compatible proxy that scans, classifies, and enforces
@@ -65,7 +65,7 @@ policies on every LLM request and response — in real time.
 > **Demo mode included** — runs without LLM models or API keys.
 > Security pipeline is real. LLM responses are simulated.
 
-![AI Protector Dashboard](docs/assets/screenshot-dashboard.png)
+![Agent-Firewall Dashboard](docs/assets/screenshot-dashboard.png)
 ```
 
 ---
@@ -76,8 +76,8 @@ policies on every LLM request and response — in real time.
 ## Quick Start
 
 ```bash
-git clone https://github.com/Szesnasty/ai-protector.git
-cd ai-protector
+git clone https://github.com/Szesnasty/agent-firewall.git
+cd agent-firewall
 make demo
 ```
 

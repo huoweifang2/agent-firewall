@@ -8,7 +8,7 @@ Graph flow:
 ╔══════════════════════════════════════════════════════════════════╗
 ║  AI PROTECTOR — Integration Example (LangGraph)                ║
 ║                                                                ║
-║  This file shows how AI Protector security gates are wired     ║
+║  This file shows how Agent-Firewall security gates are wired     ║
 ║  into a LangGraph StateGraph. Look for sections marked with:   ║
 ║                                                                ║
 ║    # ═══ AI PROTECTOR ═══                                      ║
@@ -114,7 +114,7 @@ def route_tool_node(state: AgentState) -> dict[str, Any]:
 #
 def pre_tool_gate_node(state: AgentState) -> dict[str, Any]:
     """Pre-tool security check: RBAC + limits."""
-    gate = PreToolGate()  # ← AI Protector gate, configured by wizard YAML
+    gate = PreToolGate()  # ← Agent-Firewall gate, configured by wizard YAML
     tool = state.get("tool")
     role = state.get("role", "user")
 
@@ -136,7 +136,7 @@ def pre_tool_gate_node(state: AgentState) -> dict[str, Any]:
             ],
         }
 
-    # AI Protector: check RBAC permission + rate limits for this role/tool
+    # Agent-Firewall: check RBAC permission + rate limits for this role/tool
     result = gate.check(role, tool, state.get("tool_args"))
 
     log_entry = {
@@ -173,10 +173,10 @@ def tool_executor_node(state: AgentState) -> dict[str, Any]:
 #
 def post_tool_gate_node(state: AgentState) -> dict[str, Any]:
     """Post-tool scan: PII, injection detection."""
-    gate = PostToolGate()  # ← AI Protector gate, uses policy.yaml scanners config
+    gate = PostToolGate()  # ← Agent-Firewall gate, uses policy.yaml scanners config
     output = state.get("tool_output", "")
 
-    # AI Protector: scan output for sensitive data and injection patterns
+    # Agent-Firewall: scan output for sensitive data and injection patterns
     result = gate.scan(output)
 
     log_entry = {
@@ -266,30 +266,30 @@ def after_pre_gate(state: AgentState) -> str:
 #                                                          ↓
 #                                                       response
 #
-# Without AI Protector, the graph would be:
+# Without Agent-Firewall, the graph would be:
 #   route_tool → tool_executor → response → END
 #
-# AI Protector adds pre_tool_gate and post_tool_gate as mandatory
+# Agent-Firewall adds pre_tool_gate and post_tool_gate as mandatory
 # nodes, with conditional routing for block/confirm decisions.
 #
 def build_graph() -> StateGraph:
     graph = StateGraph(AgentState)
 
     graph.add_node("route_tool", route_tool_node)
-    graph.add_node("pre_tool_gate", pre_tool_gate_node)  # ← AI Protector
+    graph.add_node("pre_tool_gate", pre_tool_gate_node)  # ← Agent-Firewall
     graph.add_node("tool_executor", tool_executor_node)
-    graph.add_node("post_tool_gate", post_tool_gate_node)  # ← AI Protector
+    graph.add_node("post_tool_gate", post_tool_gate_node)  # ← Agent-Firewall
     graph.add_node("response", response_node)
-    graph.add_node("blocked_response", blocked_response_node)  # ← AI Protector
-    graph.add_node("no_match_response", no_match_response_node)  # ← AI Protector
-    graph.add_node("confirmation", confirmation_node)  # ← AI Protector
+    graph.add_node("blocked_response", blocked_response_node)  # ← Agent-Firewall
+    graph.add_node("no_match_response", no_match_response_node)  # ← Agent-Firewall
+    graph.add_node("confirmation", confirmation_node)  # ← Agent-Firewall
 
     graph.set_entry_point("route_tool")
-    # AI Protector: security gate runs after routing, before execution
+    # Agent-Firewall: security gate runs after routing, before execution
     graph.add_edge("route_tool", "pre_tool_gate")
     graph.add_conditional_edges(
         "pre_tool_gate",
-        after_pre_gate,  # ← AI Protector: routes to block/confirm/execute/no_match
+        after_pre_gate,  # ← Agent-Firewall: routes to block/confirm/execute/no_match
         {
             "execute": "tool_executor",
             "blocked": "blocked_response",
@@ -297,7 +297,7 @@ def build_graph() -> StateGraph:
             "confirmation": "confirmation",
         },
     )
-    # AI Protector: post-tool scan runs after execution
+    # Agent-Firewall: post-tool scan runs after execution
     graph.add_edge("tool_executor", "post_tool_gate")
     graph.add_edge("post_tool_gate", "response")
     graph.add_edge("response", END)

@@ -36,7 +36,7 @@ Response: { status: "ok" | "error", status_code?, latency_ms?, content_type?, er
 
 - [Test Connection] button calls the endpoint
 - Loading state during request
-- Success: green banner "✅ 200 OK │ 340ms │ AI Protector can reach your endpoint"
+- Success: green banner "✅ 200 OK │ 340ms │ Agent-Firewall can reach your endpoint"
 - Failure: red/yellow banner with specific error message (see error states spec)
 - Non-JSON warning: yellow banner "Endpoint returned {content-type} instead of JSON. Continue anyway?"
 

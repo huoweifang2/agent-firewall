@@ -1,6 +1,6 @@
 # Step 21 — OSS Maturity & Project Hygiene
 
-> **Goal**: Transform AI Protector from a "personal repo" into a **credible open-source project**
+> **Goal**: Transform Agent-Firewall from a "personal repo" into a **credible open-source project**
 > that looks professional on first GitHub visit. Cover CI/CD, security scanning, licensing,
 > contributor experience, and social proof (badges, releases).
 
@@ -62,7 +62,7 @@ Permission is hereby granted, free of charge, to any person obtaining a copy...
 
 **CONTRIBUTING.md outline:**
 ```markdown
-# Contributing to AI Protector
+# Contributing to Agent-Firewall
 
 ## Quick Setup
 git clone ... && make init
@@ -268,8 +268,8 @@ cd apps/proxy-service && pytest tests/ -v --tb=short 2>&1 | grep FAILED
 Add status badges to the top of README.md:
 
 ```markdown
-[![CI](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/Szesnasty/ai-protector/actions/workflows/codeql.yml/badge.svg)](https://github.com/Szesnasty/ai-protector/actions/workflows/codeql.yml)
+[![CI](https://github.com/Szesnasty/agent-firewall/actions/workflows/ci.yml/badge.svg)](https://github.com/Szesnasty/agent-firewall/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/Szesnasty/agent-firewall/actions/workflows/codeql.yml/badge.svg)](https://github.com/Szesnasty/agent-firewall/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![Nuxt 4](https://img.shields.io/badge/nuxt-4-00DC82.svg)](https://nuxt.com/)

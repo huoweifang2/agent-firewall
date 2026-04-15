@@ -1,4 +1,4 @@
-"""AI Protector Agent Demo — Pydantic schemas."""
+"""Agent-Firewall Agent Demo — Pydantic schemas."""
 
 from __future__ import annotations
 

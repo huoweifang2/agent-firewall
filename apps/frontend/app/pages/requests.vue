@@ -28,7 +28,7 @@ const total = computed(() => data.value?.total ?? 0)
       <div>
         <h1 class="text-h5 font-weight-bold">Request Traces</h1>
         <p class="text-body-2 text-medium-emphasis">
-          Inspect how requests were evaluated, blocked, or allowed by AI Protector.
+          Inspect how requests were evaluated, blocked, or allowed by Agent-Firewall.
           {{ total }} request{{ total === 1 ? '' : 's' }} recorded
         </p>
       </div>

@@ -1,12 +1,12 @@
-# Contributing to AI Protector
+# Contributing to Agent-Firewall
 
 Thanks for your interest in contributing! This guide will help you get started.
 
 ## Quick Setup
 
 ```bash
-git clone https://github.com/Szesnasty/ai-protector.git
-cd ai-protector
+git clone https://github.com/Szesnasty/agent-firewall.git
+cd agent-firewall
 make init          # builds everything + pulls LLM model (~4.7 GB)
 ```
 
@@ -111,4 +111,4 @@ Before requesting review, ensure:
 
 ## Questions?
 
-Open a [GitHub Discussion](https://github.com/Szesnasty/ai-protector/discussions) for questions or ideas.
+Open a [GitHub Discussion](https://github.com/Szesnasty/agent-firewall/discussions) for questions or ideas.

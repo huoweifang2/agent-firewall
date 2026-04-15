@@ -1,4 +1,4 @@
-# AI Protector — Roadmap
+# Agent-Firewall — Roadmap
 
 > MVP is complete (Phases 1–5 + 7). The **immediate next milestone is Agents v1** —
 > turning agent security from a demo into a product pillar.
@@ -41,7 +41,7 @@ map its tools and roles, generate guardrail configs, validate with attack tests,
 
 ## Phase 1: Red Team Lab (after Agents v1)
 
-The second pillar of AI Protector. Transforms the project from "just a firewall" into a full **offensive + defensive AI security platform**.
+The second pillar of Agent-Firewall. Transforms the project from "just a firewall" into a full **offensive + defensive AI security platform**.
 
 ### 1.1. Red Team Attack Engine
 

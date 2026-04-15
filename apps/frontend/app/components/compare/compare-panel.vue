@@ -65,7 +65,7 @@
               <v-icon size="12" color="grey">mdi-arrow-right</v-icon>
               <v-chip size="x-small" color="primary" variant="tonal" label>
                 <v-icon start size="12">mdi-shield-check</v-icon>
-                AI Protector
+                Agent-Firewall
               </v-chip>
               <v-icon size="12" color="grey">mdi-arrow-right</v-icon>
               <span class="text-caption text-medium-emphasis">LLM</span>
@@ -144,7 +144,7 @@ const headerIcon = computed(() =>
 )
 
 const headerTitle = computed(() =>
-  props.variant === 'protected' ? 'With AI Protector' : 'Without Protection',
+  props.variant === 'protected' ? 'With Agent-Firewall' : 'Without Protection',
 )
 
 const headerSubtitle = computed(() => {

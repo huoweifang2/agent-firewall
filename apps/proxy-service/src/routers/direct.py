@@ -54,7 +54,7 @@ async def chat_direct(
 ) -> ChatCompletionResponse | StreamingResponse:
     """Send prompt directly to LLM — NO scanning, NO policy, NO audit log.
 
-    For Compare demo only.  Shows what happens without AI Protector.
+    For Compare demo only.  Shows what happens without Agent-Firewall.
     """
     settings = get_settings()
 

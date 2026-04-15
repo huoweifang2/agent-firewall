@@ -18,7 +18,7 @@ This completes the "magic moment":
 
 Validation proves the config works — **without deploying anything**.
 
-**Source of truth:** Tests run against the generated config + AI Protector
+**Source of truth:** Tests run against the generated config + Agent-Firewall
 runtime (gates, RBAC, limits), NOT against the user's live agent.
 
 ---

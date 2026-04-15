@@ -669,7 +669,7 @@ Also useful for UI sorting/priority and audit logs.
 - 18+ seed rules cover the most common threat categories out-of-the-box
 - Seed rules use `is_regex=True` for maximum coverage per rule
 - Operators can delete/modify seed rules — they're regular rows, not hardcoded
-- Community effect: "AI Protector PL-GDPR pack" is a shareable export
+- Community effect: "Agent-Firewall PL-GDPR pack" is a shareable export
 
 ---
 

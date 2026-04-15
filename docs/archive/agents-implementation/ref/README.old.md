@@ -3,7 +3,7 @@
 **Add deterministic security to any LLM agent in under an hour.**
 
 This guide shows how to protect your agent using the same patterns
-running in the AI Protector Agent Demo (421 tests, 9 security specs).
+running in the Agent-Firewall Agent Demo (421 tests, 9 security specs).
 
 ---
 
@@ -145,7 +145,7 @@ roles:
       deleteRecord: { scopes: [write], sensitivity: critical, requires_confirmation: true }
 
 # In your agent
-from ai_protector_patterns import RBACService, post_tool_scan
+from agent_firewall_patterns import RBACService, post_tool_scan
 
 rbac = RBACService("rbac.yaml")
 

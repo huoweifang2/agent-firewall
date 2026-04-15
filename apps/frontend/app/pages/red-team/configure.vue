@@ -197,7 +197,7 @@
           <v-avatar color="success" variant="tonal" size="24" class="mr-3 mt-0 flex-shrink-0">
             <span class="text-caption font-weight-bold">2</span>
           </v-avatar>
-          <span class="text-body-2 text-medium-emphasis">You see which attacks got through — then route your endpoint through AI Protector.</span>
+          <span class="text-body-2 text-medium-emphasis">You see which attacks got through — then route your endpoint through Agent-Firewall.</span>
         </div>
         <div class="d-flex align-start">
           <v-avatar color="warning" variant="tonal" size="24" class="mr-3 mt-0 flex-shrink-0">
@@ -242,7 +242,7 @@
           />
 
           <p v-if="target !== 'demo'" class="text-caption text-medium-emphasis mt-2">
-            Policy is applied only when traffic runs through AI Protector.
+            Policy is applied only when traffic runs through Agent-Firewall.
           </p>
         </v-expansion-panel-text>
       </v-expansion-panel>

@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════
-# AI Protector — Safe Fallback Intent (Colang 1.0)
+# Agent-Firewall — Safe Fallback Intent (Colang 1.0)
 #
 # Provides "safe attractor" embeddings that compete with attack
 # intents in cosine-similarity space, ensuring clean inputs get

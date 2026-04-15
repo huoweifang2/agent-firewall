@@ -51,7 +51,7 @@ The spec has `auth_secret_ref` with an encrypted column, which is fine for MVP. 
 **Mitigation:**
 - Invest in "one-click proxy" more than in additional packs.
 - Provide copy-paste snippets for common frameworks (LangChain, OpenAI SDK, custom Python).
-- Consider a CLI tool: `npx ai-protector proxy --target http://localhost:8080` that handles the plumbing.
+- Consider a CLI tool: `npx agent-firewall proxy --target http://localhost:8080` that handles the plumbing.
 - Track proxy setup completion rate as a top-level metric.
 - Have a fallback: if proxy is too hard, offer "paste your OpenAI API key and we'll intercept at the LLM level."
 

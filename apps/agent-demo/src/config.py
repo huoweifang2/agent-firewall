@@ -1,4 +1,4 @@
-"""AI Protector Agent Demo — application configuration."""
+"""Agent-Firewall Agent Demo — application configuration."""
 
 from functools import lru_cache
 

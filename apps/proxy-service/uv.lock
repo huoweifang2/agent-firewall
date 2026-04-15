@@ -17,7 +17,7 @@ overrides = [
 ]
 
 [[package]]
-name = "ai-protector-proxy"
+name = "agent-firewall-proxy"
 version = "0.1.12"
 source = { editable = "." }
 dependencies = [

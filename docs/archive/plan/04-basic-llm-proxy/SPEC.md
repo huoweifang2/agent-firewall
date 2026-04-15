@@ -85,7 +85,7 @@ curl -N http://localhost:8000/v1/chat/completions \
   -d '{"messages":[{"role":"user","content":"Hello"}],"stream":true}'
 
 # DB check
-psql -U postgres -d ai_protector -c "SELECT decision, prompt_preview, latency_ms FROM requests ORDER BY created_at DESC LIMIT 3;"
+psql -U postgres -d agent_firewall -c "SELECT decision, prompt_preview, latency_ms FROM requests ORDER BY created_at DESC LIMIT 3;"
 ```
 
 ---

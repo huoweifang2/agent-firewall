@@ -121,7 +121,7 @@ op.create_index("ix_promotion_events_agent_id", "promotion_events", ["agent_id"]
 # Verify tables exist
 .venv/bin/python -c "
 from sqlalchemy import inspect, create_engine
-engine = create_engine('postgresql://postgres:postgres@localhost:5432/ai_protector')
+engine = create_engine('postgresql://postgres:postgres@localhost:5432/agent_firewall')
 inspector = inspect(engine)
 tables = inspector.get_table_names()
 for t in ['agent_traces', 'agent_incidents', 'gate_decisions', 'promotion_events']:

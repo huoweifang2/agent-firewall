@@ -6,7 +6,7 @@
   "include-component-in-tag": false,
   "packages": {
     ".": {
-      "component": "ai-protector",
+      "component": "agent-firewall",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
         "apps/frontend/package.json",

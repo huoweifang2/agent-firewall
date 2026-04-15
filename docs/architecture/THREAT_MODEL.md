@@ -1,6 +1,6 @@
 # Threat Model
 
-> Application-layer threat model for AI Protector.
+> Application-layer threat model for Agent-Firewall.
 > For architecture details see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
@@ -184,7 +184,7 @@ The frontend sets a strict CSP via Nitro server middleware (`server/middleware/s
 | `form-action` | `'self'` | Prevents form hijacking |
 
 **Why `unsafe-inline` is acceptable here:**
-- AI Protector is a **self-hosted internal tool**, not a public-facing website
+- Agent-Firewall is a **self-hosted internal tool**, not a public-facing website
 - The primary XSS vector (user-controlled content rendered without escaping) is handled by Vue's default template escaping
 - Vuetify does not support nonce-based style injection — this is a framework limitation, not a configuration oversight
 - Removing `unsafe-inline` from `script-src` is feasible via `nuxt-security` module + nonce injection, but ROI is low for an internal tool

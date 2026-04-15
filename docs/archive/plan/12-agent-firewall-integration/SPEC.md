@@ -13,7 +13,7 @@
 
 ## Goal
 
-Wire the Customer Support Copilot to the **AI Protector firewall proxy** so every LLM call goes through the full security pipeline. Add session memory, mock data fixtures, and integration tests proving the **Three Security Levels** concept.
+Wire the Customer Support Copilot to the **Agent-Firewall firewall proxy** so every LLM call goes through the full security pipeline. Add session memory, mock data fixtures, and integration tests proving the **Three Security Levels** concept.
 
 After this step, the agent is a fully integrated demo:
 - `LLMCallNode` calls `proxy-service:8000/v1/chat/completions` via LiteLLM

@@ -236,7 +236,7 @@ sequenceDiagram
     actor User as 👤 User
     participant FE as 🖥️ Frontend
     participant API as ⚙️ API
-    participant PROXY as 🛡️ AI Protector Proxy
+    participant PROXY as 🛡️ Agent-Firewall Proxy
     participant TGT as 🎯 Target
 
     User->>FE: Clicks [Set up Proxy] (CTA Variant B)

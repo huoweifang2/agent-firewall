@@ -38,7 +38,7 @@
       <p class="text-caption text-medium-emphasis mb-3">
         Agent project structure — files marked with
         <v-icon size="12" color="warning">mdi-shield</v-icon>
-        are AI Protector security integration.
+        are Agent-Firewall security integration.
       </p>
       <div class="file-tree font-mono text-body-2">
         <div
@@ -64,7 +64,7 @@
             variant="tonal"
             class="ml-1"
           >
-            AI Protector
+            Agent-Firewall
           </v-chip>
           <v-chip
             v-if="node.icon === 'config'"
@@ -123,7 +123,7 @@
         <div v-if="fileCategories.length" class="mt-2">
           <div class="d-flex align-center ga-1 mb-1">
             <v-icon size="12" color="warning">mdi-palette</v-icon>
-            <span class="text-caption text-medium-emphasis font-weight-medium">AI Protector integration:</span>
+            <span class="text-caption text-medium-emphasis font-weight-medium">Agent-Firewall integration:</span>
           </div>
           <div class="d-flex flex-wrap ga-1">
             <v-chip
@@ -142,7 +142,7 @@
 
       <!-- Code viewer -->
       <div class="flex-grow-1 overflow-y-auto">
-        <!-- eslint-disable-next-line vue/no-v-html -- AI Protector lines highlighted -->
+        <!-- eslint-disable-next-line vue/no-v-html -- Agent-Firewall lines highlighted -->
         <pre v-if="selectedFileContent" class="source-code pa-3"><code v-html="highlightedSource" /></pre>
         <div v-else class="text-center text-medium-emphasis pa-12">
           <v-icon size="48" class="mb-2">mdi-file-code-outline</v-icon>
@@ -363,7 +363,7 @@ const selectedFileContent = computed(() => {
   return selectedFileMeta.value?.content ?? null
 })
 
-// ─── AI Protector highlight categories ───
+// ─── Agent-Firewall highlight categories ───
 
 interface HlCategory {
   key: string
@@ -404,7 +404,7 @@ function categoryFromLine(line: string): string | null {
   // Output scan
   if (/scan_output\(|PostToolGate|post_tool_gate|pii_redaction|injection_detection|\.scan\(/.test(line)) return 'scan'
   // Security pipeline
-  if (/protected_tool_call\(|PreToolGate|pre_tool_gate|after_pre_gate|build_graph|← AI Protector/.test(line)) return 'pipeline'
+  if (/protected_tool_call\(|PreToolGate|pre_tool_gate|after_pre_gate|build_graph|← Agent-Firewall/.test(line)) return 'pipeline'
   // Config loading
   if (/SecurityConfig|load_from_kit|load_from_files|load_from_dicts|get_config\(|reset_config\(/.test(line)) return 'config'
   if (/^\s*(from\s+protection\s+import|from\s+graph\s+import)/.test(line)) return 'config'
@@ -425,7 +425,7 @@ const fileCategories = computed(() => {
 })
 
 /**
- * Highlight AI Protector code blocks with category-specific colors.
+ * Highlight Agent-Firewall code blocks with category-specific colors.
  * Each line gets a colored left-border + tinted background matching
  * its security category (config, rbac, limits, scan, proxy, pipeline).
  */
@@ -538,7 +538,7 @@ const selectedConfigContent = computed(() => {
     font-family: inherit;
   }
 
-  // AI Protector highlighted lines — category-colored left border + tinted bg
+  // Agent-Firewall highlighted lines — category-colored left border + tinted bg
   :deep(.hl-line) {
     display: inline-block;
     width: 100%;

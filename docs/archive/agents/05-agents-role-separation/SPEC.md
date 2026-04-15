@@ -123,7 +123,7 @@ The system prompt is built from templates only:
 
 ```python
 SYSTEM_PROMPT_TEMPLATE = """
-You are a Customer Support Copilot for AI Protector.
+You are a Customer Support Copilot for Agent-Firewall.
 
 RULES:
 - Only use the tools listed below. Do not invent or request other tools.

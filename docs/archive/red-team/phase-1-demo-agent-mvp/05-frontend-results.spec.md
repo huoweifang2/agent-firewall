@@ -49,7 +49,7 @@ The most important screen — score badge, category breakdown, top failures, and
 
 - For High confidence: no banner needed (don't add noise when everything is fine)
 - For Medium confidence (future phases): use positive framing:
-  - ℹ️ "External scan — based on response analysis. For deeper analysis, route traffic through AI Protector proxy."
+  - ℹ️ "External scan — based on response analysis. For deeper analysis, route traffic through Agent-Firewall proxy."
   - NOT: "Assessment confidence: Medium — Heuristic scan"
   - Frame as upgrade path, not a disclaimer of unreliability
 

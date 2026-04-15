@@ -116,7 +116,7 @@ Template: `templates/kit/proxy_only.py.j2`
 Minimal — just shows the base_url change:
 
 ```python
-# AI Protector — Proxy-only integration
+# Agent-Firewall — Proxy-only integration
 # Agent: {{ agent_name }}
 # No SDK required — just change the base URL.
 
@@ -137,11 +137,11 @@ client = OpenAI(
 Template: `templates/kit/env.protector.j2`
 
 ```dotenv
-# AI Protector config for: {{ agent_name }}
-AI_PROTECTOR_URL={{ proxy_url }}
-AI_PROTECTOR_POLICY={{ policy_pack }}
-AI_PROTECTOR_AGENT_ID={{ agent_id }}
-AI_PROTECTOR_MODE=observe
+# Agent-Firewall config for: {{ agent_name }}
+AGENT_FIREWALL_URL={{ proxy_url }}
+AGENT_FIREWALL_POLICY={{ policy_pack }}
+AGENT_FIREWALL_AGENT_ID={{ agent_id }}
+AGENT_FIREWALL_MODE=observe
 # Add your LLM provider API key:
 # OPENAI_API_KEY=sk-...
 # GOOGLE_API_KEY=...
@@ -215,13 +215,13 @@ POST /agents/:id/integration-kit
   }
 
 GET /agents/:id/integration-kit/download
-→ ai-protector-kit.zip (7 files)
+→ agent-firewall-kit.zip (7 files)
 ```
 
 **DoD:**
 - [x] POST returns all 7 files as strings (for UI preview)
 - [x] GET returns .zip with all 7 files
-- [x] Zip filename: `ai-protector-{agent_name_slugified}.zip`
+- [x] Zip filename: `agent-firewall-{agent_name_slugified}.zip`
 - [x] Stores last generated kit on agent record
 - [x] Tests: generate → download → unzip → 7 files → `pytest test_security.py` passes
 - [x] Tests: different framework → different `protected_agent.py` content
@@ -308,7 +308,7 @@ and `tests/wizard/test_kit_templates.py`.
 | 27 | `test_raw_python_template_renders` | Template renders without error |
 | 28 | `test_raw_python_ast_parse` | ast.parse(output) — syntactically valid Python |
 | 29 | `test_raw_python_has_protected_call` | protected_tool_call function exists |
-| 30 | `test_raw_python_standalone_imports` | Only imports pydantic, pyyaml, structlog (no ai_protector SDK) |
+| 30 | `test_raw_python_standalone_imports` | Only imports pydantic, pyyaml, structlog (no agent_firewall SDK) |
 | 31 | `test_raw_python_inline_config` | Config embedded inline, no external file dependency |
 | 32 | `test_raw_python_tool_names_present` | Agent's tool names in generated code |
 
@@ -327,7 +327,7 @@ and `tests/wizard/test_kit_templates.py`.
 |---|------|--------|
 | 37 | `test_env_template_renders` | Template renders without error |
 | 38 | `test_env_parseable` | python-dotenv can parse output |
-| 39 | `test_env_has_required_vars` | AI_PROTECTOR_URL, AGENT_ID, POLICY, MODE present |
+| 39 | `test_env_has_required_vars` | AGENT_FIREWALL_URL, AGENT_ID, POLICY, MODE present |
 | 40 | `test_env_provider_keys_commented` | OPENAI_API_KEY, GOOGLE_API_KEY are commented out |
 
 ### 29i tests — test_security.py (6 tests)
@@ -358,7 +358,7 @@ and `tests/wizard/test_kit_templates.py`.
 | 52 | `test_kit_post_agent_no_tools` | POST agent with 0 tools → still generates (minimal kit) |
 | 53 | `test_kit_download_returns_zip` | GET → Content-Type=application/zip |
 | 54 | `test_kit_download_zip_has_7_files` | Unzip → 7 files |
-| 55 | `test_kit_download_filename_slugified` | Filename = ai-protector-{slug}.zip |
+| 55 | `test_kit_download_filename_slugified` | Filename = agent-firewall-{slug}.zip |
 | 56 | `test_kit_stores_on_agent` | After POST, agent record has last_kit JSONB |
 | 57 | `test_kit_langgraph_vs_raw_python` | Different framework → different protected_agent.py content |
 | 58 | `test_kit_proxy_only_vs_langgraph` | proxy_only generates simpler wrapper than langgraph |

@@ -36,7 +36,7 @@ Replace `<NuxtWelcome />` with a Vuetify-based layout: persistent navigation dra
 - [x] `<script setup lang="ts">` — Composition API + TypeScript
 - [x] `v-app` wrapper (required by Vuetify)
 - [x] `v-app-bar` with:
-  - App title: **"AI Protector"** (left side, `density="compact"`)
+  - App title: **"Agent-Firewall"** (left side, `density="compact"`)
   - Hamburger toggle button for drawer (mobile)
   - Right side: placeholder slot for `<health-indicator />` + theme toggle (step 05b)
 - [x] `v-navigation-drawer` with:
@@ -105,7 +105,7 @@ Create minimal placeholder pages — just enough to verify navigation works:
 - [x] Navigation drawer visible with 5 items and correct icons
 - [x] Clicking each nav item navigates to the matching page (URL changes, content changes)
 - [x] Active nav item is visually highlighted
-- [x] `v-app-bar` shows "AI Protector" title
+- [x] `v-app-bar` shows "Agent-Firewall" title
 - [x] Layout is responsive: drawer collapses to rail on `< md` breakpoint
 - [x] `http://localhost:3000/` redirects to `/playground`
 - [x] No console errors in browser

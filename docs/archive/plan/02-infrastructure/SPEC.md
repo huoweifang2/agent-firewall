@@ -23,13 +23,13 @@ Create a complete Docker Compose setup so that `docker compose up` brings up the
 - [x] Define all services with proper dependency order
 - [x] Use `depends_on` with `condition: service_healthy` where possible
 - [x] Named volumes for persistent data (pgdata, ollama_models)
-- [x] Network: single `ai-protector` bridge network
+- [x] Network: single `agent-firewall` bridge network
 
 ### 2. PostgreSQL + pgvector
 
 - [x] Image: `pgvector/pgvector:pg16`
 - [x] Port: `5432:5432`
-- [x] Environment: `POSTGRES_DB=ai_protector`, `POSTGRES_USER=postgres`, `POSTGRES_PASSWORD=postgres`
+- [x] Environment: `POSTGRES_DB=agent_firewall`, `POSTGRES_USER=postgres`, `POSTGRES_PASSWORD=postgres`
 - [x] Volume: `pgdata:/var/lib/postgresql/data`
 - [x] Healthcheck: `pg_isready -U postgres`
 - [x] Init script: `infra/init-db.sql` — create a second database `langfuse` for Langfuse
@@ -86,7 +86,7 @@ Create a complete Docker Compose setup so that `docker compose up` brings up the
 - [x] Update `infra/.env.example` with all variables:
   ```env
   # PostgreSQL
-  POSTGRES_DB=ai_protector
+  POSTGRES_DB=agent_firewall
   POSTGRES_USER=postgres
   POSTGRES_PASSWORD=postgres
 
@@ -103,7 +103,7 @@ Create a complete Docker Compose setup so that `docker compose up` brings up the
   LANGFUSE_SECRET_KEY=sk-lf-local
 
   # Proxy Service
-  DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/ai_protector
+  DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/agent_firewall
   DEFAULT_POLICY=balanced
 
   # Agent Demo
@@ -154,7 +154,7 @@ No code exists yet (created in Steps 03–05). Including them would cause build 
 
 - [x] `cd infra && docker compose up -d` → all 4 infra services start (db, redis, ollama, langfuse)
 - [x] `docker compose ps` → all services `healthy` or `running`
-- [x] `psql -h localhost -U postgres -d ai_protector -c '\dt'` → connects (empty is fine)
+- [x] `psql -h localhost -U postgres -d agent_firewall -c '\dt'` → connects (empty is fine)
 - [x] `redis-cli -h localhost ping` → `PONG`
 - [x] `curl http://localhost:11434/api/tags` → Ollama responds
 - [x] `./infra/scripts/pull-model.sh` → downloads llama3.1:8b successfully *(skipped — 4.7 GB download, script verified working)*

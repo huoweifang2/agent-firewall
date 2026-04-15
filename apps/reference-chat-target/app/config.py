@@ -14,8 +14,8 @@ class Settings:
 
     app_mode: Literal["raw", "protected"] = "raw"
 
-    ai_protector_base_url: str = ""
-    ai_protector_api_key: str = ""
+    agent_firewall_base_url: str = ""
+    agent_firewall_api_key: str = ""
 
     enable_streaming: bool = True
     enable_retrieval: bool = True
@@ -50,8 +50,8 @@ def load_settings() -> Settings:
         app_mode="protected"
         if os.environ.get("APP_MODE", "raw").lower() == "protected"
         else "raw",
-        ai_protector_base_url=os.environ.get("AI_PROTECTOR_BASE_URL", ""),
-        ai_protector_api_key=os.environ.get("AI_PROTECTOR_API_KEY", ""),
+        agent_firewall_base_url=os.environ.get("AGENT_FIREWALL_BASE_URL", ""),
+        agent_firewall_api_key=os.environ.get("AGENT_FIREWALL_API_KEY", ""),
         enable_streaming=_bool_env("ENABLE_STREAMING", True),
         enable_retrieval=_bool_env("ENABLE_RETRIEVAL", True),
         enable_tools=_bool_env("ENABLE_TOOLS", False),

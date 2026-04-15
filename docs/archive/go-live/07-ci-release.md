@@ -102,7 +102,7 @@ git push origin v0.1.0-beta
 ```markdown
 # v0.1.0-beta — First Public Release
 
-AI Protector is a self-hosted LLM Firewall with an agentic security pipeline.
+Agent-Firewall is a self-hosted LLM Firewall with an agentic security pipeline.
 
 ## Highlights
 
@@ -117,8 +117,8 @@ AI Protector is a self-hosted LLM Firewall with an agentic security pipeline.
 ## Quick Start
 
 \```bash
-git clone https://github.com/Szesnasty/ai-protector.git
-cd ai-protector
+git clone https://github.com/Szesnasty/agent-firewall.git
+cd agent-firewall
 make demo
 # Open http://localhost:3000
 \```

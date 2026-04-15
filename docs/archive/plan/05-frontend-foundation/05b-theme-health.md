@@ -34,12 +34,12 @@ Add a dark/light theme toggle (persisted to `localStorage`) and a live health in
 
     const toggle = () => {
       theme.global.name.value = isDark.value ? 'light' : 'dark'
-      localStorage.setItem('ai-protector-theme', theme.global.name.value)
+      localStorage.setItem('agent-firewall-theme', theme.global.name.value)
     }
 
     // Restore from localStorage on init
     onMounted(() => {
-      const saved = localStorage.getItem('ai-protector-theme')
+      const saved = localStorage.getItem('agent-firewall-theme')
       if (saved && ['dark', 'light'].includes(saved)) {
         theme.global.name.value = saved
       }
@@ -135,7 +135,7 @@ When a service is down:
 
 - [x] Theme toggle `v-btn` visible in app bar (sun/moon icon)
 - [x] Clicking toggle switches between dark and light themes instantly
-- [x] Refreshing browser preserves selected theme (localStorage key: `ai-protector-theme`)
+- [x] Refreshing browser preserves selected theme (localStorage key: `agent-firewall-theme`)
 - [x] All `.vue` files use `<script setup lang="ts">` (Composition API)
 - [x] Health dot shows green `v-icon` when proxy-service + infra are running
 - [x] Health dot shows red `v-icon` when proxy-service is stopped

@@ -92,7 +92,7 @@ const { messages, isStreaming, error, send } = useChat()
 - [x] Show a subtle typing indicator (three-dot animation or `v-progress-linear indeterminate`) when `isStreaming` is true and last message content is still empty
 - [x] If `messages` is empty, show a centered placeholder:
   ```
-  "Type a message to start testing the AI Protector pipeline."
+  "Type a message to start testing the Agent-Firewall pipeline."
   ```
 
 ```vue
@@ -100,7 +100,7 @@ const { messages, isStreaming, error, send } = useChat()
   <div ref="listRef" class="chat-message-list">
     <div v-if="messages.length === 0" class="chat-message-list__empty">
       <v-icon size="48" color="grey-lighten-1">mdi-chat-outline</v-icon>
-      <p class="text-body-1 text-grey">Type a message to start testing the AI Protector pipeline.</p>
+      <p class="text-body-1 text-grey">Type a message to start testing the Agent-Firewall pipeline.</p>
     </div>
 
     <chat-message

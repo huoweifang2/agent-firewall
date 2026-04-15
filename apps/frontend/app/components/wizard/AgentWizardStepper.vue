@@ -66,7 +66,7 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'
 
-const STORAGE_KEY = 'ai-protector-wizard-state'
+const STORAGE_KEY = 'agent-firewall-wizard-state'
 
 const props = defineProps<{
   stepValid?: boolean

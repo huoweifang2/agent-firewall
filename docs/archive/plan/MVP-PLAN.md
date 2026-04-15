@@ -141,7 +141,7 @@
 ## Phase 10: Multi-Provider & Compare Demo
 
 - [ ] **[Step 23 — External LLM Providers](23-external-providers/SPEC.md)**
-  Transform AI Protector from Ollama-only into a universal LLM firewall supporting
+  Transform Agent-Firewall from Ollama-only into a universal LLM firewall supporting
   OpenAI, Anthropic, Google, Mistral. API keys stored in browser SessionStorage
   (zero server persistence). LiteLLM auto-routing by model name. `x-api-key` header.
   - [ ] 23a — Backend provider routing (`detect_provider()`, `format_litellm_model()`, `GET /v1/models`)
@@ -149,7 +149,7 @@
 
 - [ ] **[Step 24 — Compare Playground](24-compare-playground/SPEC.md)**
   Side-by-side demo: protected (proxy pipeline) vs unprotected (direct to LLM).
-  Single prompt fires both endpoints simultaneously. Shows value of AI Protector instantly.
+  Single prompt fires both endpoints simultaneously. Shows value of Agent-Firewall instantly.
   - [ ] 24a — Direct bypass endpoint (`POST /v1/chat/direct`, disabled by default in prod)
   - [ ] 24b — Compare UI (dual-panel streaming, decision card, timing, attack scenarios)
 

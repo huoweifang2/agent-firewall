@@ -2,7 +2,7 @@
  * Composable for communicating with test agent endpoints (pure-python :8003, langgraph :8004).
  *
  * Uses direct axios calls (not the proxy `api` service) because test agents
- * run on their own ports and are NOT behind the AI Protector proxy.
+ * run on their own ports and are NOT behind the Agent-Firewall proxy.
  */
 import { ref, type Ref } from 'vue'
 import axios, { type AxiosInstance } from 'axios'

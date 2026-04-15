@@ -10,14 +10,14 @@
 
 You've configured protection and integrated it. Now prove it works.
 
-AI Protector runs a suite of attacks **against your generated config
-and AI Protector runtime** (gates, RBAC service, limits service)
+Agent-Firewall runs a suite of attacks **against your generated config
+and Agent-Firewall runtime** (gates, RBAC service, limits service)
 and tells you exactly what was blocked, redacted, or missed.
 
 This isn't a generic security scan — the tests are generated from
 your tool registry, RBAC, and policy pack.
 
-> **What validation proves:** Tests verify that your AI Protector configuration works correctly. They do NOT verify that your agent integrated the kit correctly. The UI states: "These tests validate your AI Protector configuration. To verify end-to-end integration, use the smoke tests in your integration kit."
+> **What validation proves:** Tests verify that your Agent-Firewall configuration works correctly. They do NOT verify that your agent integrated the kit correctly. The UI states: "These tests validate your Agent-Firewall configuration. To verify end-to-end integration, use the smoke tests in your integration kit."
 
 ---
 
@@ -222,19 +222,19 @@ tests:
 
 ```bash
 # Run all tests for your agent
-ai-protector validate --agent customer-support-copilot
+agent-firewall validate --agent customer-support-copilot
 
 # Run specific category
-ai-protector validate --agent customer-support-copilot --category injection
+agent-firewall validate --agent customer-support-copilot --category injection
 
 # Run with verbose output
-ai-protector validate --agent customer-support-copilot -v
+agent-firewall validate --agent customer-support-copilot -v
 ```
 
 ### Programmatic
 
 ```python
-from ai_protector import AttackValidator
+from agent_firewall import AttackValidator
 
 validator = AttackValidator(
     agent_id="customer-support-copilot",
@@ -321,7 +321,7 @@ Response:
 
 ## If tests fail
 
-AI Protector tells you exactly what to fix:
+Agent-Firewall tells you exactly what to fix:
 
 ```
 ❌ FAILED: Encoded exfiltration

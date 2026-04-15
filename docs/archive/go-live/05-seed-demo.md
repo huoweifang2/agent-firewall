@@ -6,7 +6,7 @@
 
 ## Goal
 
-When a user starts AI Protector in demo mode, Analytics and Request Log should have data immediately — not an empty dashboard. A simple script fires requests against the local API to populate the database.
+When a user starts Agent-Firewall in demo mode, Analytics and Request Log should have data immediately — not an empty dashboard. A simple script fires requests against the local API to populate the database.
 
 ---
 
@@ -169,7 +169,7 @@ seed-demo:
   volumes:
     - ../scripts:/scripts:ro
   networks:
-    - ai-protector
+    - agent-firewall
 ```
 
 This runs once at `docker compose --profile demo up`, waits for proxy to be healthy, seeds, exits.

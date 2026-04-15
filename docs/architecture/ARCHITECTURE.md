@@ -7,7 +7,7 @@
 
 ## System overview
 
-AI Protector is a two-level security layer for LLM-powered applications:
+Agent-Firewall is a two-level security layer for LLM-powered applications:
 
 ```
                          ┌─────────────────────────────────┐

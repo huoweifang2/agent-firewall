@@ -45,7 +45,7 @@ Add under `services:`:
     profiles:
       - test-agents
     networks:
-      - ai-protector
+      - agent-firewall
 
   test-agent-langgraph:
     build:
@@ -67,7 +67,7 @@ Add under `services:`:
     profiles:
       - test-agents
     networks:
-      - ai-protector
+      - agent-firewall
 ```
 
 ### Step 2: Docker profile usage
@@ -178,7 +178,7 @@ cd apps/frontend && npm run dev
 ## Network Diagram (Docker)
 
 ```
-┌─────────────────── ai-protector network ───────────────────────┐
+┌─────────────────── agent-firewall network ───────────────────────┐
 │                                                                 │
 │  frontend:3000 ──► proxy:8000 ◄── test-agent-python:8003       │
 │                        │         ◄── test-agent-langgraph:8004  │

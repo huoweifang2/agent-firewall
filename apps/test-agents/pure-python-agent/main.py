@@ -5,13 +5,13 @@ Dual-mode agent:
   - **llm**: real LLM call via LiteLLM with native function calling
 
 Both modes share the same security gates (RBAC, limits, PII scan).
-LLM responses are routed through the AI Protector proxy firewall
+LLM responses are routed through the Agent-Firewall proxy firewall
 (``balanced`` policy by default) for content-level filtering.
 
 ╔════════════════════════════════════════════════════════════════════╗
 ║  AI PROTECTOR — Integration Example (Pure Python)                ║
 ║                                                                  ║
-║  This file shows how AI Protector security is integrated into    ║
+║  This file shows how Agent-Firewall security is integrated into    ║
 ║  a plain Python agent (no framework). Look for:                  ║
 ║                                                                  ║
 ║    # ═══ AI PROTECTOR ═══                                        ║
@@ -172,7 +172,7 @@ async def _proxy_llm_call(
     model: str,
     api_key: str | None = None,
 ) -> dict | None:
-    """Route an LLM call through the AI Protector proxy firewall.
+    """Route an LLM call through the Agent-Firewall proxy firewall.
 
     The proxy runs the full pipeline: parse → intent → rules → scanners
     → decision → LLM → post-LLM scan.  This gives content-level
@@ -310,7 +310,7 @@ async def config_status():
 # ═══ AI PROTECTOR — Load Config from Wizard Integration Kit ═════
 #
 # This endpoint fetches the wizard-generated security configuration
-# (rbac.yaml, limits.yaml, policy.yaml) from the AI Protector proxy
+# (rbac.yaml, limits.yaml, policy.yaml) from the Agent-Firewall proxy
 # and loads it into the SecurityConfig singleton.
 #
 # After this call, all chat requests will be enforced by the
@@ -320,7 +320,7 @@ async def config_status():
 async def load_config(req: LoadConfigRequest):
     """Fetch integration kit from wizard API and load configs."""
     global AGENT_ID  # noqa: PLW0603
-    # AI Protector: fetch wizard-generated YAML configs from proxy
+    # Agent-Firewall: fetch wizard-generated YAML configs from proxy
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.get(f"{PROXY_URL}/v1/agents/{req.agent_id}/integration-kit")
         if resp.status_code == 404:
@@ -331,7 +331,7 @@ async def load_config(req: LoadConfigRequest):
             raise HTTPException(502, f"Failed to fetch kit: {resp.status_code}")
 
     kit = resp.json()
-    # AI Protector: parse YAML configs and store in SecurityConfig singleton
+    # Agent-Firewall: parse YAML configs and store in SecurityConfig singleton
     get_config().load_from_kit(kit)
     # Store agent_id for trace flushing
     if not AGENT_ID:
@@ -530,7 +530,7 @@ async def _chat_llm(req: ChatRequest) -> dict:
     role_context = (
         f"The current user's role is '{req.role}'. "
         f"You may call any tool that is available to this role — "
-        f"security enforcement is handled by the AI Protector gate, not by you. "
+        f"security enforcement is handled by the Agent-Firewall gate, not by you. "
         f"Never refuse a tool call on permission grounds; always attempt the call "
         f"and let the security layer decide."
     )

@@ -1,4 +1,4 @@
-# AI Protector — Pre-LLM Detection Results on JailbreakBench
+# Agent-Firewall — Pre-LLM Detection Results on JailbreakBench
 
 > External validation against published jailbreak artifacts from
 > [JailbreakBench](https://jailbreakbench.github.io/) (NeurIPS 2024 Datasets & Benchmarks Track).

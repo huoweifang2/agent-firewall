@@ -8,7 +8,7 @@
 
 ## Why this step matters
 
-Protection isn't a one-time setup. AI Protector gives you
+Protection isn't a one-time setup. Agent-Firewall gives you
 continuous visibility into what your agent is doing:
 
 - Every tool call traced with gate decisions
@@ -166,7 +166,7 @@ Gate overhead:    ~8ms p50, ~16ms p95
 
 ## Incidents
 
-AI Protector automatically creates incidents for anomalous
+Agent-Firewall automatically creates incidents for anomalous
 patterns:
 
 ### Incident types
@@ -240,7 +240,7 @@ channels:
     webhook: "https://hooks.slack.com/services/..."
     severity: [high, critical]
     template: |
-      🚨 AI Protector Incident {{incident.id}}
+      🚨 Agent-Firewall Incident {{incident.id}}
       Agent: {{incident.agent}}
       Type: {{incident.type}}
       Severity: {{incident.severity}}
@@ -339,7 +339,7 @@ Response:
 
 ## Langfuse integration
 
-AI Protector traces integrate with Langfuse out of the box:
+Agent-Firewall traces integrate with Langfuse out of the box:
 
 ```python
 # Already configured via .env.protector:

@@ -1,6 +1,6 @@
 # Known Issues & Improvements
 
-Tracked issues for the AI Protector project, prioritised by impact.
+Tracked issues for the Agent-Firewall project, prioritised by impact.
 
 ---
 

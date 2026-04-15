@@ -1,7 +1,7 @@
 """LOCAL MOCK of the wizard-generated security layer — for unit testing only.
 
 In production, the agent does NOT enforce security locally. Instead, it calls
-the running AI Protector proxy service over HTTP:
+the running Agent-Firewall proxy service over HTTP:
   - PreToolGate  → POST {PROXY_URL}/v1/security/pre-tool-check
   - PostToolGate → POST {PROXY_URL}/v1/security/post-tool-scan
   - Traces, limits, RBAC — all handled server-side by the proxy.

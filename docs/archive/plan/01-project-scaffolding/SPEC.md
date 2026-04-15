@@ -83,7 +83,7 @@ Create the monorepo directory structure, configure all linters and formatters, i
 ## File Tree After This Step
 
 ```
-ai-protector/
+agent-firewall/
 ├── .editorconfig
 ├── .gitignore
 ├── Makefile

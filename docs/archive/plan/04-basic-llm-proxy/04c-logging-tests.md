@@ -107,7 +107,7 @@ Implement fire-and-forget request logging to the database, write all unit and in
   ```
 - [x] Verify request logged in DB:
   ```bash
-  docker compose exec -T db psql -U postgres -d ai_protector \
+  docker compose exec -T db psql -U postgres -d agent_firewall \
     -c "SELECT decision, prompt_preview, latency_ms FROM requests ORDER BY created_at DESC LIMIT 3;"
   ```
 

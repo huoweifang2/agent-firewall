@@ -23,7 +23,7 @@
             <v-icon icon="mdi-shield-check" size="22" />
           </v-avatar>
           <span class="text-subtitle-2 font-weight-bold">2. Protect</span>
-          <span class="text-caption text-medium-emphasis">Route your endpoint through AI Protector</span>
+          <span class="text-caption text-medium-emphasis">Route your endpoint through Agent-Firewall</span>
         </v-col>
         <v-col cols="12" sm="4" class="d-flex flex-column align-center">
           <v-avatar color="warning" variant="tonal" size="44" class="mb-2">
@@ -110,7 +110,7 @@
         <v-expansion-panel-text>
           <p class="text-body-2 text-medium-emphasis mb-0">
             Attack scenarios hit your endpoint directly. The baseline run shows what gets through.
-            Enable protection and re-run the same attacks to see what AI Protector blocks.
+            Enable protection and re-run the same attacks to see what Agent-Firewall blocks.
           </p>
         </v-expansion-panel-text>
       </v-expansion-panel>

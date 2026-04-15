@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════
-# AI Protector — Agent Security Rails (Colang 1.0)
+# Agent-Firewall — Agent Security Rails (Colang 1.0)
 # Covers: OWASP LLM Top 10 agent-specific attack patterns
 #
 # NeMo uses embedding-based semantic matching: define example

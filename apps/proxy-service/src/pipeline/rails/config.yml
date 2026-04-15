@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════
-# AI Protector — NeMo Guardrails Configuration
+# Agent-Firewall — NeMo Guardrails Configuration
 #
 # Pure embeddings-only mode: NO LLM model required.
 # Uses FastEmbed (all-MiniLM-L6-v2 ONNX, ~90MB) for intent

@@ -124,7 +124,7 @@ class RealHttpClient:
 
 
 class ProtectedHttpClient:
-    """Wrap :class:`RealHttpClient` with the AI Protector firewall pipeline.
+    """Wrap :class:`RealHttpClient` with the Agent-Firewall firewall pipeline.
 
     Before forwarding each prompt to the target, runs it through the
     pre-LLM pipeline (intent → rules → scanners → decision).

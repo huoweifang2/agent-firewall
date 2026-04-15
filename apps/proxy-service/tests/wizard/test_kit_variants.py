@@ -666,7 +666,7 @@ class TestVariantRateLimits:
 
 
 class TestVariantRolloutModes:
-    """Different rollout modes → different .env.protector AI_PROTECTOR_MODE."""
+    """Different rollout modes → different .env.protector AGENT_FIREWALL_MODE."""
 
     @pytest.mark.asyncio
     async def test_default_rollout_mode_is_observe(self, client):
@@ -675,7 +675,7 @@ class TestVariantRolloutModes:
         await _create_tool(client, agent["id"], name="defaultModeTool")
         kit = await _generate_kit(client, agent["id"])
         env_content = kit["files"][".env.protector"]
-        assert "AI_PROTECTOR_MODE=observe" in env_content
+        assert "AGENT_FIREWALL_MODE=observe" in env_content
 
     @pytest.mark.asyncio
     async def test_rollout_mode_observe_in_kit(self, client):
@@ -693,7 +693,7 @@ class TestVariantRolloutModes:
         kit = await _generate_kit(client, agent["id"])
         env_content = kit["files"][".env.protector"]
         # Default is observe — verify the template renders rollout_mode
-        assert "AI_PROTECTOR_MODE=" in env_content
+        assert "AGENT_FIREWALL_MODE=" in env_content
 
     @pytest.mark.asyncio
     async def test_promoted_mode_in_env(self, client):
@@ -713,7 +713,7 @@ class TestVariantRolloutModes:
 
         kit = await _generate_kit(client, aid)
         env_content = kit["files"][".env.protector"]
-        assert "AI_PROTECTOR_MODE=warn" in env_content
+        assert "AGENT_FIREWALL_MODE=warn" in env_content
 
     @pytest.mark.asyncio
     async def test_kit_valid_for_all_rollout_states(self, client):
@@ -900,7 +900,7 @@ class TestVariantCrossFileConsistency:
 
     @pytest.mark.asyncio
     async def test_env_agent_id_matches_kit_agent_id(self, client):
-        """AI_PROTECTOR_AGENT_ID in .env matches the agent used for generation."""
+        """AGENT_FIREWALL_AGENT_ID in .env matches the agent used for generation."""
         agent = await _create_agent(client, policy_pack="customer_support")
         await _create_tool(client, agent["id"], name="envIdTool")
         kit = await _generate_kit(client, agent["id"])

@@ -2,7 +2,7 @@
 
 Runs the pre-LLM pipeline (parse → intent → rules → scanners → decision)
 with no LLM call, no network, no database.  Measures pure CPU overhead
-that AI Protector adds to every request.
+that Agent-Firewall adds to every request.
 
 Usage:
     cd apps/proxy-service
@@ -104,7 +104,7 @@ def print_table(all_results: list[dict]) -> None:
     sep = "-" * len(header)
 
     print(f"\n{'=' * len(header)}")
-    print("  AI Protector — Latency Benchmark (pre-LLM pipeline, ms)")
+    print("  Agent-Firewall — Latency Benchmark (pre-LLM pipeline, ms)")
     print(f"{'=' * len(header)}")
     print(header)
     print(sep)
@@ -133,7 +133,7 @@ def print_table(all_results: list[dict]) -> None:
 
 
 async def main() -> None:
-    parser = argparse.ArgumentParser(description="AI Protector latency benchmark")
+    parser = argparse.ArgumentParser(description="Agent-Firewall latency benchmark")
     parser.add_argument("--iterations", type=int, default=50, help="Iterations per prompt (default: 50)")
     parser.add_argument("--warmup", type=int, default=3, help="Warmup iterations (default: 3)")
     parser.add_argument("--policy", type=str, default="balanced", choices=POLICIES.keys())

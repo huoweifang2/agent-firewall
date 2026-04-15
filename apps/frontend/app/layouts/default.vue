@@ -18,7 +18,7 @@
 
     <v-navigation-drawer v-model="drawer" width="280">
       <nuxt-link to="/red-team" class="sidebar-logo-item d-block text-decoration-none">
-        <img :src="isDark ? '/logo-white.png' : '/logo.png'" alt="AI Protector" class="sidebar-logo" />
+        <img :src="isDark ? '/logo-white.png' : '/logo.png'" alt="Agent-Firewall" class="sidebar-logo" />
       </nuxt-link>
       <v-divider color="primary" thickness="2" />
       <app-nav-drawer />

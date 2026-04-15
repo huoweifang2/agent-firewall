@@ -168,7 +168,7 @@ def load_all_scenarios() -> list[dict]:
                 scenarios.append(
                     {
                         "id": item.get("id", "?"),
-                        "source": f"ai-protector/{source}",
+                        "source": f"agent-firewall/{source}",
                         "category": category,
                         "prompt": item["prompt"],
                         "expected": item.get("expectedDecision", "ALLOW"),

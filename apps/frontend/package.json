@@ -1,5 +1,5 @@
 {
-  "name": "ai-protector-frontend",
+  "name": "agent-firewall-frontend",
   "version": "0.2.5",
   "type": "module",
   "private": true,

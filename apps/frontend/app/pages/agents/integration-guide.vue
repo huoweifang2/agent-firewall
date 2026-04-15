@@ -10,14 +10,14 @@
 
     <!-- Hosting requirement banner -->
     <v-alert type="info" variant="tonal" class="mb-6" icon="mdi-server-network">
-      <v-alert-title>AI Protector must be running</v-alert-title>
+      <v-alert-title>Agent-Firewall must be running</v-alert-title>
       <p class="mt-1 mb-2">
-        The generated integration kit connects to a running AI Protector instance.
+        The generated integration kit connects to a running Agent-Firewall instance.
         Your agent calls the proxy service at runtime for RBAC enforcement, limit checking,
         trace logging, and full security pipeline scans.
       </p>
       <p class="mb-0 text-body-2 text-medium-emphasis">
-        AI Protector runs on a single machine via Docker Compose.
+        Agent-Firewall runs on a single machine via Docker Compose.
         Core stack (proxy + DB + cache) uses ~280 MB.
         With all ML scanners (LLM Guard, NeMo, Presidio) loaded: ~1.2 GB.
         No GPU needed unless you use local LLM inference via Ollama.
@@ -105,13 +105,13 @@
       </p>
       <v-sheet rounded class="pa-4 code-block mb-3">
         <pre class="text-body-2"><code># .env.protector (generated)
-AI_PROTECTOR_URL=http://localhost:8000
-AI_PROTECTOR_POLICY=customer_support
-AI_PROTECTOR_AGENT_ID=&lt;your-agent-uuid&gt;
-AI_PROTECTOR_MODE=observe</code></pre>
+AGENT_FIREWALL_URL=http://localhost:8000
+AGENT_FIREWALL_POLICY=customer_support
+AGENT_FIREWALL_AGENT_ID=&lt;your-agent-uuid&gt;
+AGENT_FIREWALL_MODE=observe</code></pre>
       </v-sheet>
       <p class="text-body-2 text-medium-emphasis">
-        The <code>AI_PROTECTOR_MODE</code> controls enforcement behavior:
+        The <code>AGENT_FIREWALL_MODE</code> controls enforcement behavior:
         <strong>observe</strong> (log only) → <strong>warn</strong> (log + warn) → <strong>enforce</strong> (block violations).
       </p>
     </section>
@@ -138,7 +138,7 @@ graph = StateGraph(AgentState)
 graph.add_node("agent", agent_node)
 graph.add_node("tools", tool_node)
 
-# Add AI Protector security nodes
+# Add Agent-Firewall security nodes
 add_protection(graph)
 
 # Wire the gates into your graph flow:
@@ -217,11 +217,11 @@ tool call 11/10 limit → ❌ blocked (rate limit)</code></pre>
         <v-expansion-panel>
           <v-expansion-panel-title>
             <v-icon icon="mdi-wall-fire" class="mr-2" size="20" />
-            Proxy firewall (AI Protector pipeline)
+            Proxy firewall (Agent-Firewall pipeline)
           </v-expansion-panel-title>
           <v-expansion-panel-text>
             <p class="mb-2">
-              When your agent calls the LLM through the AI Protector proxy,
+              When your agent calls the LLM through the Agent-Firewall proxy,
               the full message set is scanned by the security pipeline:
             </p>
             <ul class="ml-4 mb-3">
@@ -302,7 +302,7 @@ tool call 11/10 limit → ❌ blocked (rate limit)</code></pre>
         7. Observability
       </h2>
       <p class="text-body-2 mb-3">
-        Every request through the AI Protector proxy is recorded as a trace, including:
+        Every request through the Agent-Firewall proxy is recorded as a trace, including:
       </p>
       <v-row>
         <v-col v-for="item in observabilityItems" :key="item.label" cols="12" sm="6" md="4">
@@ -321,19 +321,19 @@ tool call 11/10 limit → ❌ blocked (rate limit)</code></pre>
     <section class="mb-8">
       <h2 class="text-h6 mb-3 d-flex align-center ga-2">
         <v-icon icon="mdi-server" size="22" />
-        8. Hosting AI Protector
+        8. Hosting Agent-Firewall
       </h2>
 
       <v-alert type="info" variant="tonal" class="mb-4" density="compact" icon="mdi-information">
-        AI Protector runs as a Docker Compose stack. No cloud-specific dependencies.
+        Agent-Firewall runs as a Docker Compose stack. No cloud-specific dependencies.
       </v-alert>
 
       <p class="text-body-2 mb-3">Minimum deployment:</p>
 
       <v-sheet rounded class="pa-4 code-block mb-4">
         <pre class="text-body-2"><code># Clone the repo
-git clone https://github.com/Szesnasty/ai-protector.git
-cd ai-protector/infra
+git clone https://github.com/Szesnasty/agent-firewall.git
+cd agent-firewall/infra
 
 # Start the full stack
 docker compose --profile full up -d

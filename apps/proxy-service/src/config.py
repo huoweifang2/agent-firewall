@@ -1,4 +1,4 @@
-"""AI Protector Proxy Service — application configuration."""
+"""Agent-Firewall Proxy Service — application configuration."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ def _get_package_version() -> str:
     try:
         from importlib.metadata import version
 
-        return version("ai-protector-proxy")
+        return version("agent-firewall-proxy")
     except Exception:
         return "0.0.0-unknown"
 
@@ -52,7 +52,7 @@ class Settings(BaseSettings):
     """Central configuration loaded from environment / .env file."""
 
     # Database
-    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/ai_protector"
+    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/agent_firewall"
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"

@@ -1,11 +1,11 @@
 /**
  * Persists the last-selected model per view in localStorage.
  *
- * Storage key: `ai-protector:remembered-models`
+ * Storage key: `agent-firewall:remembered-models`
  * Shape: `{ [viewName: string]: modelId }`
  */
 
-const STORAGE_KEY = 'ai-protector:remembered-models'
+const STORAGE_KEY = 'agent-firewall:remembered-models'
 
 function loadAll(): Record<string, string> {
   try {

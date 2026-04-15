@@ -7,7 +7,7 @@
 
 ## Why this step matters
 
-Before configuring anything, AI Protector needs to understand what your
+Before configuring anything, Agent-Firewall needs to understand what your
 agent does. The answers here determine:
 
 - Which protection level you need (proxy / runtime / full)
@@ -66,7 +66,7 @@ Answer these questions about your agent:
 
 ## Risk classification
 
-Based on your answers, AI Protector classifies your agent:
+Based on your answers, Agent-Firewall classifies your agent:
 
 ### Low risk
 

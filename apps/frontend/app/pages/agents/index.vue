@@ -76,7 +76,7 @@
       <v-icon icon="mdi-robot-outline" size="80" color="primary" class="mb-4" />
       <h2 class="text-h6 mb-2">No agents registered yet</h2>
       <p class="text-body-2 text-medium-emphasis mb-6">
-        Register your first agent to start protecting it with AI Protector
+        Register your first agent to start protecting it with Agent-Firewall
       </p>
       <v-btn color="primary" prepend-icon="mdi-plus" @click="navigateTo('/agents/new')">
         Register your first agent

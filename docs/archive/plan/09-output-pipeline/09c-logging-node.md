@@ -76,7 +76,7 @@ def get_langfuse() -> Langfuse | None:
 async def create_trace(
     *,
     trace_id: str,
-    name: str = "ai-protector-request",
+    name: str = "agent-firewall-request",
     input_data: dict[str, Any],
     output_data: dict[str, Any] | None = None,
     metadata: dict[str, Any] | None = None,
