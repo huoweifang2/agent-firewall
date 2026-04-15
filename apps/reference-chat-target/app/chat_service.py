@@ -8,7 +8,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 from app.config import Settings
-from app.gemini_client import ModelBackend
+from app.target_client import ModelClient
 from app.models import (
     ChatMessage,
     ChatRequest,
@@ -40,7 +40,7 @@ class ChatService:
     def __init__(
         self,
         settings: Settings,
-        backend: ModelBackend,
+        backend: ModelClient,
         conversations: ConversationStore,
         traces: TraceStore,
     ) -> None:
@@ -98,7 +98,7 @@ class ChatService:
             canary_id=canary_id,
             canary_token=canary_token,
             streamed=False,
-            model=self._settings.gemini_model,
+            model=self._settings.target_model,
         )
 
         try:
@@ -162,7 +162,7 @@ class ChatService:
                     citations.append({"doc_id": doc_id})
 
             trace.response_length = len(result.text)
-            trace.model = result.model or self._settings.gemini_model
+            trace.model = result.model or self._settings.target_model
             self._traces.put(trace)
 
             return ChatResponse(
@@ -238,7 +238,7 @@ class ChatService:
             canary_id=canary_id,
             canary_token=canary_token,
             streamed=True,
-            model=self._settings.gemini_model,
+            model=self._settings.target_model,
         )
 
         full_text = ""
@@ -263,7 +263,7 @@ class ChatService:
                 "conversation_id": conversation_id,
                 "request_id": request_id,
                 "variant": self._settings.app_mode,
-                "model": self._settings.gemini_model,
+                "model": self._settings.target_model,
             }
             yield f"event: completed\ndata: {_json.dumps(completed)}\n\n"
 

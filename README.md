@@ -55,7 +55,7 @@ Run curated attack scenarios against an OpenAI-compatible endpoint. Pick an atta
 | **Presidio PII** | Entity scrubbing (names, emails, cards, phone numbers) |
 | **NeMo Guardrails** | Semantic similarity via FastEmbed embeddings |
 
-Supported providers: OpenAI, Anthropic, Google Gemini, Mistral, Azure. → [Full proxy pipeline](docs/architecture/PROXY_FIREWALL_PIPELINE.md)
+Supported providers: OpenAI, Anthropic, DeepSeek, Mistral, Azure. → [Full proxy pipeline](docs/architecture/PROXY_FIREWALL_PIPELINE.md)
 
 ### Agent-level enforcement
 

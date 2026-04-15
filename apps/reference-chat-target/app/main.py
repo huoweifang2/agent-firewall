@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 
 from app.chat_service import ChatService
 from app.config import Settings, load_settings
-from app.gemini_client import create_backend
+from app.target_client import ModelClient
 from app.retrieval import load_kb
 from app.routes_chat import router as chat_router
 from app.routes_health import router as health_router
@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
     load_kb()
     logger.info("Knowledge base loaded")
 
-    backend = create_backend(settings)
+    backend = ModelClient()
     conversations, traces = create_stores(settings)
 
     app.state.conversations = conversations
@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI):
     logger.info(
         "reference-chat-target started — mode=%s model=%s",
         settings.app_mode,
-        settings.gemini_model,
+        settings.target_model,
     )
     yield
     logger.info("reference-chat-target shutting down")

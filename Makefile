@@ -132,7 +132,7 @@ benchmark-quick:  ## Quick benchmark (balanced policy, 20 iterations)
 	cd apps/proxy-service && uv run python -m benchmarks.bench_latency --iterations 20
 	cd apps/proxy-service && uv run python -m benchmarks.generate_report
 
-benchmark-e2e:  ## End-to-end benchmark with real LLM (requires GEMINI_API_KEY + running proxy)
+benchmark-e2e:  ## End-to-end benchmark with real LLM (requires TARGET_API_KEY + running proxy)
 	cd apps/proxy-service && uv run python -m benchmarks.bench_e2e --iterations 10
 	cd apps/proxy-service && uv run python -m benchmarks.generate_report
 

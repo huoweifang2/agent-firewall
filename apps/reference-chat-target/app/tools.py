@@ -7,7 +7,7 @@ from typing import Any
 
 from app.retrieval import retrieve
 
-# Tool definitions for the Gemini function-calling API
+# Tool definitions for the OpenAI function-calling API
 TOOL_DEFINITIONS = [
     {
         "name": "search_kb",

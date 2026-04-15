@@ -227,7 +227,7 @@ class TestScanRequestHeaders:
             policy="balanced",
             api_key="sk-test-key-abc",
             scan_messages=[{"role": "user", "content": "hi"}],
-            model_name="gemini-2.0-flash",
+            model_name="deepseek-chat",
             temperature=0.5,
             max_tokens=2048,
         )

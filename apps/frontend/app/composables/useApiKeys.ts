@@ -23,10 +23,8 @@ export interface StoredKey {
 }
 
 export const PROVIDERS: ProviderDef[] = [
-  { id: 'openai', name: 'OpenAI', icon: 'mdi-creation', placeholder: 'sk-proj-...' },
-  { id: 'anthropic', name: 'Anthropic', icon: 'mdi-robot', placeholder: 'sk-ant-...' },
-  { id: 'google', name: 'Google AI', icon: 'mdi-google', placeholder: 'AIza...' },
-  { id: 'mistral', name: 'Mistral', icon: 'mdi-weather-windy', placeholder: 'mis-...' },
+  { id: 'openrouter', name: 'OpenRouter', icon: 'mdi-router-network', placeholder: 'sk-or-v1-...' },
+  { id: 'deepseek', name: 'DeepSeek', icon: 'mdi-brain', placeholder: 'sk-...' },
 ]
 
 function maskKey(key: string): string {
@@ -40,10 +38,8 @@ function maskKey(key: string): string {
 export function detectProviderClient(model: string): string {
   const m = model.toLowerCase()
   if (m === 'demo') return 'mock'
-  if (m.startsWith('gpt-') || m.startsWith('o1') || m.startsWith('o3')) return 'openai'
-  if (m.startsWith('claude-') || m.startsWith('anthropic/')) return 'anthropic'
-  if (m.startsWith('gemini/') || m.startsWith('gemini-')) return 'google'
-  if (m.startsWith('mistral-') || m.startsWith('mistral/') || m.startsWith('codestral')) return 'mistral'
+  if (m.startsWith('deepseek-') || m.startsWith('deepseek/')) return 'deepseek'
+  if (m.startsWith('openrouter/')) return 'openrouter'
   return 'mock'
 }
 

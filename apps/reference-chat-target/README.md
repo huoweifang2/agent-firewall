@@ -12,8 +12,8 @@ cd apps/reference-chat-target
 # Install dependencies
 pip install -r requirements.txt
 
-# Set your Gemini API key
-export GEMINI_API_KEY="your-key-here"
+# Set your Target API key
+export TARGET_API_KEY="your-key-here"
 
 # Run the service
 uvicorn app.main:app --reload --port 8010
@@ -25,9 +25,9 @@ Copy `.env.example` to `.env` and fill in values. Key variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `GEMINI_API_KEY` | — | **Required** for raw mode |
-| `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model name |
-| `APP_MODE` | `raw` | `raw` = direct Gemini, `protected` = via AI Protector |
+| `TARGET_API_KEY` | — | **Required** for raw mode |
+| `TARGET_MODEL` | `openrouter/auto` | Target model name |
+| `APP_MODE` | `raw` | `raw` = direct Target, `protected` = via AI Protector |
 | `AI_PROTECTOR_BASE_URL` | — | Required when `APP_MODE=protected` |
 | `AI_PROTECTOR_API_KEY` | — | Bearer token for AI Protector |
 | `ENABLE_STREAMING` | `true` | Enable SSE streaming |
@@ -41,7 +41,7 @@ Copy `.env.example` to `.env` and fill in values. Key variables:
 ## Modes
 
 ### Raw mode (`APP_MODE=raw`)
-Calls Gemini directly via the Google GenAI SDK. No proxy, no protection layer.
+Calls Target directly via the Google GenAI SDK. No proxy, no protection layer.
 
 ### Protected mode (`APP_MODE=protected`)
 Routes model requests through AI Protector's OpenAI-compatible endpoint at `{AI_PROTECTOR_BASE_URL}/v1/chat/completions`. The external API contract stays identical — only the backend path changes.
@@ -158,9 +158,9 @@ This service is designed as a target for AI Protector's red-team benchmark runne
 ```
 Client → POST /v1/chat
            │
-           ├─ raw mode → GeminiDirectBackend → Google GenAI SDK → Gemini API
+           ├─ raw mode → TargetDirectBackend → Google GenAI SDK → Target API
            │
-           └─ protected mode → ProtectedHTTPBackend → HTTP → AI Protector → Gemini
+           └─ protected mode → ProtectedHTTPBackend → HTTP → AI Protector → Target
 ```
 
 The `ModelBackend` abstraction keeps mode-switching invisible to the chat service layer.

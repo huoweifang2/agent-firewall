@@ -16,7 +16,7 @@ async def health(request: Request):
         status="ok",
         service="reference-chat-target",
         mode=settings.app_mode,
-        model=settings.gemini_model,
+        model=settings.target_model,
         streaming_enabled=settings.enable_streaming,
         retrieval_enabled=settings.enable_retrieval,
         tools_enabled=settings.enable_tools,

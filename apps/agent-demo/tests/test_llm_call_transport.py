@@ -99,41 +99,31 @@ class TestAcompletionModelRouting:
 
     @pytest.mark.asyncio
     async def test_google_model_gets_prefix(self, httpx_mock):
-        """Google models should be prefixed with 'gemini/'."""
+        """DeepSeek models should be prefixed with 'gemini/'."""
         httpx_mock.add_response(json=_scan_allow_json(), status_code=200)
         llm = _mock_llm_response()
 
         with patch(_ACOMPLETION_PATCH, return_value=llm) as mock_acomp:
-            await llm_call_node(_base_state(model="gemini-2.0-flash", api_key="goog-key"))
+            await llm_call_node(_base_state(model="deepseek-chat", api_key="sk-ds-key"))
 
         call_kwargs = mock_acomp.call_args
-        assert call_kwargs.kwargs["model"] == "gemini/gemini-2.0-flash"
-        assert call_kwargs.kwargs["api_key"] == "goog-key"
+        assert call_kwargs.kwargs["model"] == "gemini/deepseek-chat"
+        assert call_kwargs.kwargs["api_key"] == "sk-ds-key"
 
     @pytest.mark.asyncio
-    async def test_anthropic_model_gets_prefix(self, httpx_mock):
-        """Anthropic models should be prefixed with 'anthropic/'."""
+    async def test_openrouter_model_gets_prefix(self, httpx_mock):
+        """OpenRouter models should be prefixed with 'openrouter/'."""
         httpx_mock.add_response(json=_scan_allow_json(), status_code=200)
         llm = _mock_llm_response()
 
         with patch(_ACOMPLETION_PATCH, return_value=llm) as mock_acomp:
-            await llm_call_node(_base_state(model="claude-sonnet-4-6", api_key="sk-ant"))
+            await llm_call_node(_base_state(model="auto", api_key="sk-or"))
 
         call_kwargs = mock_acomp.call_args
-        assert call_kwargs.kwargs["model"] == "anthropic/claude-sonnet-4-6"
-        assert call_kwargs.kwargs["api_key"] == "sk-ant"
+        assert call_kwargs.kwargs["model"] == "openrouter/auto"
+        assert call_kwargs.kwargs["api_key"] == "sk-or"
 
     @pytest.mark.asyncio
-    async def test_mistral_model_gets_prefix(self, httpx_mock):
-        httpx_mock.add_response(json=_scan_allow_json(), status_code=200)
-        llm = _mock_llm_response()
-
-        with patch(_ACOMPLETION_PATCH, return_value=llm) as mock_acomp:
-            await llm_call_node(_base_state(model="mistral-large-latest", api_key="ms-key"))
-
-        call_kwargs = mock_acomp.call_args
-        assert call_kwargs.kwargs["model"] == "mistral/mistral-large-latest"
-        assert call_kwargs.kwargs["api_key"] == "ms-key"
 
 
 # ── Test: acompletion receives correct messages + params ─────

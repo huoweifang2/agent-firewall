@@ -26,17 +26,9 @@ logger = structlog.get_logger()
 
 # ── Provider detection rules (mirrors proxy-service/src/llm/providers.py) ──
 _PROVIDER_RULES: list[tuple[str, str]] = [
-    ("anthropic/", "anthropic"),
-    ("gemini/", "google"),
-    ("mistral/", "mistral"),
-    ("azure/", "azure"),
-    ("gpt-", "openai"),
-    ("o1", "openai"),
-    ("o3", "openai"),
-    ("claude-", "anthropic"),
-    ("gemini-", "google"),
-    ("mistral-", "mistral"),
-    ("codestral", "mistral"),
+    ("openrouter/", "openrouter"),
+    ("deepseek/", "deepseek"),
+    ("deepseek-", "deepseek"),
 ]
 
 
@@ -50,21 +42,19 @@ def _resolve_direct_llm(
     Returns ``(litellm_model, extra_kwargs)``.  For external providers they carry ``api_key``.
     """
     model_lower = model_name.lower()
-    provider = "openai"
+    provider = "openrouter"
     for pattern, prov in _PROVIDER_RULES:
         if model_lower.startswith(pattern):
             provider = prov
             break
 
     # Format model for LiteLLM (add provider prefix where required)
-    if provider == "anthropic" and not model_name.startswith("anthropic/"):
-        litellm_model = f"anthropic/{model_name}"
-    elif provider == "google" and not model_name.startswith("gemini/"):
-        litellm_model = f"gemini/{model_name}"
-    elif provider == "mistral" and not model_name.startswith("mistral/"):
-        litellm_model = f"mistral/{model_name}"
+    if provider == "openrouter" and not model_name.startswith("openrouter/"):
+        litellm_model = f"openrouter/{model_name}"
+    elif provider == "deepseek" and not model_name.startswith("deepseek/"):
+        litellm_model = f"deepseek/{model_name}"
     else:
-        litellm_model = model_name  # openai: no prefix
+        litellm_model = model_name  # fallback: no prefix
 
     return litellm_model, {"api_key": api_key}
 

@@ -97,7 +97,7 @@
 
 ## End-to-End Overhead
 
-Real LLM calls through the proxy vs direct. Model: `gemini/gemini-2.0-flash`.
+Real LLM calls through the proxy vs direct. Model: `deepseek/deepseek-chat`.
 
 > **Note**: End-to-end overhead includes Docker networking round-trip (~290 ms).
 > The actual security pipeline adds **~50 ms** of CPU processing (see Pipeline
@@ -174,7 +174,7 @@ python -m benchmarks.bench_memory
 
 # End-to-end (requires running proxy + API key)
 make demo  # in another terminal
-GEMINI_API_KEY=... python -m benchmarks.bench_e2e --iterations 10
+TARGET_API_KEY=... python -m benchmarks.bench_e2e --iterations 10
 
 # Generate this report
 python -m benchmarks.generate_report

@@ -9,8 +9,9 @@ from typing import Literal
 
 @dataclass(frozen=True, slots=True)
 class Settings:
-    gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.5-flash"
+    target_api_key: str = ""
+    target_model: str = "openrouter/auto"
+    target_base_url: str = ""
 
     app_mode: Literal["raw", "protected"] = "raw"
 
@@ -45,8 +46,9 @@ def _bool_env(key: str, default: bool) -> bool:
 
 def load_settings() -> Settings:
     return Settings(
-        gemini_api_key=os.environ.get("GEMINI_API_KEY", ""),
-        gemini_model=os.environ.get("GEMINI_MODEL", "gemini-2.5-flash"),
+        target_api_key=os.environ.get("TARGET_API_KEY", ""),
+        target_model=os.environ.get("TARGET_MODEL", "openrouter/auto"),
+        target_base_url=os.environ.get("TARGET_BASE_URL", "https://openrouter.ai/api/v1"),
         app_mode="protected"
         if os.environ.get("APP_MODE", "raw").lower() == "protected"
         else "raw",
