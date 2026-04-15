@@ -95,20 +95,7 @@
 
     <!-- Mode Row -->
     <v-row class="mb-4" dense>
-      <v-col cols="auto">
-        <v-btn-toggle v-model="chatMode" mandatory density="compact" variant="outlined" divided>
-          <v-btn value="mock" size="small">
-            <v-icon start size="16">mdi-test-tube</v-icon>
-            Mock
-          </v-btn>
-          <v-btn value="llm" size="small">
-            <v-icon start size="16">mdi-brain</v-icon>
-            LLM
-          </v-btn>
-        </v-btn-toggle>
-      </v-col>
-
-      <v-col v-if="chatMode === 'llm'" cols="12" sm="4">
+      <v-col cols="12" sm="4">
         <v-select
           v-model="llmModel"
           :items="modelItems"
@@ -123,7 +110,7 @@
         />
       </v-col>
 
-      <v-col v-if="chatMode === 'llm'" cols="auto" class="d-flex align-center ga-2">
+      <v-col cols="auto" class="d-flex align-center ga-2">
         <v-chip
           v-if="selectedModelProvider === 'mock'"
           size="small"
@@ -446,8 +433,8 @@ const inputMessage = ref('')
 const isSending = ref(false)
 const chatContainer = ref<HTMLElement | null>(null)
 const drawerOpen = ref(false)
-const chatMode = ref<'mock' | 'llm'>('mock')
-const llmModel = ref('')
+const chatMode = ref<'mock' | 'llm'>('llm')
+const llmModel = ref('deepseek-chat')
 
 // ── Model catalogue from /v1/models + browser-stored keys ──────
 const { availableModels, isLoading: modelsLoading } = useModels()
@@ -458,25 +445,29 @@ const PROVIDER_LABELS: Record<string, string> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic',
   google: 'Google AI',
-  mistral: 'Mistral',  mock: 'Demo',
+  mistral: 'Mistral',
+  deepseek: 'DeepSeek',
+  openrouter: 'OpenRouter',
 }
 
 /** Build LiteLLM-compatible model string (prefix for non-OpenAI providers). */
 function toLitellmId(modelId: string, provider: string): string {
-  if (provider === 'openai' || provider === 'mock') return modelId
+  if (provider === 'openai') return modelId
   // anthropic → anthropic/claude-..., google → gemini/..., mistral → mistral/...
   const prefixMap: Record<string, string> = { anthropic: 'anthropic', google: 'gemini', mistral: 'mistral', groq: 'groq', deepseek: 'deepseek' }
   const prefix = prefixMap[provider] ?? provider
   return modelId.startsWith(`${prefix}/`) ? modelId : `${prefix}/${modelId}`
 }
 
-/** Only show available models (providers with key). */
+/** Only show available external models (providers with key). */
 const modelItems = computed(() =>
-  (availableModels.value ?? []).map((m) => ({
-    title: `${m.name}  ·  ${PROVIDER_LABELS[m.provider] ?? m.provider}`,
-    value: toLitellmId(m.id, m.provider),
-    provider: m.provider,
-  })),
+  (availableModels.value ?? [])
+    .filter(m => m.provider !== 'mock')
+    .map((m) => ({
+      title: `${m.name}  ·  ${PROVIDER_LABELS[m.provider] ?? m.provider}`,
+      value: toLitellmId(m.id, m.provider),
+      provider: m.provider,
+    })),
 )
 
 // Auto-select model: restore from localStorage → first external → first any
@@ -488,7 +479,7 @@ watch(modelItems, (items) => {
     if (mem) { llmModel.value = mem.value; return }
   }
   if (llmModel.value && items.find((m) => m.value === llmModel.value)) return
-  const firstExternal = items.find((m) => m.provider !== 'mock')
+  const firstExternal = items.find((m) => m.value === 'deepseek-chat') || items[0]
   if (firstExternal) { llmModel.value = firstExternal.value; return }
   llmModel.value = items[0]!.value
 }, { immediate: true })

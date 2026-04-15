@@ -38,9 +38,9 @@ function maskKey(key: string): string {
 export function detectProviderClient(model: string): string {
   const m = model.toLowerCase()
   if (m === 'demo') return 'mock'
-  if (m.startsWith('deepseek-') || m.startsWith('deepseek/')) return 'deepseek'
-  if (m.startsWith('openrouter/')) return 'openrouter'
-  return 'mock'
+  if (m.startsWith('deepseek')) return 'deepseek'
+  // Everything else is openrouter
+  return 'openrouter'
 }
 
 /**

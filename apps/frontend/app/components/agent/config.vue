@@ -47,11 +47,6 @@
         @update:model-value="$emit('update:policy', $event)"
       />
 
-      <p v-if="isDemo" class="text-caption text-medium-emphasis mt-n2 mb-4">
-        <v-icon size="x-small">mdi-key</v-icon>
-        Paste an API key in <router-link to="/settings">Settings</router-link> to use real models.
-      </p>
-
       <v-btn
         block
         variant="outlined"
@@ -70,7 +65,6 @@
 import { computed } from 'vue'
 import { usePolicies } from '~/composables/usePolicies'
 import { useModels } from '~/composables/useModels'
-import { useAppMode } from '~/composables/useAppMode'
 import { sortedPolicyItems } from '~/utils/policyOrder'
 
 defineProps<{
@@ -89,8 +83,6 @@ defineEmits<{
 
 const { policies, isLoading: isPoliciesLoading } = usePolicies()
 const { groupedModels, isLoading: isModelsLoading } = useModels()
-const { isDemo } = useAppMode()
-
 const roleItems = [
   { title: 'Customer', value: 'customer' },
   { title: 'Admin', value: 'admin' },
@@ -100,7 +92,10 @@ const PROVIDER_LABELS: Record<string, string> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic',
   google: 'Google AI',
-  mistral: 'Mistral',  mock: 'Demo',
+  mistral: 'Mistral',
+  deepseek: 'DeepSeek',
+  openrouter: 'OpenRouter',
+  mock: 'Demo',
 }
 
 /** Only show models that are available (providers with key). */

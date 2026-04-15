@@ -34,11 +34,6 @@
         @update:model-value="updateField('model', $event)"
       />
 
-      <p v-if="isDemo" class="text-caption text-medium-emphasis mt-n2 mb-4">
-        <v-icon size="x-small">mdi-key</v-icon>
-        Paste an API key in <router-link to="/settings">Settings</router-link> to use real models.
-      </p>
-
       <v-slider
         :model-value="config.temperature"
         :disabled="disabled"
@@ -72,7 +67,6 @@
 import { computed } from 'vue'
 import { usePolicies } from '~/composables/usePolicies'
 import { useModels } from '~/composables/useModels'
-import { useAppMode } from '~/composables/useAppMode'
 import { sortedPolicyItems } from '~/utils/policyOrder'
 
 interface Config {
@@ -93,15 +87,16 @@ const emit = defineEmits<{
 
 const { policies, isLoading } = usePolicies()
 const { groupedModels, isLoading: modelsLoading } = useModels()
-const { isDemo } = useAppMode()
-
 const policyItems = computed(() => sortedPolicyItems(policies.value ?? []))
 
 const PROVIDER_LABELS: Record<string, string> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic',
   google: 'Google AI',
-  mistral: 'Mistral',  mock: 'Demo',
+  mistral: 'Mistral',  
+  deepseek: 'DeepSeek',
+  openrouter: 'OpenRouter',
+  mock: 'Demo',
 }
 
 /** Only show models that are available (providers with key). */
@@ -117,6 +112,20 @@ const modelItems = computed(() =>
 function updateField<K extends keyof Config>(key: K, value: Config[K]) {
   emit('update:config', { ...props.config, [key]: value })
 }
+
+watch(() => modelItems.value, (items) => {
+  if (items.length > 0) {
+    if (!items.find((m) => m.value === props.config.model)) {
+      const preferred = items.find((m) => m.value === 'deepseek-chat')
+      if (preferred) {
+        updateField('model', preferred.value)
+      } else {
+        updateField('model', items[0]!.value)
+      }
+    }
+  }
+}, { immediate: true })
+
 </script>
 
 <style lang="scss" scoped>

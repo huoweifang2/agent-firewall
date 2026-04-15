@@ -390,7 +390,6 @@ const proofSummaries = computed<ProofSummary[]>(() => {
   for (const [key, runs] of groups.entries()) {
     const endpoint = key.split('::')[0] ?? ''
     const packName = key.split('::')[1] ?? ''
-    const isDemo = endpoint === 'demo'
 
     // Sort newest first
     runs.sort((a, b) => {
@@ -439,16 +438,14 @@ const proofSummaries = computed<ProofSummary[]>(() => {
       secondaryRoute = latestRoute
     } else if (status === 'rerun_needed') {
       secondaryLabel = 'Re-run protected scan'
-      secondaryRoute = isDemo
-        ? '/red-team/configure?target=demo'
-        : `/red-team/target?type=${latestRun.target_type}`
+      secondaryRoute = `/red-team/target?type=${latestRun.target_type}`
     }
 
     summaries.push({
       key,
-      label: isDemo ? 'Demo Endpoint' : truncateLabel(endpoint, 50),
+      label: truncateLabel(endpoint, 50),
       pack: humanPack(packName),
-      icon: isDemo ? 'mdi-robot-outline' : 'mdi-web',
+      icon: 'mdi-web',
       status,
       statusLabel,
       statusColor,

@@ -130,7 +130,7 @@ watch(
       const current = models.find((m) => m.id === config.model)
       if (current?.available) return
     }
-    const firstExternal = models.find((m) => m.available)
+    const firstExternal = models.find((m) => m.id === 'deepseek-chat' && m.available) || models.find((m) => m.available && m.provider !== 'mock') || models.find((m) => m.available)
     if (firstExternal) { config.model = firstExternal.id; return }
     const firstAny = models.find((m) => m.available)
     config.model = firstAny?.id ?? ''

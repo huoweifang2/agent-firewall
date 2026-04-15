@@ -21,33 +21,33 @@
     </div>
 
     <template v-else-if="agent">
-      <wizard-agent-wizard-stepper
+      <creator-stepper
         v-model="currentStep"
         :step-valid="true"
         :agent-id="agent.id"
       >
         <template #step-1>
-          <wizard-step-describe :initial-data="agent" @valid="() => {}" />
+          <creator-step-describe :initial-data="agent" @valid="() => {}" />
         </template>
         <template #step-2>
-          <wizard-step-tools :agent-id="agent.id" @valid="() => {}" />
+          <creator-step-tools :agent-id="agent.id" @valid="() => {}" />
         </template>
         <template #step-3>
-          <wizard-step-roles :agent-id="agent.id" @valid="() => {}" />
+          <creator-step-roles :agent-id="agent.id" @valid="() => {}" />
         </template>
         <template #step-4>
-          <wizard-step-security :agent-id="agent.id" @valid="() => {}" />
+          <creator-step-security :agent-id="agent.id" @valid="() => {}" />
         </template>
         <template #step-5>
-          <wizard-step-kit :agent-id="agent.id" @valid="() => {}" />
+          <creator-step-kit :agent-id="agent.id" @valid="() => {}" />
         </template>
         <template #step-6>
-          <wizard-step-validate :agent-id="agent.id" @valid="() => {}" />
+          <creator-step-validate :agent-id="agent.id" @valid="() => {}" />
         </template>
         <template #step-7>
-          <wizard-step-deploy :agent-id="agent.id" @valid="() => {}" />
+          <creator-step-deploy :agent-id="agent.id" @valid="() => {}" />
         </template>
-      </wizard-agent-wizard-stepper>
+      </creator-stepper>
     </template>
   </v-container>
 </template>

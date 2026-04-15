@@ -18,14 +18,14 @@
       </div>
     </div>
 
-    <wizard-agent-wizard-stepper
+    <creator-stepper
       v-model="currentStep"
       :step-valid="stepValid"
       :agent-id="agentId"
       @complete="onComplete"
     >
       <template #step-1>
-        <wizard-step-describe
+        <creator-step-describe
           ref="describeRef"
           :initial-data="editAgent ?? undefined"
           @valid="v => stepValidity[1] = v"
@@ -33,35 +33,35 @@
       </template>
 
       <template #step-2>
-        <wizard-step-tools v-if="agentId" :agent-id="agentId" @valid="v => stepValidity[2] = v" />
+        <creator-step-tools v-if="agentId" :agent-id="agentId" @valid="v => stepValidity[2] = v" />
         <v-alert v-else type="info" variant="tonal">
           Complete Step 1 first to register the agent.
         </v-alert>
       </template>
 
       <template #step-3>
-        <wizard-step-roles v-if="agentId" :agent-id="agentId" @valid="v => stepValidity[3] = v" />
+        <creator-step-roles v-if="agentId" :agent-id="agentId" @valid="v => stepValidity[3] = v" />
         <v-alert v-else type="info" variant="tonal">
           Complete Step 1 first.
         </v-alert>
       </template>
 
       <template #step-4>
-        <wizard-step-security v-if="agentId" :agent-id="agentId" @valid="v => stepValidity[4] = v" />
+        <creator-step-security v-if="agentId" :agent-id="agentId" @valid="v => stepValidity[4] = v" />
       </template>
 
       <template #step-5>
-        <wizard-step-kit v-if="agentId" :agent-id="agentId" @valid="v => stepValidity[5] = v" />
+        <creator-step-kit v-if="agentId" :agent-id="agentId" @valid="v => stepValidity[5] = v" />
       </template>
 
       <template #step-6>
-        <wizard-step-validate v-if="agentId" :agent-id="agentId" @valid="v => stepValidity[6] = v" />
+        <creator-step-validate v-if="agentId" :agent-id="agentId" @valid="v => stepValidity[6] = v" />
       </template>
 
       <template #step-7>
-        <wizard-step-deploy v-if="agentId" :agent-id="agentId" @valid="v => stepValidity[7] = v" />
+        <creator-step-deploy v-if="agentId" :agent-id="agentId" @valid="v => stepValidity[7] = v" />
       </template>
-    </wizard-agent-wizard-stepper>
+    </creator-stepper>
   </v-container>
 </template>
 

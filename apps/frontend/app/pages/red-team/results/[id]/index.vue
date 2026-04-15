@@ -17,17 +17,6 @@
             :to="'/red-team'"
           />
           <h1 class="text-h5">{{ pageTitle }}</h1>
-          <v-chip
-            v-if="isDemoTarget"
-            color="purple"
-            variant="tonal"
-            size="small"
-            prepend-icon="mdi-robot"
-            class="ml-3"
-            label
-          >
-            Demo
-          </v-chip>
         </div>
         <p class="text-body-2 text-medium-emphasis" data-testid="header-info">
           <v-icon :icon="targetIcon" size="x-small" class="mr-1" />
@@ -335,19 +324,6 @@
               </div>
               <div class="d-flex flex-wrap ga-2 mb-1">
                 <v-btn
-                  v-if="isDemoTarget"
-                  color="primary"
-                  variant="flat"
-                  size="default"
-                  prepend-icon="mdi-shield-check"
-                  :loading="isRerunning"
-                  data-testid="hero-protect-rerun-btn"
-                  @click="onRerunProtected"
-                >
-                  Enable protection &amp; re-run
-                </v-btn>
-                <v-btn
-                  v-else
                   color="primary"
                   variant="flat"
                   size="default"
@@ -358,9 +334,6 @@
                   Set up protection
                 </v-btn>
               </div>
-              <p v-if="isDemoTarget" class="text-caption text-medium-emphasis mt-2 mb-2">
-                One click — Agent-Firewall will filter every attack and re-run the same scan.
-              </p>
               <!-- Demoted secondary actions -->
               <div class="d-flex flex-wrap ga-3 mt-2">
                 <a class="text-caption text-primary" style="cursor: pointer;" @click="onExport">Export PDF</a>
@@ -442,18 +415,6 @@
               The model resisted all attacks on its own. But model behavior changes — enable Agent-Firewall for enforced runtime protection.
             </p>
             <v-btn
-              v-if="isDemoTarget"
-              color="primary"
-              variant="flat"
-              size="small"
-              prepend-icon="mdi-shield-check"
-              :loading="isRerunning"
-              @click="onRerunProtected"
-            >
-              Enable protection &amp; re-run
-            </v-btn>
-            <v-btn
-              v-else
               color="primary"
               variant="flat"
               size="small"
@@ -496,15 +457,6 @@
           </v-row>
           <div class="text-center mt-4">
             <a
-              v-if="isDemoTarget"
-              class="text-caption text-primary"
-              style="cursor: pointer;"
-              @click="onRerunProtected"
-            >
-              Enable protection &amp; re-run →
-            </a>
-            <a
-              v-else
               class="text-caption text-primary"
               style="cursor: pointer;"
               @click="showSetupDialog = true"
@@ -608,19 +560,6 @@
               {{ failedCount }} attack{{ failedCount !== 1 ? 's' : '' }} got through — enable protection and re-run to verify
             </span>
             <v-btn
-              v-if="isDemoTarget"
-              color="primary"
-              variant="flat"
-              size="small"
-              prepend-icon="mdi-shield-check"
-              class="cta-pulse"
-              :loading="isRerunning"
-              @click="onRerunProtected"
-            >
-              Enable protection &amp; re-run
-            </v-btn>
-            <v-btn
-              v-else
               color="primary"
               variant="flat"
               size="small"
@@ -871,10 +810,6 @@ const targetIcon = computed(() => targetMeta.value.icon)
 
 const runClass = computed(() => run.value ? classifyRun(run.value) : null)
 const isBaseline = computed(() => runClass.value?.type === 'baseline')
-const isDemoTarget = computed(() => {
-  const t = run.value?.target_type ?? ''
-  return t === 'demo' || t === 'demo_agent'
-})
 
 // ---------------------------------------------------------------------------
 // Computed — dynamic page title
@@ -1113,29 +1048,6 @@ async function onRerun() {
       target_config: run.value.target_config,
       pack: run.value.pack,
       policy: policyApplied.value ? 'strict' : (run.value.policy ?? 'balanced'),
-      source_run_id: run.value.id,
-    })
-    router.push(`/red-team/run/${result.id}`)
-  } catch {
-    isRerunning.value = false
-  }
-}
-
-async function onRerunProtected() {
-  if (!run.value) return
-  // If the run had auth headers (now deleted), redirect to the form to re-enter them
-  if (hadAuth.value) {
-    router.push({ path: '/red-team/target', query: rerunQuery({ protected: true }) })
-    return
-  }
-  isRerunning.value = true
-  try {
-    const config = { ...(run.value.target_config ?? {}), through_proxy: true }
-    const result = await benchmarkService.createRun({
-      target_type: run.value.target_type,
-      target_config: config,
-      pack: run.value.pack,
-      policy: 'balanced',
       source_run_id: run.value.id,
     })
     router.push(`/red-team/run/${result.id}`)

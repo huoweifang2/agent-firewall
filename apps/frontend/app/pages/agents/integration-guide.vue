@@ -388,11 +388,11 @@ docker compose --profile full up -d
     <v-card variant="tonal" color="primary" class="pa-6 text-center">
       <h3 class="text-h6 mb-2">Ready to protect your agent?</h3>
       <p class="text-body-2 mb-4">
-        Use the Agent Wizard to register your agent, define tools and roles,
+        Use the Creator to register your agent, define tools and roles,
         and generate your integration kit.
       </p>
       <v-btn color="primary" size="large" prepend-icon="mdi-magic-staff" to="/agents/new">
-        Open Agent Wizard
+        Open Creator
       </v-btn>
     </v-card>
   </v-container>

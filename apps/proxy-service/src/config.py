@@ -72,7 +72,7 @@ class Settings(BaseSettings):
     request_timeout: int = 120  # seconds — max wait for LLM response
 
     # App
-    mode: str = "demo"  # "demo" | "real" — demo uses MockProvider when no API key
+    mode: str = "dev"  # "dev" | "real"
     default_policy: str = "balanced"
     log_level: str = "INFO"
     json_logs: bool = False  # True for production (structured JSON to stdout)

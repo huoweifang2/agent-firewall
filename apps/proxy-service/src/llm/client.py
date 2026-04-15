@@ -45,13 +45,6 @@ async def llm_completion(
     For external providers the ``api_key`` parameter is required and comes
     from the ``x-api-key`` request header.
 
-    In **demo mode** (``MODE=demo``) with no API key the call is routed to
-    :mod:`src.llm.mock_provider` which returns deterministic fixture
-    responses based on the pipeline's ``intent`` classification.
-
-    An API key always overrides demo mode — if the user pastes a key in
-    Settings → API Keys, the real provider is used regardless of MODE.
-
     Args:
         messages: OpenAI-format message list.
         model: Model name (e.g. ``"gpt-4o"``, ``"claude-sonnet-4-6"``, ``"llama3.1:8b"``).
@@ -74,15 +67,6 @@ async def llm_completion(
 
     if temperature is None:
         temperature = settings.default_temperature
-
-    # ── Demo mode (no API key) → MockProvider ─────────────────────
-    if not api_key and settings.mode == "demo":
-        from src.llm.mock_provider import mock_completion, mock_completion_stream
-
-        logger.info("mock_provider", intent=intent, stream=stream)
-        if stream:
-            return mock_completion_stream(messages, intent=intent)
-        return mock_completion(messages, intent=intent, stream=False)
 
     # ── Real provider routing ─────────────────────────────────────
     provider = detect_provider(model)

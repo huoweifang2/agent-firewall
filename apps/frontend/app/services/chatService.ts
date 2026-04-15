@@ -33,6 +33,8 @@ export function getProviderApiBases(): Record<string, string> {
   return {
     openai: (import.meta.env.NUXT_PUBLIC_OPENAI_API_BASE as string) ?? 'https://api.openai.com',
     mistral: (import.meta.env.NUXT_PUBLIC_MISTRAL_API_BASE as string) ?? 'https://api.mistral.ai',
+    openrouter: (import.meta.env.NUXT_PUBLIC_OPENROUTER_API_BASE as string) ?? 'https://openrouter.ai/api',
+    deepseek: (import.meta.env.NUXT_PUBLIC_DEEPSEEK_API_BASE as string) ?? 'https://api.deepseek.com',
   }
 }
 

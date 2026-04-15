@@ -1,7 +1,6 @@
-.PHONY: demo up dev setup init down seed lint format test verify pre-commit-install pre-commit benchmark benchmark-quick benchmark-e2e benchmark-jailbreakbench
+.PHONY: up dev setup init down seed lint format test verify pre-commit-install pre-commit benchmark benchmark-quick benchmark-e2e benchmark-jailbreakbench
 
 # ── Quick start ─────────────────────────────────────────
-# Demo (mock LLM):     make demo
 # Full stack (real LLM):  make up
 # Contributor (infra only):        make dev
 
@@ -13,22 +12,6 @@ define ensure-benchmark-key
 		echo "🔑  Generated BENCHMARK_SECRET_KEY"; \
 	fi
 endef
-
-demo:
-	@test -f infra/.env || (cp infra/.env.example infra/.env && echo "📋  Created infra/.env from .env.example")
-	$(ensure-benchmark-key)
-	cd infra && MODE=demo docker compose --profile demo --profile test-agents up --build -d
-	@echo ""
-	@echo "🚀  Agent-Firewall Demo is starting..."
-	@echo "    Frontend:          http://localhost:3000"
-	@echo "    Proxy API:         http://localhost:8000"
-	@echo "    Agent Demo:        http://localhost:8002"
-	@echo "    Python Agent:      http://localhost:8003"
-	@echo "    LangGraph Agent:   http://localhost:8004"
-	@echo "    Chat Target:       http://localhost:8010/v1/chat"
-	@echo ""
-	@echo "    Mode: DEMO (mock LLM, real security pipeline)"
-	@echo "    Paste an API key in Settings to use a real model."
 
 up:
 	@test -f infra/.env || (cp infra/.env.example infra/.env && echo "📋  Created infra/.env from .env.example")
@@ -55,6 +38,16 @@ dev:
 	@echo "    cd apps/proxy-service && uv run uvicorn src.main:app --reload --port 8000"
 	@echo "    cd apps/agent-demo && uv run uvicorn src.main:app --reload --port 8002"
 	@echo "    cd apps/frontend && npm run dev"
+
+dev-all:
+	@echo "🔧  Starting infrastructure..."
+	cd infra && docker compose up db redis langfuse -d
+	@echo "🚀  Starting local apps concurrently. Press Ctrl+C to stop all."
+	@trap 'echo "🛑 Stopping all services..."; kill 0' SIGINT; \
+	(cd apps/proxy-service && uv run uvicorn src.main:app --reload --port 8000) & \
+	(cd apps/agent-demo && uv run uvicorn src.main:app --reload --port 8002) & \
+	(cd apps/frontend && npm run dev) & \
+	wait
 
 setup:
 	@echo "📦 Syncing dependencies with uv..."

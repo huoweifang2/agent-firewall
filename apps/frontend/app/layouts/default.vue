@@ -22,15 +22,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useAppMode } from '~/composables/useAppMode'
+import { ref } from 'vue'
 
 const drawer = ref(true)
-const { fetchMode } = useAppMode()
-
-onMounted(() => {
-  fetchMode()
-})
 </script>
 
 <style lang="scss" scoped>
