@@ -22,24 +22,8 @@ export default defineNuxtConfig({
     },
     vuetifyOptions: {
       theme: {
-        defaultTheme: 'dark',
+        defaultTheme: 'light',
         themes: {
-          dark: {
-            colors: {
-              primary: '#7C8FD4',
-              secondary: '#4DB6AC',
-              info: '#38BDF8',
-              error: '#EF4444',
-              warning: '#F59E0B',
-              success: '#22C55E',
-              background: '#1A1A2E',
-              surface: '#252540',
-              'surface-bright': '#333352',
-              'surface-light': '#2A2A48',
-              'surface-variant': '#B0B0C0',
-              'on-surface-variant': '#252540',
-            },
-          },
           light: {
             colors: {
               primary: '#4F5FB5',

@@ -8,11 +8,6 @@
 
       <template #append>
         <health-indicator />
-        <v-btn
-          :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
-          variant="text"
-          @click="toggle"
-        />
       </template>
     </v-app-bar>
 
@@ -28,11 +23,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useAppTheme } from '~/composables/useAppTheme'
 import { useAppMode } from '~/composables/useAppMode'
 
 const drawer = ref(true)
-const { isDark, toggle } = useAppTheme()
 const { fetchMode } = useAppMode()
 
 onMounted(() => {
@@ -44,18 +37,6 @@ onMounted(() => {
 // Ensure main content fills viewport
 .v-main {
   min-height: 100vh;
-}
-
-.sidebar-logo-item {
-  padding: 16px 16px 8px !important;
-  text-align: center;
-}
-
-.sidebar-logo {
-  width: 100%;
-  max-width: 140px;
-  height: auto;
-  object-fit: contain;
 }
 
 .app-bar--shadow {
