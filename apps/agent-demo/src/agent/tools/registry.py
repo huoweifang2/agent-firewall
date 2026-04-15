@@ -1,0 +1,53 @@
+"""Tool registry — tool dispatch and descriptions.
+
+RBAC configuration has moved to `src/agent/rbac/` (spec 02).
+This module retains tool function dispatch and descriptions.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import Any
+
+from src.agent.rbac.service import get_rbac_service
+from src.agent.tools.kb import search_knowledge_base
+from src.agent.tools.orders import get_order_status
+from src.agent.tools.secrets import get_internal_secrets
+
+# Tool name → callable mapping
+TOOL_FUNCTIONS: dict[str, Callable[..., str]] = {
+    "searchKnowledgeBase": search_knowledge_base,
+    "getOrderStatus": get_order_status,
+    "getInternalSecrets": get_internal_secrets,
+}
+
+# Tool descriptions for LLM system prompt
+TOOL_DESCRIPTIONS: dict[str, str] = {
+    "searchKnowledgeBase": "Search the knowledge base / FAQ for information. Args: query (string).",
+    "getOrderStatus": "Look up order status by order ID. Args: order_id (string).",
+    "getInternalSecrets": "Retrieve internal API keys and configuration. No args needed.",
+}
+
+
+def get_allowed_tools(user_role: str) -> list[str]:
+    """Return list of tool names allowed for the given role.
+
+    Delegates to RBAC service (with inheritance resolution).
+    """
+    rbac = get_rbac_service()
+    return rbac.get_allowed_tools(user_role)
+
+
+def execute_tool(tool_name: str, args: dict[str, Any]) -> str:
+    """Execute a tool by name with given args. Raises KeyError if unknown."""
+    fn = TOOL_FUNCTIONS[tool_name]
+    return fn(**args)
+
+
+def get_tools_description(allowed_tools: list[str]) -> str:
+    """Build a tool description string for the LLM system prompt."""
+    lines = []
+    for name in allowed_tools:
+        desc = TOOL_DESCRIPTIONS.get(name, "No description.")
+        lines.append(f"- {name}: {desc}")
+    return "\n".join(lines)

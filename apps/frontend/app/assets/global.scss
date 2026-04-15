@@ -1,0 +1,85 @@
+// ── Global input border-radius (12px) ──────────────────────────
+// Applies to all Vuetify outlined / filled / solo inputs:
+// v-text-field, v-textarea, v-select, v-autocomplete, v-combobox, v-file-input
+
+.v-field {
+  border-radius: 12px !important;
+}
+
+.v-field__outline {
+  border-radius: 12px !important;
+
+  &__start {
+    border-radius: 12px 0 0 12px !important;
+  }
+
+  &__end {
+    border-radius: 0 12px 12px 0 !important;
+  }
+}
+
+// ── Global v-alert border-radius (12px) ────────────────────────
+.v-alert {
+  border-radius: 12px !important;
+}
+
+// ── Global v-data-table border-radius (12px) ───────────────────
+.v-data-table {
+  border-radius: 12px !important;
+}
+
+// ── Global v-chip font size (12px) ─────────────────────────────
+.v-chip {
+  font-size: 12px !important;
+}
+
+// ── Global v-card-title font size (18px) + margin ──────────────
+.v-card-title {
+  font-size: 18px !important;
+  margin-bottom: 4px !important;
+}
+
+// ── Global v-card border-radius (12px) ─────────────────────────
+.v-card {
+  border-radius: 12px !important;
+}
+
+// ── Global button border-radius (12px) ─────────────────────────
+.v-btn {
+  border-radius: 12px !important;
+}
+
+// ── Action button – solid teal background ──────────────────────
+.btn-action {
+  background-color: rgb(var(--v-theme-secondary)) !important;
+  color: #fff !important;
+
+  &:hover {
+    filter: brightness(1.15);
+  }
+
+  &:disabled,
+  &.v-btn--disabled {
+    opacity: 0.5;
+  }
+}
+
+.btn-action--danger {
+  background-color: rgb(var(--v-theme-error)) !important;
+  color: #fff !important;
+
+  &:hover {
+    filter: brightness(1.15);
+  }
+}
+
+// ── Dialog card – subtle white border ──────────────────────────
+.v-dialog > .v-overlay__content > .v-card {
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+// ── Active parent row highlight when expanded ──────────────────
+.v-data-table tbody > tr:has(+ tr .detail-row) {
+  background: rgba(var(--v-theme-primary), 0.04) !important;
+}
