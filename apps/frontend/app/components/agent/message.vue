@@ -19,11 +19,14 @@
       <!-- ═══ VERDICT CARD ═══ -->
       <div
         v-else-if="isVerdict"
-        class="verdict-card"
+        class="verdict-card pb-4"
         :class="`verdict-card--${decision!.decision.toLowerCase()}`"
       >
-        <!-- 1 · VERDICT — first and loudest -->
-        <div class="verdict-card__header">
+   <!-- 1 · VERDICT — first and loudest -->
+        <v-expansion-panels variant="accordion" class="bg-transparent elevation-0">
+          <v-expansion-panel class="bg-transparent elevation-0" :ripple="false">
+            <v-expansion-panel-title class="px-0 py-0" style="min-height: 48px;">
+<div class="verdict-card__header">
           <v-icon :color="decisionColor" size="28">{{ verdictIcon }}</v-icon>
           <div class="verdict-card__headline">
             <span class="verdict-card__word" :class="`text-${decisionColor}`">{{ verdictWord }}</span>
@@ -32,7 +35,10 @@
           </div>
         </div>
 
-        <!-- 2 · HUMAN-READABLE REASON -->
+                    </v-expansion-panel-title>
+
+            <v-expansion-panel-text class="px-0 pt-3">
+<!-- 2 · HUMAN-READABLE REASON -->
         <p v-if="humanReason" class="verdict-card__explain">
           {{ humanReason }}
         </p>
@@ -100,7 +106,11 @@
           </div>
         </div>
 
-        <!-- 7 · RESPONSE CONTENT — at the bottom, quietest -->
+                    </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+        
+             <!-- 7 · RESPONSE CONTENT — at the bottom, quietest -->
         <div v-if="cleanContent" class="verdict-card__body">
           <v-divider class="mb-4" />
           <div class="verdict-card__section-title mb-1">Final outcome</div>

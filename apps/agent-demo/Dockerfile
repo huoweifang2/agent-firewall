@@ -2,8 +2,10 @@
 FROM python:3.12-slim AS builder
 
 WORKDIR /app
+RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 COPY pyproject.toml .
-RUN pip install --no-cache-dir .
+COPY src/ src/
+RUN pip install --no-cache-dir --default-timeout=1000 .
 
 # ── Stage 2: Runtime ────────────────────────────────────
 FROM python:3.12-slim

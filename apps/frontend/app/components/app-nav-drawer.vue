@@ -17,10 +17,10 @@
 
       <v-divider class="my-2" />
 
-      <!-- Protection -->
-      <v-list-subheader>Protection</v-list-subheader>
+      <!-- Agents -->
+      <v-list-subheader>Agents</v-list-subheader>
       <v-list-item
-        v-for="item in protectionItems"
+        v-for="item in agentItems"
         :key="item.to"
         :to="item.to"
         :title="item.title"
@@ -34,10 +34,10 @@
 
       <v-divider class="my-2" />
 
-      <!-- Agents -->
-      <v-list-subheader>Agents</v-list-subheader>
+      <!-- Protection -->
+      <v-list-subheader>Protection</v-list-subheader>
       <v-list-item
-        v-for="item in agentItems"
+        v-for="item in protectionItems"
         :key="item.to"
         :to="item.to"
         :title="item.title"
@@ -83,20 +83,20 @@ const entryItems: NavItem[] = [
   { title: 'Security Scan', icon: 'mdi-shield-search', to: '/red-team' },
 ]
 
-// --- Protection (proxy layer) ---
-const protectionItems: NavItem[] = [
-  { title: 'Policies', icon: 'mdi-shield-lock', to: '/policies' },
-  { title: 'Rules', icon: 'mdi-playlist-check', to: '/rules' },
-  { title: 'Request Traces', icon: 'mdi-text-box-search-outline', to: '/requests' },
-  { title: 'Analytics', icon: 'mdi-chart-bar', to: '/analytics' },
-]
-
 // --- Agents (agent workspace) ---
 const agentItems: NavItem[] = [
   { title: 'Creator', icon: 'mdi-magic-staff', to: '/agents/new' },
   { title: 'My Agents', icon: 'mdi-robot-outline', to: '/agents' },
   { title: 'Agent Sandbox', icon: 'mdi-flask-outline', to: '/test-agents' },
   { title: 'Agent Traces', icon: 'mdi-timeline-clock-outline', to: '/agent-traces' },
+]
+
+// --- Protection (proxy layer) ---
+const protectionItems: NavItem[] = [
+  { title: 'Policies', icon: 'mdi-shield-lock', to: '/policies' },
+  { title: 'Rules', icon: 'mdi-playlist-check', to: '/rules' },
+  { title: 'Request Traces', icon: 'mdi-text-box-search-outline', to: '/requests' },
+  { title: 'Analytics', icon: 'mdi-chart-bar', to: '/analytics' },
 ]
 
 // --- System ---

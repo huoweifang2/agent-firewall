@@ -10,67 +10,75 @@
     <!-- ═══ VERDICT CARD ═══ -->
     <div
       v-if="isVerdict"
-      class="verdict-card"
+      class="verdict-card pb-4"
       :class="`verdict-card--${decision!.decision.toLowerCase()}`"
     >
       <!-- 1 · VERDICT — first and loudest -->
-      <div class="verdict-card__header">
-        <v-icon :color="decisionColor" size="28">{{ verdictIcon }}</v-icon>
-        <div class="verdict-card__headline">
-          <span class="verdict-card__word" :class="`text-${decisionColor}`">{{ verdictWord }}</span>
-          <span class="verdict-card__dash text-medium-emphasis">—</span>
-          <span class="verdict-card__short-reason text-medium-emphasis">{{ verdictReason }}</span>
-        </div>
-      </div>
+      <v-expansion-panels variant="accordion" class="bg-transparent elevation-0">
+        <v-expansion-panel class="bg-transparent elevation-0" :ripple="false">
+          <v-expansion-panel-title class="px-0 py-0" style="min-height: 48px;">
+            <div class="verdict-card__header mb-0 w-100 d-flex align-center justify-start ga-3">
+              <v-icon :color="decisionColor" size="28">{{ verdictIcon }}</v-icon>
+              <div class="verdict-card__headline d-flex align-center">
+                <span class="verdict-card__word" :class="`text-${decisionColor}`">{{ verdictWord }}</span>
+                <span class="verdict-card__dash text-medium-emphasis">—</span>
+                <span class="verdict-card__short-reason text-medium-emphasis">{{ verdictReason }}</span>
+              </div>
+            </div>
+          </v-expansion-panel-title>
 
-      <!-- 2 · HUMAN-READABLE REASON -->
-      <p v-if="humanReason" class="verdict-card__explain">
-        {{ humanReason }}
-      </p>
+          <v-expansion-panel-text class="px-0 pt-3">
+<!-- 2 · HUMAN-READABLE REASON -->
+              <p v-if="humanReason" class="verdict-card__explain">
+                {{ humanReason }}
+              </p>
 
-      <!-- 3 · SECURITY SUMMARY — compact secondary row -->
-      <div class="verdict-card__meta">
-        <div class="verdict-card__kv">
-          <span class="verdict-card__label">Risk</span>
-          <span class="text-caption font-weight-bold" :class="riskTextColor">{{ riskPercent }}%</span>
-        </div>
-        <v-progress-linear
-          :model-value="decision!.riskScore * 100"
-          :color="riskColor"
-          height="3"
-          rounded
-          class="verdict-card__bar"
-        />
-        <div class="verdict-card__kv">
-          <span class="verdict-card__label">Action</span>
-          <v-chip :color="decisionColor" size="x-small" label variant="tonal">
-            {{ decision!.decision }}
-          </v-chip>
-        </div>
-        <div v-if="decision!.intent" class="verdict-card__kv">
-          <span class="verdict-card__label">Intent</span>
-          <span class="text-caption">{{ decision!.intent }}</span>
-        </div>
-      </div>
+              <!-- 3 · SECURITY SUMMARY — compact secondary row -->
+              <div class="verdict-card__meta">
+                <div class="verdict-card__kv">
+                  <span class="verdict-card__label">Risk</span>
+                  <span class="text-caption font-weight-bold" :class="riskTextColor">{{ riskPercent }}%</span>
+                </div>
+                <v-progress-linear
+                  :model-value="decision!.riskScore * 100"
+                  :color="riskColor"
+                  height="3"
+                  rounded
+                  class="verdict-card__bar"
+                />
+                <div class="verdict-card__kv">
+                  <span class="verdict-card__label">Action</span>
+                  <v-chip :color="decisionColor" size="x-small" label variant="tonal">
+                    {{ decision!.decision }}
+                  </v-chip>
+                </div>
+                <div v-if="decision!.intent" class="verdict-card__kv">
+                  <span class="verdict-card__label">Intent</span>
+                  <span class="text-caption">{{ decision!.intent }}</span>
+                </div>
+              </div>
 
-      <!-- 4 · POLICY SIGNALS — chips in own labeled section -->
-      <div v-if="topFlags.length" class="verdict-card__section">
-        <span class="verdict-card__section-title">Matched signals</span>
-        <div class="verdict-card__signals">
-          <v-chip
-            v-for="f in topFlags"
-            :key="f.key"
-            :color="flagChipColor(f.key, f.value)"
-            size="x-small"
-            label
-            variant="outlined"
-          >
-            {{ f.key }}
-          </v-chip>
-        </div>
-      </div>
-
-      <!-- 5 · RESPONSE CONTENT — at the bottom, quietest -->
+              <!-- 4 · POLICY SIGNALS — chips in own labeled section -->
+              <div v-if="topFlags.length" class="verdict-card__section">
+                <span class="verdict-card__section-title">Matched signals</span>
+                <div class="verdict-card__signals">
+                  <v-chip
+                    v-for="f in topFlags"
+                    :key="f.key"
+                    :color="flagChipColor(f.key, f.value)"
+                    size="x-small"
+                    label
+                    variant="outlined"
+                  >
+                    {{ f.key }}
+                  </v-chip>
+                </div>
+              </div>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+        
+             <!-- 5 · RESPONSE CONTENT — at the bottom, quietest -->
       <div v-if="cleanContent" class="verdict-card__body">
         <v-divider class="mb-4" />
         <div class="verdict-card__section-title mb-1">Final outcome</div>
@@ -232,6 +240,8 @@ const renderedRaw = computed(() => renderMarkdown(props.message.content ?? ''))
   }
 
   &__content {
+    :deep(> *:first-child) { margin-top: 0 !important; }
+    
     :deep(p) {
       margin-bottom: 0.4em;
       &:last-child { margin-bottom: 0; }
