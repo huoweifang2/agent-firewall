@@ -32,6 +32,16 @@ export interface ChatMessage {
   content: string
   name?: string
   decision?: PipelineDecision
+  tools_called?: any[]
+  tool_calls?: Array<{
+    id: string
+    type: 'function'
+    function: {
+      name: string
+      arguments: string
+    }
+  }>
+  tool_call_id?: string
 }
 
 export interface ChatCompletionRequest {

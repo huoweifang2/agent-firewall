@@ -36,6 +36,12 @@ export const useChat = () => {
     const assistantIdx = messages.value.length - 1
 
     try {
+      // Retrieve middleware config from localStorage
+      let middlewares = '[]'
+      if (typeof window !== 'undefined') {
+        middlewares = localStorage.getItem('middleware-config') || '[]'
+      }
+
       const response = await streamChat(
         {
           body: {
@@ -47,6 +53,7 @@ export const useChat = () => {
           },
           headers: {
             'x-policy': config.policy,
+            'x-middlewares': middlewares,
           },
           signal: abortController.signal,
         },

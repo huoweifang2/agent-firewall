@@ -101,6 +101,7 @@ const protectionItems: NavItem[] = [
 
 // --- System ---
 const systemItems: NavItem[] = [
+  { title: 'Middleware', icon: 'mdi-transfer-right', to: '/middleware' },
   { title: 'Settings', icon: 'mdi-cog', to: '/settings' },
 ]
 </script>

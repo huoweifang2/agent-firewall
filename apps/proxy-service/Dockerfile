@@ -1,9 +1,13 @@
 # ── Stage 1: Builder ────────────────────────────────────
 FROM python:3.12-slim AS builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN echo "Acquire::ForceIPv4 \"true\";" > /etc/apt/apt.conf.d/99force-ipv4 && \
+    sed -i -e "s/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/g" \
+           -e "s/security.debian.org\/debian-security/mirrors.tuna.tsinghua.edu.cn\/debian-security/g" \
+           /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
+
+RUN apt-get update -y --fix-missing && apt-get install -y --no-install-recommends --fix-missing \
     build-essential g++ \
-    # WeasyPrint system deps (build time)
     libpango-1.0-0 libpangocairo-1.0-0 libpangoft2-1.0-0 \
     libgdk-pixbuf-2.0-0 libffi-dev libcairo2 libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
@@ -18,8 +22,12 @@ RUN pip install --no-cache-dir uv && \
 # ── Stage 2: Runtime ────────────────────────────────────
 FROM python:3.12-slim
 
-# WeasyPrint runtime system deps
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN echo "Acquire::ForceIPv4 \"true\";" > /etc/apt/apt.conf.d/99force-ipv4 && \
+    sed -i -e "s/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/g" \
+           -e "s/security.debian.org\/debian-security/mirrors.tuna.tsinghua.edu.cn\/debian-security/g" \
+           /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
+
+RUN apt-get update -y --fix-missing && apt-get install -y --no-install-recommends --fix-missing \
     libpango-1.0-0 libpangocairo-1.0-0 libpangoft2-1.0-0 \
     libgdk-pixbuf-2.0-0 libcairo2 libglib2.0-0 \
     fonts-liberation fonts-dejavu-core \

@@ -12,7 +12,7 @@ from src.agent.nodes.policy import policy_check_node
 from src.agent.nodes.post_tool_gate import post_tool_gate_node
 from src.agent.nodes.pre_tool_gate import pre_tool_gate_node
 from src.agent.nodes.response import response_node
-from src.agent.nodes.tools import tool_executor_node, tool_router_node
+from src.agent.nodes.tools import tool_executor_node
 from src.agent.state import AgentState
 
 
@@ -23,12 +23,20 @@ def _after_input(state: AgentState) -> str:
     return "intent"
 
 
-def _should_call_tools(state: AgentState) -> str:
-    """Decide whether to execute tools or skip to LLM."""
+def _after_llm_call(state: AgentState) -> str:
+    """Decide whether LLM returned tool calls or a final response."""
+    # Check limit again
+    if state.get("limit_exceeded"):
+        return "memory"
+    fw = state.get("firewall_decision", {})
+    if fw.get("decision") == "BLOCK":
+        return "memory"
+
     plan = state.get("tool_plan", [])
     if plan:
         return "pre_tool_gate"
-    return "llm_call"
+        
+    return "response"
 
 
 def _after_gate(state: AgentState) -> str:
@@ -65,18 +73,6 @@ def _confirmation_response_node(state: AgentState) -> AgentState:
     }
 
 
-def _check_blocked(state: AgentState) -> str:
-    """After LLM call, check if response was blocked by firewall or limits."""
-    # Limit exceeded after LLM call (token budget, spec 06)
-    if state.get("limit_exceeded"):
-        return "memory"
-    fw = state.get("firewall_decision", {})
-    if fw.get("decision") == "BLOCK":
-        # Skip to memory (final_response already set by llm_call_node)
-        return "memory"
-    return "response"
-
-
 def build_agent_graph() -> StateGraph:
     """Build and compile the agent LangGraph."""
     graph = StateGraph(AgentState)
@@ -85,7 +81,6 @@ def build_agent_graph() -> StateGraph:
     graph.add_node("input", input_node)
     graph.add_node("intent", intent_node)
     graph.add_node("policy_check", policy_check_node)
-    graph.add_node("tool_router", tool_router_node)
     graph.add_node("pre_tool_gate", pre_tool_gate_node)
     graph.add_node("tool_executor", tool_executor_node)
     graph.add_node("post_tool_gate", post_tool_gate_node)
@@ -97,7 +92,7 @@ def build_agent_graph() -> StateGraph:
     # Wire edges
     graph.set_entry_point("input")
 
-    # After input: check limits (spec 06) — short-circuit if exceeded
+    # After input: check limits
     graph.add_conditional_edges(
         "input",
         _after_input,
@@ -107,19 +102,20 @@ def build_agent_graph() -> StateGraph:
         },
     )
     graph.add_edge("intent", "policy_check")
-    graph.add_edge("policy_check", "tool_router")
+    graph.add_edge("policy_check", "llm_call")
 
-    # Conditional: tool_router → pre_tool_gate (if tools planned) or llm_call (no tools)
+    # After LLM → check if tools called
     graph.add_conditional_edges(
-        "tool_router",
-        _should_call_tools,
+        "llm_call",
+        _after_llm_call,
         {
             "pre_tool_gate": "pre_tool_gate",
-            "llm_call": "llm_call",
+            "response": "response",
+            "memory": "memory",
         },
     )
 
-    # After gate → execute, skip to LLM (all blocked), or ask confirmation
+    # After gate → execute, skip back to LLM (if all blocked), or ask confirmation
     graph.add_conditional_edges(
         "pre_tool_gate",
         _after_gate,
@@ -136,17 +132,6 @@ def build_agent_graph() -> StateGraph:
 
     # Confirmation response → memory → END (returns to user)
     graph.add_edge("confirmation_response", "memory")
-
-    # After LLM → check if blocked
-    graph.add_conditional_edges(
-        "llm_call",
-        _check_blocked,
-        {
-            "memory": "memory",
-            "response": "response",
-        },
-    )
-
     graph.add_edge("response", "memory")
     graph.add_edge("memory", END)
 

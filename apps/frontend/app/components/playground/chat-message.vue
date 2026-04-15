@@ -84,6 +84,41 @@
         <div class="verdict-card__section-title mb-1">Final outcome</div>
         <!-- eslint-disable-next-line vue/no-v-html -- sanitized by DOMPurify -->
         <div class="text-body-2 chat-message__content verdict-card__response" v-html="renderedClean" />
+
+      <!-- 6 · TOOLS CALLED (折叠显示的工具卡片) -->
+      <div v-if="message.tools_called?.length" class="verdict-card__body mt-4">
+        <v-divider class="mb-4" />
+        <div class="verdict-card__section-title mb-2">
+          <v-icon size="small" class="mr-1">mdi-tools</v-icon>
+          Tools Executed ({{ message.tools_called.length }})
+        </div>
+        <v-expansion-panels variant="accordion" class="bg-transparent elevation-0">
+          <v-expansion-panel
+            v-for="(tool, i) in message.tools_called"
+            :key="i"
+            class="bg-transparent elevation-0 border rounded mb-2"
+          >
+            <v-expansion-panel-title class="pa-3 text-caption font-weight-medium bg-surface-light">
+              <v-icon size="small" class="mr-2 text-primary">mdi-wrench-outline</v-icon>
+              {{ tool.name || tool?.function?.name || 'Unnamed Tool' }}
+            </v-expansion-panel-title>
+            
+            <v-expansion-panel-text class="pa-0">
+              <div class="bg-surface-variant pa-3 text-caption font-weight-mono" style="overflow-x: auto;">
+                <div class="text-primary mb-1">Arguments:</div>
+                <pre class="mb-3" style="white-space: pre-wrap">{{ JSON.stringify(tool.args || tool?.function?.arguments, null, 2) }}</pre>
+                
+                <template v-if="tool.result">
+                  <v-divider class="my-2" />
+                  <div class="text-success mb-1">Result:</div>
+                  <pre style="white-space: pre-wrap">{{ tool.result }}</pre>
+                </template>
+              </div>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+      </div>
+
       </div>
     </div>
 
@@ -97,6 +132,35 @@
       <v-card-text class="text-body-1 chat-message__content">
         <!-- eslint-disable-next-line vue/no-v-html -- sanitized by DOMPurify -->
         <div v-html="renderedRaw" />
+
+        <!-- 渲染原生 Tool Calls -->
+        <div v-if="message.tool_calls?.length" class="mt-2">
+          <v-expansion-panels variant="accordion" class="bg-transparent elevation-0">
+            <v-expansion-panel
+              v-for="tc in message.tool_calls"
+              :key="tc.id"
+              class="bg-transparent elevation-0 border rounded mb-2"
+            >
+              <v-expansion-panel-title class="pa-3 text-caption font-weight-medium bg-surface-light">
+                <v-icon size="small" class="mr-2 text-primary">mdi-wrench</v-icon>
+                {{ tc.function.name }}()
+              </v-expansion-panel-title>
+              <v-expansion-panel-text class="pa-0">
+                <div class="bg-surface-variant pa-3 text-caption font-weight-mono" style="overflow-x: auto;">
+                  <pre style="white-space: pre-wrap">{{ tc.function.arguments }}</pre>
+                </div>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
+        </div>
+
+        <!-- 当前如果是 tool 角色的返回信息，给个特殊样式标识 -->
+        <div v-if="message.role === 'tool'" class="text-caption text-medium-emphasis mt-2 pa-2 bg-surface-variant rounded">
+          <v-icon size="14" class="mr-1">mdi-check-circle-outline</v-icon>
+          Tool result returned: 
+          <pre class="mt-1" style="white-space: pre-wrap; font-size: 11px;">{{ message.content }}</pre>
+        </div>
+
       </v-card-text>
     </v-card>
   </div>
