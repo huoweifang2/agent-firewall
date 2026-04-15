@@ -26,7 +26,12 @@ git clone https://github.com/Szesnasty/agent-firewall.git
 cd agent-firewall
 make demo
 ```
-
+```
+Infrastructure started. Run apps locally:
+    cd apps/proxy-service && uv run uvicorn src.main:app --reload --port 8000
+    cd apps/agent-demo && uv run uvicorn src.main:app --reload --port 8002
+    cd apps/frontend && npm run dev
+```
 Open **http://localhost:3000**. `make demo` starts the full stack: proxy firewall, two test agents (LangGraph + pure Python), a mock chat target, and built-in security packs.
 
 1. Open **Security Scan** → select the demo target → run the scan

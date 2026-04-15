@@ -112,6 +112,8 @@
             </v-btn>
           </v-card-text>
         </v-card>
+      </v-col>
+    </v-row>
 
     <!-- Add Key Dialog -->
     <v-dialog v-model="addDialog" max-width="480" persistent>

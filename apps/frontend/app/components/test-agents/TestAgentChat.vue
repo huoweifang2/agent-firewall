@@ -125,6 +125,7 @@
 
       <v-col v-if="chatMode === 'llm'" cols="auto" class="d-flex align-center ga-2">
         <v-chip
+          v-if="selectedModelProvider === 'mock'"
           size="small"
           color="success"
           variant="tonal"

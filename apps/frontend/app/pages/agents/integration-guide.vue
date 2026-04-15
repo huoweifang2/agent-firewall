@@ -342,7 +342,7 @@ docker compose --profile full up -d
 #   frontend       → :3000  (management UI)
 #   db             → :5432  (PostgreSQL)
 #   redis          → :6379  (cache)
-#   langfuse       → :3001  (tracing, optional)
+#   langfuse       → :3001  (tracing, optional)</code></pre>
       </v-sheet>
 
       <v-table density="compact" class="guide-table mb-4">

@@ -84,12 +84,12 @@ class Settings(BaseSettings):
     ]
 
     # Security scanners
-    enable_llm_guard: bool = True
-    enable_nemo_guardrails: bool = True
+    enable_llm_guard: bool = False
+    enable_nemo_guardrails: bool = False
     scanner_timeout: int = 30  # Max seconds per scanner
 
     # Presidio PII
-    enable_presidio: bool = True
+    enable_presidio: bool = False
     presidio_language: str = "en"
     presidio_score_threshold: float = 0.4
     presidio_spacy_model: str = "en_core_web_sm"  # en_core_web_lg for prod
