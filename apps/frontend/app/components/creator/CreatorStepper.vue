@@ -24,9 +24,6 @@
     <template #item.6>
       <slot name="step-6" />
     </template>
-    <template #item.7>
-      <slot name="step-7" />
-    </template>
 
     <template #actions>
       <div class="d-flex justify-space-between pa-4">
@@ -41,7 +38,7 @@
         <v-spacer v-else />
 
         <v-btn
-          v-if="currentStep < 7"
+          v-if="currentStep < 6"
           color="primary"
           append-icon="mdi-arrow-right"
           :disabled="!stepValid"
@@ -84,13 +81,12 @@ const stepItems = [
   { title: 'Register Tools', value: 2 },
   { title: 'Define Roles', value: 3 },
   { title: 'Configure Security', value: 4 },
-  { title: 'Generate Kit', value: 5 },
-  { title: 'Validate', value: 6 },
-  { title: 'Deploy', value: 7 },
+  { title: 'Validate', value: 5 },
+  { title: 'Deploy', value: 6 },
 ]
 
 const next = () => {
-  if (currentStep.value < 7) currentStep.value++
+  if (currentStep.value < 6) currentStep.value++
 }
 
 const prev = () => {

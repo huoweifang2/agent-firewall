@@ -75,27 +75,29 @@ def wrap_tool_results(tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return []
 
     messages = []
+    import uuid
 
-    assistant_tool_calls = []
     for tc in tool_calls:
-        call_id = tc.get("id") or "call_unknown"
-        assistant_tool_calls.append({
+        call_id = tc.get("id")
+        if not call_id or call_id == "call_unknown":
+            call_id = f"call_{uuid.uuid4().hex[:8]}"
+            tc["id"] = call_id
+
+        assistant_tool = {
             "id": call_id,
             "type": "function",
             "function": {
                 "name": tc.get("tool", "unknown"),
                 "arguments": json.dumps(tc.get("args", {}))
             }
+        }
+        
+        messages.append({
+            "role": "assistant",
+            "content": None,
+            "tool_calls": [assistant_tool]
         })
-
-    messages.append({
-        "role": "assistant",
-        "content": None,
-        "tool_calls": assistant_tool_calls
-    })
-
-    for tc in tool_calls:
-        call_id = tc.get("id") or "call_unknown"
+        
         tool_name = tc.get("tool", "unknown")
         allowed = tc.get("allowed", False)
         result_text = tc.get("sanitized_result", tc.get("result", ""))
@@ -109,13 +111,13 @@ def wrap_tool_results(tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
             status = "OK"
 
         prefix = TOOL_OUTPUT_PREFIX.format(tool_name=tool_name)
-        content = f"{prefix}[Status: {status}]\n{result_text}{TOOL_OUTPUT_SUFFIX}"
+        content_text = f"{prefix}[Status: {status}]\n{result_text}{TOOL_OUTPUT_SUFFIX}"
 
         messages.append({
             "role": "tool",
             "tool_call_id": call_id,
             "name": tool_name,
-            "content": content
+            "content": content_text
         })
 
     return messages

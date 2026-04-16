@@ -94,7 +94,22 @@
         </div>
 
         <!-- 6 · TOOL CALLS — expandable per-tool details -->
-        <div v-if="message.tools_called?.length" class="verdict-card__section">
+        <div v-if="message.blocks?.length" class="verdict-card__section">
+          <div class="verdict-card__tools">
+            <template v-for="(block, idx) in message.blocks" :key="idx">
+              <div v-if="block.type === 'text' && cleanTextBlock(block.content)" class="verdict-card__text-block text-body-2 mb-2 mt-2" style="white-space: pre-wrap">
+                {{ cleanTextBlock(block.content) }}
+              </div>
+              <agent-tool-call-chip
+                v-else-if="block.type === 'tool' && block.tool"
+                :tool="block.tool"
+                :verdict="decision?.decision"
+                class="my-2"
+              />
+            </template>
+          </div>
+        </div>
+        <div v-else-if="message.tools_called?.length" class="verdict-card__section">
           <span class="verdict-card__section-title">Tool calls</span>
           <div class="verdict-card__tools">
             <agent-tool-call-chip
@@ -111,7 +126,7 @@
         </v-expansion-panels>
         
              <!-- 7 · RESPONSE CONTENT — at the bottom, quietest -->
-        <div v-if="cleanContent" class="verdict-card__body">
+        <div v-if="!message.blocks?.length && cleanContent" class="verdict-card__body">
           <v-divider class="mb-4" />
           <div class="verdict-card__section-title mb-1">Final outcome</div>
           <div class="text-body-2 verdict-card__response">{{ cleanContent }}</div>
@@ -328,6 +343,11 @@ const cleanContent = computed(() => {
   const c = (props.message.content ?? '').replace(/^⛔\s*/, '').trim()
   return c || ''
 })
+
+function cleanTextBlock(content?: string): string {
+  if (!content) return '';
+  return content.replace(/^⛔\s*/, '').trim();
+}
 </script>
 
 <style lang="scss" scoped>

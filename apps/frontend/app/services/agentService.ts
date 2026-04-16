@@ -20,8 +20,10 @@ export const agentService = {
   async chat(request: AgentChatRequest): Promise<AgentChatResponse> {
     const headers: Record<string, string> = {}
 
-    // Retrieve middleware config from localStorage
-    if (typeof window !== 'undefined') {
+    // Use requested middlewares or fallback to localStorage
+    if (request.middlewares) {
+      headers['x-middlewares'] = request.middlewares
+    } else if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('middleware-config')
       if (stored) {
         headers['x-middlewares'] = stored
@@ -41,5 +43,79 @@ export const agentService = {
 
     const { data } = await agentApi.post<AgentChatResponse>('/agent/chat', request, { headers })
     return data
+  },
+
+  async *streamChat(request: AgentChatRequest): AsyncGenerator<{ event: string; data: any }> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'x-correlation-id': crypto.randomUUID()
+    }
+
+    if (request.middlewares) {
+      headers['x-middlewares'] = request.middlewares
+    } else if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('middleware-config')
+      if (stored) {
+        headers['x-middlewares'] = stored
+      }
+    }
+
+    if (request.model) {
+      const provider = detectProviderClient(request.model)
+      if (provider) {
+        const apiKey = getKey(provider)
+        if (apiKey) {
+          headers['x-api-key'] = apiKey
+        }
+      }
+    }
+
+    const response = await fetch(`${baseURL}/agent/chat`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(request)
+    })
+
+    if (!response.ok) {
+      let errText = response.statusText
+      try {
+        const errData = await response.json()
+        errText = errData.detail || errText
+      } catch {}
+      throw new Error(`Chat API failed: ${response.status} ${errText}`)
+    }
+
+    if (!response.body) {
+      throw new Error('No response body')
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      
+      const lines = buffer.split('\n\n')
+      buffer = lines.pop() || ''
+      
+      for (const chunk of lines) {
+        if (!chunk.trim()) continue
+        const eventMatch = chunk.match(/event:\s*(.+)/)
+        const dataMatch = chunk.match(/data:\s*(.+)/)
+        
+        if (eventMatch && dataMatch) {
+          const event = eventMatch[1].trim()
+          try {
+            const data = JSON.parse(dataMatch[1].trim())
+            yield { event, data }
+          } catch (e) {
+            console.error('Failed to parse SSE data:', dataMatch[1])
+          }
+        }
+      }
+    }
   },
 }

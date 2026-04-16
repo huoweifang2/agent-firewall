@@ -6,6 +6,7 @@ export interface AgentChatRequest {
   session_id: string
   policy?: string
   model?: string
+  middlewares?: string
 }
 
 export interface ToolCall {
@@ -40,10 +41,17 @@ export interface AgentChatResponse {
   firewall_decision: FirewallDecision
 }
 
+export interface AgentMessageBlock {
+  type: 'text' | 'tool'
+  content?: string
+  tool?: ToolCall
+}
+
 export interface AgentMessage {
   id: string
   role: 'user' | 'assistant' | 'system'
   content: string
+  blocks?: AgentMessageBlock[]
   tools_called?: ToolCall[]
   agent_trace?: AgentTrace
   firewall_decision?: FirewallDecision

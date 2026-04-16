@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import json
 import time
 
 import structlog
 from fastapi import APIRouter, Header
+from fastapi.responses import StreamingResponse
 
 from src.agent.graph import get_agent_graph
 from src.config import get_settings
@@ -21,15 +23,14 @@ logger = structlog.get_logger()
 router = APIRouter(tags=["agent"])
 
 
-@router.post("/agent/chat", response_model=AgentChatResponse)
+@router.post("/agent/chat")
 async def agent_chat(
     body: AgentChatRequest,
     x_api_key: str | None = Header(default=None),
     x_middlewares: str | None = Header(default=None),
-) -> AgentChatResponse:
-    """Run the agent graph and return structured response."""
+):
+    """Stream the agent graph execution."""
     settings = get_settings()
-    start = time.perf_counter()
 
     # Build initial state
     initial_state = {
@@ -42,55 +43,65 @@ async def agent_chat(
         "x_middlewares": x_middlewares,
     }
 
-    # Run the agent graph
     graph = get_agent_graph()
-    result = await graph.ainvoke(initial_state)
 
-    elapsed_ms = int((time.perf_counter() - start) * 1000)
+    async def event_generator():
+        start = time.perf_counter()
+        
+        async for event in graph.astream_events(initial_state, version="v2"):
+            kind = event["event"]
+            
+            if kind == "on_chat_model_stream":
+                chunk = event["data"]["chunk"]
+                if chunk.content:
+                    yield f"event: chunk\ndata: {json.dumps({'content': chunk.content})}\n\n"
+                    
+            elif kind == "on_tool_start":
+                kwargs = event["data"].get("input")
+                yield f"event: tool_start\ndata: {json.dumps({'name': event['name'], 'kwargs': kwargs})}\n\n"
+                
+            elif kind == "on_tool_end":
+                output = event["data"].get("output", {})
+                if isinstance(output, dict):
+                    result = output.get("result", "")
+                    allowed = output.get("allowed", True)
+                else:
+                    result = str(output)
+                    allowed = True
+                yield f"event: tool_end\ndata: {json.dumps({'result': result, 'allowed': allowed})}\n\n"
+                
+            elif kind == "on_chain_end" and event["name"] == "LangGraph":
+                final_state = event["data"]["output"]
+                
+                response_obj = AgentChatResponse(
+                    session_id=final_state.get("session_id", ""),
+                    response=final_state.get("final_response", ""),
+                    tools_called=[
+                        ToolCallInfo(
+                            tool=t.get("tool", ""),
+                            args=t.get("args", {}),
+                            result_preview=str(t.get("result", "")),
+                            allowed=t.get("allowed", True),
+                            blocked_reason=t.get("post_gate", {}).get("reason") if t.get("post_gate") else None,
+                        )
+                        for t in final_state.get("tool_calls", [])
+                    ],
+                    agent_trace=AgentTrace(
+                        intent=final_state.get("intent", "unknown"),
+                        user_role=final_state.get("user_role", "customer"),
+                        allowed_tools=final_state.get("allowed_tools", []),
+                        iterations=final_state.get("iterations", 0),
+                        latency_ms=int((time.perf_counter() - start) * 1000),
+                    ),
+                    firewall_decision=FirewallDecision(
+                        decision=final_state.get("firewall_decision", {}).get("decision", "UNKNOWN") if final_state.get("firewall_decision") else "UNKNOWN",
+                        risk_score=final_state.get("firewall_decision", {}).get("risk_score", 0.0) if final_state.get("firewall_decision") else 0.0,
+                        intent=final_state.get("firewall_decision", {}).get("intent", "") if final_state.get("firewall_decision") else "",
+                        risk_flags=final_state.get("firewall_decision", {}).get("risk_flags", {}) if final_state.get("firewall_decision") else {},
+                        blocked_reason=final_state.get("firewall_decision", {}).get("blocked_reason") if final_state.get("firewall_decision") else None,
+                    ),
+                    trace=final_state.get("trace", {}),
+                )
+                yield f"event: final\ndata: {response_obj.model_dump_json()}\n\n"
 
-    # Build response
-    tool_calls_info = [
-        ToolCallInfo(
-            tool=tc["tool"],
-            args=tc.get("args", {}),
-            result_preview=tc.get("result", "")[:200],
-            allowed=tc.get("allowed", True),
-            blocked_reason=tc.get("result", "")[:200] if not tc.get("allowed", True) else None,
-        )
-        for tc in result.get("tool_calls", [])
-    ]
-
-    fw = result.get("firewall_decision", {})
-
-    response = AgentChatResponse(
-        response=result.get("final_response", "No response generated."),
-        session_id=body.session_id,
-        tools_called=tool_calls_info,
-        agent_trace=AgentTrace(
-            intent=result.get("intent", "unknown"),
-            user_role=body.user_role,
-            allowed_tools=result.get("allowed_tools", []),
-            iterations=result.get("iterations", 0),
-            latency_ms=elapsed_ms,
-        ),
-        firewall_decision=FirewallDecision(
-            decision=fw.get("decision", "UNKNOWN"),
-            risk_score=fw.get("risk_score", 0.0),
-            intent=fw.get("intent", ""),
-            risk_flags=fw.get("risk_flags", {}),
-            blocked_reason=fw.get("blocked_reason"),
-        ),
-        trace=result.get("trace", {}),
-    )
-
-    logger.info(
-        "agent_chat",
-        session_id=body.session_id,
-        role=body.user_role,
-        intent=result.get("intent"),
-        tools=len(tool_calls_info),
-        decision=fw.get("decision"),
-        latency_ms=elapsed_ms,
-    )
-
-    return response
+    return StreamingResponse(event_generator(), media_type="text/event-stream")

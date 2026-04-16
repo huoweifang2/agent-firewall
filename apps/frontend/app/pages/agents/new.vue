@@ -51,15 +51,11 @@
       </template>
 
       <template #step-5>
-        <creator-step-kit v-if="agentId" :agent-id="agentId" @valid="v => stepValidity[5] = v" />
+        <creator-step-validate v-if="agentId" :agent-id="agentId" @valid="v => stepValidity[5] = v" />
       </template>
 
       <template #step-6>
-        <creator-step-validate v-if="agentId" :agent-id="agentId" @valid="v => stepValidity[6] = v" />
-      </template>
-
-      <template #step-7>
-        <creator-step-deploy v-if="agentId" :agent-id="agentId" @valid="v => stepValidity[7] = v" />
+        <creator-step-deploy v-if="agentId" :agent-id="agentId" @valid="v => stepValidity[6] = v" />
       </template>
     </creator-stepper>
   </v-container>
@@ -89,7 +85,6 @@ const stepValidity = reactive<Record<number, boolean>>({
   4: false,
   5: false,
   6: false,
-  7: false,
 })
 
 const stepValid = computed(() => stepValidity[currentStep.value] ?? false)

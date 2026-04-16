@@ -7,6 +7,21 @@
 
     <v-card-text>
       <v-select
+        :model-value="agentId"
+        :items="agentItems"
+        :loading="isAgentsLoading"
+        :disabled="disabled"
+        label="Agent"
+        variant="outlined"
+        density="compact"
+        hide-details
+        item-title="name"
+        item-value="id"
+        class="mb-4"
+        @update:model-value="$emit('update:agentId', $event)"
+      />
+
+      <v-select
         :model-value="role"
         :items="roleItems"
         :disabled="disabled"
@@ -65,9 +80,11 @@
 import { computed } from 'vue'
 import { usePolicies } from '~/composables/usePolicies'
 import { useModels } from '~/composables/useModels'
+import { useAgents } from '~/composables/useAgents'
 import { sortedPolicyItems } from '~/utils/policyOrder'
 
 defineProps<{
+  agentId?: string | null
   role: 'customer' | 'admin'
   policy: string | null
   model: string
@@ -75,14 +92,17 @@ defineProps<{
 }>()
 
 defineEmits<{
+  'update:agentId': [value: string | null]
   'update:role': [value: 'customer' | 'admin']
   'update:policy': [value: string | null]
   'update:model': [value: string]
   'new-conversation': []
 }>()
 
+const { agents, isLoading: isAgentsLoading } = useAgents()
 const { policies, isLoading: isPoliciesLoading } = usePolicies()
 const { groupedModels, isLoading: isModelsLoading } = useModels()
+
 const roleItems = [
   { title: 'Customer', value: 'customer' },
   { title: 'Admin', value: 'admin' },
@@ -97,6 +117,8 @@ const PROVIDER_LABELS: Record<string, string> = {
   openrouter: 'OpenRouter',
   mock: 'Demo',
 }
+
+const agentItems = computed(() => agents.value ?? [])
 
 /** Only show models that are available (providers with key). */
 const modelItems = computed(() =>

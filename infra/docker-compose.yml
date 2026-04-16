@@ -118,58 +118,10 @@ services:
       # Client-side (browser) → calls host machine ports
       NUXT_PUBLIC_API_BASE: http://localhost:8000
       NUXT_PUBLIC_AGENT_API_BASE: http://localhost:8002
-      NUXT_PUBLIC_TEST_AGENT_PYTHON_URL: http://localhost:8003
-      NUXT_PUBLIC_TEST_AGENT_GRAPH_URL: http://localhost:8004
       NUXT_PUBLIC_REFERENCE_CHAT_TARGET_URL: http://localhost:8010
     depends_on:
       - proxy-service
       - agent-demo
-    networks:
-      - agent-firewall
-
-  # ── Test Agents (wizard go-live) ──────────────────────
-
-  test-agent-python:
-    build:
-      context: ../apps/test-agents
-      dockerfile: pure-python-agent/Dockerfile
-    container_name: test-agent-python
-    profiles: ["test-agents"]
-    ports:
-      - "8003:8003"
-    environment:
-      PROXY_URL: http://proxy-service:8000
-      PROXY_POLICY: ${PROXY_POLICY:-balanced}
-      AGENT_ID: ${AGENT_ID_PYTHON:-}
-    depends_on:
-      - proxy-service
-    healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8003/health')\""]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    networks:
-      - agent-firewall
-
-  test-agent-langgraph:
-    build:
-      context: ../apps/test-agents
-      dockerfile: langgraph-agent/Dockerfile
-    container_name: test-agent-langgraph
-    profiles: ["test-agents"]
-    ports:
-      - "8004:8004"
-    environment:
-      PROXY_URL: http://proxy-service:8000
-      PROXY_POLICY: ${PROXY_POLICY:-balanced}
-      AGENT_ID: ${AGENT_ID_LANGGRAPH:-}
-    depends_on:
-      - proxy-service
-    healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8004/health')\""]
-      interval: 10s
-      timeout: 5s
-      retries: 3
     networks:
       - agent-firewall
 

@@ -6,7 +6,7 @@
     <v-card-text>
       <v-form ref="formRef" v-model="formValid">
         <v-row>
-          <v-col cols="12" md="6">
+          <v-col cols="12">
             <v-text-field
               v-model="form.name"
               label="Agent name"
@@ -15,15 +15,6 @@
               prepend-inner-icon="mdi-tag-outline"
               hint="Unique name for your agent"
               persistent-hint
-            />
-          </v-col>
-          <v-col cols="12" md="6">
-            <v-select
-              v-model="form.framework"
-              :items="frameworkOptions"
-              label="Framework"
-              variant="outlined"
-              prepend-inner-icon="mdi-puzzle-outline"
             />
           </v-col>
           <v-col cols="12">
@@ -85,7 +76,7 @@
 
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
-import type { AgentCreate, AgentFramework, AgentEnvironment } from '~/types/wizard'
+import type { AgentCreate,  AgentEnvironment } from '~/types/wizard'
 
 const props = defineProps<{
   initialData?: Partial<AgentCreate>
@@ -99,12 +90,6 @@ const emit = defineEmits<{
 const formRef = ref<InstanceType<typeof import('vuetify/components').VForm> | null>(null)
 const formValid = ref(false)
 const errorMsg = ref('')
-
-const frameworkOptions = [
-  { title: 'LangGraph', value: 'langgraph' as AgentFramework },
-  { title: 'Raw Python', value: 'raw_python' as AgentFramework },
-  { title: 'Proxy Only', value: 'proxy_only' as AgentFramework },
-]
 
 const envOptions = [
   { title: 'Development', value: 'dev' as AgentEnvironment },
@@ -120,7 +105,7 @@ const rules = {
 const form = reactive<AgentCreate>({
   name: props.initialData?.name ?? '',
   description: props.initialData?.description ?? '',
-  framework: props.initialData?.framework ?? 'langgraph',
+  framework: 'langgraph',
   environment: props.initialData?.environment ?? 'dev',
   team: props.initialData?.team ?? null,
   is_public_facing: props.initialData?.is_public_facing ?? false,

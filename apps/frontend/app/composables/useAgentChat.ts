@@ -8,9 +8,11 @@ export function useAgentChat() {
   const error = ref<string | null>(null)
 
   const config = reactive({
+    agentId: null as string | null,
     role: 'customer' as 'customer' | 'admin',
     policy: 'balanced' as string | null,
     model: '' as string,
+    middlewares: '' as string,
   })
 
   const sessionId = ref(generateSessionId())
@@ -58,23 +60,80 @@ export function useAgentChat() {
     isLoading.value = true
 
     try {
-      const response = await agentService.chat({
+      const stream = agentService.streamChat({
         message: text,
         user_role: config.role,
         session_id: sessionId.value,
         model: config.model,
         ...(config.policy ? { policy: config.policy } : {}),
+        middlewares: config.middlewares,
       })
 
+      const msgId = crypto.randomUUID()
       messages.value.push({
-        id: crypto.randomUUID(),
+        id: msgId,
         role: 'assistant',
-        content: response.response,
-        tools_called: response.tools_called,
-        agent_trace: response.agent_trace,
-        firewall_decision: response.firewall_decision,
+        content: '',
+        blocks: [],
+        tools_called: [],
         timestamp: new Date(),
       })
+
+      const assistantMsgIndex = messages.value.length - 1
+
+      for await (const { event, data } of stream) {
+        const msg = messages.value[assistantMsgIndex]
+        
+        switch (event) {
+          case 'chunk':
+            if (data.content) {
+              msg.content += data.content
+              if (!msg.blocks) msg.blocks = []
+              
+              if (msg.blocks.length > 0 && msg.blocks[msg.blocks.length - 1].type === 'text') {
+                msg.blocks[msg.blocks.length - 1].content += data.content
+              } else {
+                msg.blocks.push({ type: 'text', content: data.content })
+              }
+            }
+            break
+            
+          case 'tool_start':
+            if (!msg.tools_called) msg.tools_called = []
+            if (!msg.blocks) msg.blocks = []
+            
+            const newTool = {
+              tool: data.name,
+              args: data.kwargs || {},
+              result_preview: '',
+              allowed: true,
+            }
+            
+            msg.tools_called.push(newTool)
+            msg.blocks.push({ type: 'tool', tool: newTool })
+            break
+            
+          case 'tool_end':
+            if (msg.tools_called && msg.tools_called.length > 0) {
+              const currentTool = msg.tools_called[msg.tools_called.length - 1]
+              currentTool.result_preview = data.result
+              currentTool.allowed = data.allowed
+            }
+            break
+            
+          case 'final':
+            msg.agent_trace = data.agent_trace || data.trace
+            msg.firewall_decision = data.firewall_decision
+            msg.content = data.response || msg.content
+            if (data.tools_called) {
+              msg.tools_called = data.tools_called
+            }
+            break
+        }
+        
+        // Trigger Vue reactivity
+        messages.value.splice(assistantMsgIndex, 1, msg)
+      }
     }
     catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to get response from agent'

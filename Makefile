@@ -16,14 +16,12 @@ endef
 up:
 	@test -f infra/.env || (cp infra/.env.example infra/.env && echo "📋  Created infra/.env from .env.example")
 	$(ensure-benchmark-key)
-	cd infra && MODE=real docker compose --profile full --profile test-agents up --build -d
+	cd infra && MODE=real docker compose --profile full up --build -d
 	@echo ""
 	@echo "🚀  Agent-Firewall is starting (full stack)..."
 	@echo "    Frontend:       http://localhost:3000"
 	@echo "    Proxy API:      http://localhost:8000"
 	@echo "    Agent Demo:     http://localhost:8002"
-	@echo "    Python Agent:   http://localhost:8003"
-	@echo "    LangGraph Agent:http://localhost:8004"
 	@echo "    Langfuse:       http://localhost:3001"
 	@echo ""
 
@@ -53,7 +51,6 @@ setup:
 	@echo "📦 Syncing dependencies with uv..."
 	cd apps/proxy-service && uv sync
 	cd apps/agent-demo && uv sync
-	cd apps/test-agents && uv sync
 	cd apps/frontend && npm install
 	@echo "✅ Dependencies synced"
 
@@ -63,10 +60,10 @@ seed:
 
 # ── Docker ──────────────────────────────────────────────
 down:
-	cd infra && docker compose --profile demo --profile full --profile test-agents down
+	cd infra && docker compose --profile demo --profile full down
 
 reset:
-	cd infra && docker compose --profile demo --profile full --profile test-agents down -v
+	cd infra && docker compose --profile demo --profile full down -v
 	@echo "🗑️  All data wiped (volumes removed)"
 
 logs:
@@ -103,7 +100,6 @@ pre-commit:
 test:
 	cd apps/proxy-service && uv run pytest tests/ -v
 	cd apps/agent-demo && uv run pytest tests/ -v
-	cd apps/test-agents && uv run pytest tests/ -v
 
 test-cov:
 	cd apps/proxy-service && uv run pytest tests/ -v --cov=src --cov-report=html

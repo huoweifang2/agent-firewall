@@ -56,13 +56,25 @@
             </ul>
           </v-alert>
 
-          <v-btn
-            color="primary"
-            prepend-icon="mdi-arrow-right"
-            @click="navigateTo(`/agents/${agentId}`)"
-          >
-            Go to Agent Detail
-          </v-btn>
+          <div class="d-flex justify-center mt-4">
+            <v-btn
+              color="secondary"
+              variant="outlined"
+              prepend-icon="mdi-flask"
+              @click="navigateTo('/test-agents')"
+            >
+              Test in Sandbox
+            </v-btn>
+
+            <v-btn
+              color="primary"
+              prepend-icon="mdi-arrow-right"
+              @click="navigateTo(`/agents/${agentId}`)"
+              class="ml-4"
+            >
+              Go to Agent Detail
+            </v-btn>
+          </div>
         </div>
       </template>
     </v-card-text>
