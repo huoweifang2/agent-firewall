@@ -35,7 +35,7 @@ def _after_llm_call(state: AgentState) -> str:
     plan = state.get("tool_plan", [])
     if plan:
         return "pre_tool_gate"
-        
+
     return "response"
 
 

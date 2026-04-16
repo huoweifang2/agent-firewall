@@ -123,11 +123,6 @@ class TestAcompletionModelRouting:
         assert call_kwargs.kwargs["model"] == "openrouter/auto"
         assert call_kwargs.kwargs["api_key"] == "sk-or"
 
-    @pytest.mark.asyncio
-
-
-# ── Test: acompletion receives correct messages + params ─────
-
 
 class TestAcompletionParams:
     """Verify temperature, max_tokens, timeout, and messages are correct."""

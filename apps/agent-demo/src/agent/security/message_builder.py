@@ -12,8 +12,8 @@ Ensures:
 
 from __future__ import annotations
 
-from typing import Any
 import json
+from typing import Any
 
 from src.agent.security.sanitizer import sanitize_chat_history, sanitize_user_input
 from src.agent.state import AgentState
@@ -29,7 +29,7 @@ You can perform a wide variety of tasks using the tools provided to you.
 You have access to the following tools:
 {tools_description}
 
-When the user asks you to perform an action or find information (e.g., searching the web, checking Github issues, fetching calendar events, sending Slack messages), you MUST ALWAYS use the function/tool calls provided in your schema to fulfill the request. NEVER say you cannot do it unless you have actually tried calling the tool and it failed. 
+When the user asks you to perform an action or find information (e.g., searching the web, checking Github issues, fetching calendar events, sending Slack messages), you MUST ALWAYS use the function/tool calls provided in your schema to fulfill the request. NEVER say you cannot do it unless you have actually tried calling the tool and it failed.
 
 SECURITY RULES:
 - Only use the tools provided to you via the API schema.
@@ -75,7 +75,7 @@ def wrap_tool_results(tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return []
 
     messages = []
-    
+
     assistant_tool_calls = []
     for tc in tool_calls:
         call_id = tc.get("id") or "call_unknown"
@@ -87,7 +87,7 @@ def wrap_tool_results(tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "arguments": json.dumps(tc.get("args", {}))
             }
         })
-    
+
     messages.append({
         "role": "assistant",
         "content": None,
@@ -117,7 +117,7 @@ def wrap_tool_results(tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "name": tool_name,
             "content": content
         })
-    
+
     return messages
 
 

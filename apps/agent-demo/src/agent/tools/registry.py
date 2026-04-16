@@ -3,18 +3,18 @@
 from __future__ import annotations
 
 import json
-from typing import Any
-import structlog
 import os
+from typing import Any
+
+import structlog
 from dotenv import load_dotenv
 
-# Ensure environment variables are loaded so os.environ.get sees COMPOSIO_API_KEY
 load_dotenv(".env")
 
-from src.agent.rbac.service import get_rbac_service
-from src.agent.tools.kb import search_knowledge_base
-from src.agent.tools.orders import get_order_status
-from src.agent.tools.secrets import get_internal_secrets
+# Ensure environment variables are loaded so os.environ.get sees COMPOSIO_API_KEY
+from src.agent.tools.kb import search_knowledge_base  # noqa: E402
+from src.agent.tools.orders import get_order_status  # noqa: E402
+from src.agent.tools.secrets import get_internal_secrets  # noqa: E402
 
 try:
     from ddgs import DDGS
@@ -96,7 +96,7 @@ def get_llm_tool_schemas(x_middlewares: str | None, user_role: str, user_id: str
     ])
 
     apps = get_active_composio_apps(x_middlewares)
-    
+
     if "WEB_SEARCH" in apps:
         schemas.append({
             "type": "function",
@@ -116,11 +116,11 @@ def get_llm_tool_schemas(x_middlewares: str | None, user_role: str, user_id: str
     # Convert generic schemas to Composio integrations
     if composio_client and apps:
         try:
-            # Lowercase for the new API 
+            # Lowercase for the new API
             app_slugs = [a.lower() for a in apps if a != "WEB_SEARCH"]
             if app_slugs:
                 session = composio_client.create(user_id=user_id, toolkits=app_slugs, manage_connections=True)
-                composio_tools = session.tools(provider="openai")
+                composio_tools = session.tools()
                 # Composio returns a list of openai tool schema objects: {"type": "function", "function": {...}}
                 schemas.extend(composio_tools)
         except Exception as e:
@@ -131,7 +131,7 @@ def get_llm_tool_schemas(x_middlewares: str | None, user_role: str, user_id: str
 def execute_tool(tool_name: str, args: dict[str, Any], user_id: str = "default_user", apps: list[str] = None) -> str:
     if tool_name in TOOL_FUNCTIONS:
         return TOOL_FUNCTIONS[tool_name](**args)
-        
+
     # Execute Composio natively!
     if composio_client:
         try:
@@ -139,17 +139,31 @@ def execute_tool(tool_name: str, args: dict[str, Any], user_id: str = "default_u
                 apps = []
             app_slugs = [a.lower() for a in apps if a != "WEB_SEARCH"]
             session = composio_client.create(user_id=user_id, toolkits=app_slugs, manage_connections=True)
-            # execute via session
-            # Composio v0.11+ session objects handle execution directly or you can execute via the client
-            # The exact method might vary, but standard pattern is session.execute_action(action=tool_name, params=args)
-            if hasattr(session, "execute_action"):
-                result = session.execute_action(action=tool_name, params=args)
+
+            # Check for meta-tools that we must handle locally
+            if tool_name == "COMPOSIO_MANAGE_CONNECTIONS":
+                # Manually handle in-chat auth logic
+                toolkits_to_auth = args.get("toolkits", args.get("expected_toolkits", app_slugs))
+                if not toolkits_to_auth:
+                    return "Please specify which toolkit you want to connect (e.g. 'github')."
+                slug = toolkits_to_auth[0].lower()
+                conn_request = session.authorize(slug)
+                # For continuous loop, return link and ask user to confirm
+                return f"Action required: Please click this link to authorize {slug.upper()}: {conn_request.redirect_url}\nOnce you are done, just confirm with me here!"
+
+            if hasattr(session, "execute"):
+                res = session.execute(tool_slug=tool_name, arguments=args)
             else:
-                # App fallback for direct execute if session execute doesn't exist
-                result = composio_client.execute_action(action=tool_name, params=args, user_id=user_id)
-            return str(result)
+                res = session.execute_action(action=tool_name, params=args)
+
+            # Ensure we return a string representation of the response
+            if hasattr(res, "model_dump_json"):
+                return res.model_dump_json()
+            elif hasattr(res, "json"):
+                return res.json()
+            return str(res)
         except Exception as e:
             logger.error("composio_execute_error", tool=tool_name, error=str(e))
             return f"Error executing Composio tool {tool_name}: {str(e)}"
-            
+
     return f"Error executing tool {tool_name}: Not found or Composio SDK not initialized."

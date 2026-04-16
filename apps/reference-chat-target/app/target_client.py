@@ -7,10 +7,8 @@ from __future__ import annotations
 
 import logging
 from collections.abc import AsyncGenerator
-from typing import Any
 
 from openai import AsyncOpenAI
-import httpx
 
 from .config import load_settings
 from .models import (

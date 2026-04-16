@@ -13,7 +13,7 @@ from src.config import get_settings
 from src.db.seed import seed_denylist, seed_policies
 from src.db.session import close_db, close_redis, engine
 from src.llm.exceptions import LLMError
-from src.logging import CorrelationIdMiddleware, setup_logging
+from src.logger import CorrelationIdMiddleware, setup_logging
 from src.models import Base
 from src.routers.analytics import router as analytics_router
 from src.routers.chat import router as chat_router

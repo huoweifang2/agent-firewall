@@ -14,12 +14,12 @@ import httpx
 import structlog
 from litellm import acompletion
 from litellm.exceptions import APIError
-from src.agent.tools.registry import get_llm_tool_schemas
 
 from src.agent.limits.config import get_limits_for_role
 from src.agent.limits.service import get_limits_service
 from src.agent.security.message_builder import build_messages
 from src.agent.state import AgentState
+from src.agent.tools.registry import get_llm_tool_schemas
 from src.agent.trace.accumulator import TraceAccumulator
 from src.config import Settings, get_settings
 
@@ -266,16 +266,16 @@ async def llm_call_node(state: AgentState) -> AgentState:
 
         completion_kwargs = direct_kwargs.copy()
         if tool_schemas:
-            # Strip parameter nesting artifacts if any 
+            # Strip parameter nesting artifacts if any
             cleaned_schemas = []
             for t in tool_schemas:
                 if "function" in t and "parameters" in t["function"]:
-                    props = t["function"]["parameters"].get("properties", {})
+                    t["function"]["parameters"].get("properties", {})
                     # Ensure property shape is simple json schema
                     cleaned_schemas.append(t)
                 else:
                     cleaned_schemas.append(t)
-            
+
             completion_kwargs["tools"] = cleaned_schemas
             completion_kwargs["tool_choice"] = "auto"
 
@@ -290,7 +290,7 @@ async def llm_call_node(state: AgentState) -> AgentState:
 
         message = full_resp.choices[0].message
         llm_text = message.content or ""
-        
+
         tool_plan = []
         if getattr(message, "tool_calls", None):
             for tc in message.tool_calls:
@@ -348,7 +348,8 @@ async def llm_call_node(state: AgentState) -> AgentState:
 
     except Exception as e:
         elapsed_ms = int((time.perf_counter() - start) * 1000)
-        logger.error("llm_call_error", error=str(e), elapsed_ms=elapsed_ms)
+        import traceback
+        logger.error("llm_call_error", error=str(e), elapsed_ms=elapsed_ms, traceback=traceback.format_exc())
 
         return {
             **state,

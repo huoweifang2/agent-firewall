@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import httpx
 import structlog
 from fastapi import APIRouter
 
-from src.config import get_settings
 from src.llm.providers import EXTERNAL_MODELS
 from src.schemas.models import ModelInfo, ModelsResponse
 
@@ -25,7 +23,6 @@ async def list_models() -> ModelsResponse:
     External models are always listed — the frontend knows
     which providers have a key stored in browser SessionStorage.
     """
-    settings = get_settings()
 
     models: list[ModelInfo] = []
 

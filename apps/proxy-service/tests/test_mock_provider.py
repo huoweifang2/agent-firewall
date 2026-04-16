@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from src.llm.mock_provider import (
     FALLBACK_RESPONSE,
     MOCK_MODEL_ID,

@@ -91,6 +91,8 @@ services:
     build:
       context: ../apps/agent-demo
     profiles: ["full"]
+    env_file: 
+      - ../apps/agent-demo/.env
     ports:
       - "8002:8002"
     environment:

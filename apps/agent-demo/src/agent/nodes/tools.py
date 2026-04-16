@@ -21,8 +21,8 @@ def _select_tools_for_intent(state: AgentState) -> list[dict]:
     This is a deterministic router — no LLM needed.
     """
     intent = state.get("intent", "unknown")
-    message = state.get("message", "").lower()
     allowed = state.get("allowed_tools", [])
+    message = state.get("message", "").lower()
     plans: list[dict] = []
 
     if intent == "order_query":
@@ -89,7 +89,6 @@ def tool_executor_node(state: AgentState) -> AgentState:
     kept as a safety net.
     """
     plans = state.get("tool_plan", [])
-    allowed = state.get("allowed_tools", [])
     tool_calls: list[ToolCallRecord] = list(state.get("tool_calls", []))
     iterations = state.get("iterations", 0)
     trace = TraceAccumulator(state.get("trace"))
