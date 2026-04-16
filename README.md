@@ -28,13 +28,21 @@ The most common way to run the project for testing or development is starting al
    make setup
    ```
 
-3. **Start the full development environment:**
+3. **Configure API Keys:**
+   Create or edit the `.env` files in `apps/agent-demo/` and `apps/proxy-service/` to include the required API keys for the LLM providers and Composio tools. For example:
+   ```env
+   # Example .env configuration
+   DEEPSEEK_API_KEY="your-deepseek-api-key"
+   COMPOSIO_API_KEY="your-composio-api-key"
+   ```
+
+4. **Start the full development environment:**
    ```bash
    make dev-all
    ```
    *(This starts the backend proxy, agent mock endpoints, frontend portal, as well as the required Docker infrastructure (DB, Redis, Langfuse) concurrently).*
 
-4. **Access the portal:**
+5. **Access the portal:**
    Open **http://localhost:3000** in your browser.
 
 > Note: To cleanly shut down the services and infrastructure, use `Ctrl+C` first to stop the terminal apps, and run `make down` to stop the Docker backend.
@@ -53,6 +61,7 @@ The most common way to run the project for testing or development is starting al
 
 ### 🔍 Agent-Level Enforcement
 Intercepts and enforces policy at two gates during tool execution:
+- **Tool Integrations:** Powered by the Composio SDK for seamless and extensive third-party application execution.
 - **Pre-tool gate:** RBAC, argument injection scan, budget, confirmation
 - **Post-tool gate:** PII redaction, secrets scan, indirect injection
 

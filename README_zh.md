@@ -28,13 +28,21 @@ Agent-Firewall 是一个毕业设计项目，致力于为支持工具调用（To
    make setup
    ```
 
-3. **启动完整开发环境：**
+3. **配置 API 密钥 (API Keys)：**
+   启动应用前，请在 `apps/agent-demo/.env` 与 `apps/proxy-service/.env`（如果不存在请自行创建）中填入你所使用的模型与集成工具的真实 API 密钥。例如：
+   ```env
+   # .env 示例
+   DEEPSEEK_API_KEY="your-deepseek-api-key"
+   COMPOSIO_API_KEY="your-composio-api-key"
+   ```
+
+4. **启动完整开发环境：**
    ```bash
    make dev-all
    ```
    *(该命令会并发启动后端代理、Agent Mock 接口、前端界面，以及必需的 Docker 基础设施如 DB, Redis, Langfuse 等)*
 
-4. **访问前端平台：**
+5. **访问前端平台：**
    在浏览器中打开 **http://localhost:3000**。
 
 > 注意：如果想要干净地关闭服务与基础设施，请先在终端中使用 `Ctrl+C` 停止应用程序进程，随后运行 `make down` 关闭 Docker 后端容器。
@@ -53,6 +61,7 @@ Agent-Firewall 是一个毕业设计项目，致力于为支持工具调用（To
 
 ### 🔍 智能体运行层约束 (Agent-Level Enforcement)
 在智能体执行工具调用的环节，本系统设置了两道关卡拦截并强制执行安全策略：
+- **工具生态集成 (Tool Integrations)：** 基于 Composio SDK 驱动，提供一站式的外部应用与工具挂载能力。
 - **前置评估 (Pre-tool gate)：** 角色权限控制 (RBAC)、参数注入检测、额度预算、用户二次确认
 - **后置评估 (Post-tool gate)：** PII 数据清洗、API 密钥/凭据泄露反扫、防间接注入
 
