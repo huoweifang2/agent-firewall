@@ -76,7 +76,7 @@ const integrations = ref([
   { name: 'WEB_SEARCH', icon: 'mdi-web', enabled: false, preGate: false, postGate: false },
   { name: 'GITHUB', icon: 'mdi-github', enabled: false, preGate: false, postGate: false },
   { name: 'SLACK', icon: 'mdi-slack', enabled: false, preGate: false, postGate: false },
-  { name: 'FILETOOL', icon: 'mdi-folder', enabled: false, preGate: false, postGate: false },
+  { name: 'FILE', icon: 'mdi-folder', enabled: false, preGate: false, postGate: false },
   { name: 'GMAIL', icon: 'mdi-gmail', enabled: false, preGate: false, postGate: false },
 ])
 

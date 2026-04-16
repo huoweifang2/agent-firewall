@@ -70,7 +70,9 @@ def get_active_composio_apps(x_middlewares: str | None) -> list[str]:
         return []
     try:
         middlewares = json.loads(x_middlewares)
-        return [m["name"].upper() for m in middlewares if m.get("enabled")]
+        apps = [m["name"].upper() for m in middlewares if m.get("enabled")]
+        # Transparent backward-compatibility for legacy 'FILETOOL' slug
+        return ["FILE" if a == "FILETOOL" else a for a in apps]
     except Exception:
         return []
 

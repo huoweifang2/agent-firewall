@@ -70,7 +70,7 @@ const PREDEFINED_APPS = [
   { name: 'WEB_SEARCH', icon: 'mdi-web', category: 'Search', description: 'Search the web using DuckDuckGo.', sensitivity: 'low', access_type: 'read' },
   { name: 'GITHUB', icon: 'mdi-github', category: 'Composio', description: 'Interact with GitHub repositories and issues.', sensitivity: 'medium', access_type: 'write' },
   { name: 'SLACK', icon: 'mdi-slack', category: 'Composio', description: 'Send and read messages in Slack workspace.', sensitivity: 'medium', access_type: 'write' },
-  { name: 'FILETOOL', icon: 'mdi-folder', category: 'Composio', description: 'Read and write local or remote files.', sensitivity: 'high', access_type: 'write' },
+  { name: 'FILE', icon: 'mdi-folder', category: 'Composio', description: 'Read and write local or remote files.', sensitivity: 'high', access_type: 'write' },
   { name: 'GMAIL', icon: 'mdi-gmail', category: 'Composio', description: 'Manage and send emails using Gmail.', sensitivity: 'high', access_type: 'write' },
   { name: 'CALENDAR', icon: 'mdi-calendar', category: 'Composio', description: 'Manage calendar events.', sensitivity: 'medium', access_type: 'write' },
 ]
