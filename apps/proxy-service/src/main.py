@@ -156,6 +156,7 @@ app.add_middleware(
         "x-policy",
         "x-api-key",
         "x-correlation-id",
+        "x-middlewares",
     ],
     expose_headers=[
         "x-decision",

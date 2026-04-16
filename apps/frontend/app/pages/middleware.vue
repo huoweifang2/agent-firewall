@@ -3,7 +3,7 @@
     <h1 class="text-h4 mb-4">Middleware Config</h1>
     <p class="mb-6 text-body-1 text-medium-emphasis">
       Manage active Composer toolkits and MCP integrations. 
-      <br />
+      <br >
       <strong>Default behavior is zero-protection.</strong> You must explicitly enable Pre-Gate and Post-Gate interception.
     </p>
 
@@ -26,7 +26,7 @@
           <tr v-for="(tool, i) in integrations" :key="i">
             <td>
               <div class="d-flex align-center">
-                <v-icon :icon="tool.icon" class="mr-2" color="primary"></v-icon>
+                <v-icon :icon="tool.icon" class="mr-2" color="primary"/>
                 <strong>{{ tool.name }}</strong>
               </div>
             </td>
@@ -38,7 +38,7 @@
                 density="compact"
                 class="d-inline-flex"
                 @change="saveConfig"
-              ></v-switch>
+              />
             </td>
             <td class="text-center">
               <v-switch
@@ -49,7 +49,7 @@
                 density="compact"
                 class="d-inline-flex"
                 @change="saveConfig"
-              ></v-switch>
+              />
             </td>
             <td class="text-center">
               <v-switch
@@ -60,7 +60,7 @@
                 density="compact"
                 class="d-inline-flex"
                 @change="saveConfig"
-              ></v-switch>
+              />
             </td>
           </tr>
         </tbody>
@@ -84,7 +84,16 @@ onMounted(() => {
   const saved = localStorage.getItem('middleware-config')
   if (saved) {
     try {
-      integrations.value = JSON.parse(saved)
+      const parsed = JSON.parse(saved)
+      // Merge saved state into the base integrations array
+      for (const p of parsed) {
+        const existing = integrations.value.find(i => i.name === p.name)
+        if (existing) {
+          existing.enabled = p.enabled
+          existing.preGate = p.preGate
+          existing.postGate = p.postGate
+        }
+      }
     } catch (e) {
       console.error(e)
     }

@@ -260,10 +260,9 @@ async def llm_call_node(state: AgentState) -> AgentState:
         # with the complete message set including system prompt and tool
         # results so the model can actually use tool outputs in its answer.
         direct_model, direct_kwargs = _resolve_direct_llm(model_name, api_key, settings)
-        
         x_middlewares = state.get("x_middlewares", "[]")
         role = state.get("user_role", "customer")
-        tool_schemas = get_llm_tool_schemas(x_middlewares, role)
+        tool_schemas = get_llm_tool_schemas(x_middlewares, role, user_id=session_id)
 
         completion_kwargs = direct_kwargs.copy()
         if tool_schemas:

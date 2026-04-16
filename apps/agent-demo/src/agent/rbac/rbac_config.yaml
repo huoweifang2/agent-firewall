@@ -11,6 +11,9 @@ roles:
   customer:
     description: "End-user customer with read-only access to public tools"
     tools:
+      WEB_SEARCH:
+        scopes: [read]
+        sensitivity: low
       searchKnowledgeBase:
         scopes: [read]
         sensitivity: low

@@ -6,6 +6,10 @@ import json
 from typing import Any
 import structlog
 import os
+from dotenv import load_dotenv
+
+# Ensure environment variables are loaded so os.environ.get sees COMPOSIO_API_KEY
+load_dotenv(".env")
 
 from src.agent.rbac.service import get_rbac_service
 from src.agent.tools.kb import search_knowledge_base
@@ -13,14 +17,12 @@ from src.agent.tools.orders import get_order_status
 from src.agent.tools.secrets import get_internal_secrets
 
 try:
-    from duckduckgo_search import DDGS
-    # Function to grab some live duckduckgo results
+    from ddgs import DDGS
     def web_search(query: str) -> str:
         try:
             results = DDGS().text(query, max_results=3)
             if not results:
                 return "No results found."
-            # format the results
             return "\n\n".join([f"Title: {r.get('title')}\nURL: {r.get('href')}\nSnippet: {r.get('body')}" for r in results])
         except Exception as e:
             return f"Search failed: {str(e)}"
@@ -41,7 +43,7 @@ TOOL_FUNCTIONS = {
 composio_client = None
 try:
     if os.environ.get("COMPOSIO_API_KEY"):
-        # Initialize global Composio client if API Key is configured
+        # Initialize global Composio SDK correctly via Composio
         from composio import Composio
         composio_client = Composio(api_key=os.environ.get("COMPOSIO_API_KEY"))
 except ImportError:
@@ -49,11 +51,8 @@ except ImportError:
 except Exception as e:
     logger.warning("composio_init_failed", error=str(e))
 
-
 def get_tools_description(allowed_tools: list[str]) -> str:
-    # We no longer strictly list allowed tools here since we dynamically fetch schemas and LLMs use schemas.
-    # Just return a generic note.
-    return "You have access to the dynamic tools provided in the API tools schema array."
+    return "- WEB_SEARCH: Search the web for real-time information\n- Composio: Execute 100+ integrations dynamically"
 
 def get_allowed_tools(user_role: str) -> list[str]:
     return []
@@ -67,7 +66,7 @@ def get_active_composio_apps(x_middlewares: str | None) -> list[str]:
     except Exception:
         return []
 
-def get_llm_tool_schemas(x_middlewares: str | None, user_role: str) -> list[dict]:
+def get_llm_tool_schemas(x_middlewares: str | None, user_role: str, user_id: str = "default_user") -> list[dict]:
     schemas = []
     schemas.extend([
         {
@@ -96,101 +95,61 @@ def get_llm_tool_schemas(x_middlewares: str | None, user_role: str) -> list[dict
         }
     ])
 
-    # In Advanced Session Mode, if composio is installed and an API key is available,
-    # we return the dynamic meta tools (COMPOSIO_SEARCH_TOOLS, COMPOSIO_MANAGE_CONNECTIONS, etc.)
-    if composio_client:
-        try:
-            # We use a default playground_user for the demo context.
-            # In a real system, you'd extract the user ID from the request state.
-            session = composio_client.create(user_id="playground_user")
-            
-            # Fetch the meta tools for LLM use
-            # Depending on the SDK bindings, this returns schema objects.
-            # Convert them to raw dicts if required by LiteLLM:
-            meta_tools = session.tools()
-            for tool in meta_tools:
-                if hasattr(tool, "model_dump"):
-                    schemas.append({"type": "function", "function": tool.model_dump()})
-                elif hasattr(tool, "to_openai_tool"):
-                    schemas.append(tool.to_openai_tool())
-                elif isinstance(tool, dict):
-                    schemas.append(tool)
-                else:
-                    # Generic fallback based on arbitrary SDK objects
-                    properties = {}
-                    if hasattr(tool, "args_schema") and tool.args_schema:
-                        properties = tool.args_schema.schema()
-                    schemas.append({
-                        "type": "function",
-                        "function": {
-                            "name": tool.name,
-                            "description": tool.description,
-                            "parameters": properties
-                        }
-                    })
-        except Exception as e:
-            logger.error("composio_session_tools_error", error=str(e))
-    
-    # Fallback mock for weather if we don't have composio running
     apps = get_active_composio_apps(x_middlewares)
     
     if "WEB_SEARCH" in apps:
-             schemas.append({
-                 "type": "function",
-                 "function": {
-                     "name": "WEB_SEARCH",
-                     "description": "Search the web for real-time information and URLs using DuckDuckGo.",
-                     "parameters": {
-                         "type": "object",
-                         "properties": {
-                             "query": {"type": "string", "description": "Search query string"}
-                         },
-                         "required": ["query"]
-                     }
-                 }
-             })
+        schemas.append({
+            "type": "function",
+            "function": {
+                "name": "WEB_SEARCH",
+                "description": "Search the web for real-time information and URLs using DuckDuckGo.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string", "description": "Search query string"}
+                    },
+                    "required": ["query"]
+                }
+            }
+        })
 
-    if apps and not composio_client:
-        if "WEATHERMAP" in apps or "OPENWEATHERMAP" in apps:
-             schemas.append({
-                 "type": "function",
-                 "function": {
-                     "name": "WEATHERMAP_WEATHER",
-                     "description": "Get current weather in a city.",
-                     "parameters": {
-                         "type": "object",
-                         "properties": {
-                             "q": {"type": "string", "description": "City name"}
-                         },
-                         "required": ["q"]
-                     }
-                 }
-             })
+    # Convert generic schemas to Composio integrations
+    if composio_client and apps:
+        try:
+            # Lowercase for the new API 
+            app_slugs = [a.lower() for a in apps if a != "WEB_SEARCH"]
+            if app_slugs:
+                session = composio_client.create(user_id=user_id, toolkits=app_slugs, manage_connections=True)
+                composio_tools = session.tools(provider="openai")
+                # Composio returns a list of openai tool schema objects: {"type": "function", "function": {...}}
+                schemas.extend(composio_tools)
+        except Exception as e:
+            logger.error("composio_fetch_schema_error", error=str(e))
 
     return schemas
 
-def execute_tool(tool_name: str, args: dict[str, Any]) -> str:
+def execute_tool(tool_name: str, args: dict[str, Any], user_id: str = "default_user", apps: list[str] = None) -> str:
     if tool_name in TOOL_FUNCTIONS:
         return TOOL_FUNCTIONS[tool_name](**args)
         
-    if tool_name == "WEATHERMAP_WEATHER":
-        city = args.get("q", "Unknown")
-        return f"The current weather in {city} is sunny, 24°C (Mocked response due to missing COMPOSIO_API_KEY)."
-
-    if composio_client and tool_name.startswith("COMPOSIO_"):
+    # Execute Composio natively!
+    if composio_client:
         try:
-            # Recreate session (or store session context in state)
-            session = composio_client.create(user_id="playground_user")
-            
-            # Execute the specific meta-tool (like COMPOSIO_SEARCH_TOOLS or COMPOSIO_MULTI_EXECUTE_TOOL)
-            result = composio_client.tools.execute(
-                name=tool_name,
-                user_id="playground_user",
-                arguments=args
-            )
+            if not apps:
+                apps = []
+            app_slugs = [a.lower() for a in apps if a != "WEB_SEARCH"]
+            session = composio_client.create(user_id=user_id, toolkits=app_slugs, manage_connections=True)
+            # execute via session
+            # Composio v0.11+ session objects handle execution directly or you can execute via the client
+            # The exact method might vary, but standard pattern is session.execute_action(action=tool_name, params=args)
+            if hasattr(session, "execute_action"):
+                result = session.execute_action(action=tool_name, params=args)
+            else:
+                # App fallback for direct execute if session execute doesn't exist
+                result = composio_client.execute_action(action=tool_name, params=args, user_id=user_id)
             return str(result)
         except Exception as e:
-            logger.error("composio_meta_tool_error", tool=tool_name, error=str(e))
-            return f"Error executing Composio Session tool {tool_name}: {str(e)}"
+            logger.error("composio_execute_error", tool=tool_name, error=str(e))
+            return f"Error executing Composio tool {tool_name}: {str(e)}"
             
-    return f"Error executing tool {tool_name}: Composio SDK not initialized."
+    return f"Error executing tool {tool_name}: Not found or Composio SDK not initialized."

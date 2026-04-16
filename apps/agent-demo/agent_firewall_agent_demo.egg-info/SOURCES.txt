@@ -10,6 +10,7 @@ src/main.py
 src/schemas.py
 src/session.py
 src/agent/__init__.py
+src/agent/fix_registry.py
 src/agent/graph.py
 src/agent/state.py
 src/agent/limits/__init__.py
