@@ -245,6 +245,7 @@ def _check_confirmation(tool_name: str, user_role: str = "") -> CheckResult:
 
 def is_tool_protected(tool_name: str, x_middlewares: str) -> bool:
     import json
+
     try:
         mws = json.loads(x_middlewares or "[]")
         for mw in mws:
@@ -256,6 +257,7 @@ def is_tool_protected(tool_name: str, x_middlewares: str) -> bool:
         pass
     # default to protected for internal tools or if unknown
     return True
+
 
 def _evaluate_tool(
     tool_name: str,
@@ -283,7 +285,7 @@ def _evaluate_tool(
             tool=tool_name,
             args=args,
             decision="ALLOW",
-            reason="Unprotected external tool bypassed." ,
+            reason="Unprotected external tool bypassed.",
             checks=[],
             modified_args=args,
             risk_score=0.0,

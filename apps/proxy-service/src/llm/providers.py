@@ -37,6 +37,7 @@ EXTERNAL_MODELS: list[dict[str, str]] = [
     {"id": "mistralai/mistral-large", "provider": "openrouter", "name": "Mistral Large"},
 ]
 
+
 def detect_provider(model: str) -> str:
     """Detect LLM provider from model name.
 
@@ -55,7 +56,7 @@ def format_litellm_model(model: str, provider: str) -> str:
     - OpenAI: ``"gpt-4o"`` (as-is, no prefix)
     - Anthropic: ``"anthropic/claude-sonnet-4-6"`` (needs prefix if not present)
     - Google: ``"gemini/gemini-2.5-flash"`` (as-is if prefixed)
-        """
+    """
     if provider == "deepseek" and not model.startswith("deepseek/"):
         return f"deepseek/{model}"
     if provider != "deepseek" and not model.startswith("openrouter/"):

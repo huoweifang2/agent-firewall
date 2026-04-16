@@ -100,7 +100,7 @@
       >
         <strong>{{ verdictText }}</strong>
         <template v-if="!scenario.passed">
-          <br />
+          <br >
           <span class="text-body-2">
             Expected: <strong>{{ scenario.expected }}</strong>
             &nbsp;→&nbsp; Got: <strong>{{ scenario.actual ?? 'ALLOW' }}</strong>

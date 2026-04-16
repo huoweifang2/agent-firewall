@@ -72,11 +72,11 @@ const {
       />
 
       <agent-traces-table
+        v-model:page="page"
+        v-model:page-size="pageSize"
         :items="items"
         :total="total"
         :loading="isLoading"
-        v-model:page="page"
-        v-model:page-size="pageSize"
         :fetch-detail="fetchDetail"
         :fetch-export="fetchExport"
       />

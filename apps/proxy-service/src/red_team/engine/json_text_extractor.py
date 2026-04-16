@@ -33,7 +33,7 @@ def extract_text(data: Any, paths: list[str]) -> str:
         Newline-joined string of all extracted fragments, or ``""``
         if nothing matched.
     """
-    if not isinstance(data, (dict, list)) or not paths:
+    if not isinstance(data, dict | list) or not paths:
         return ""
 
     fragments: list[str] = []
@@ -86,7 +86,7 @@ def detect_text_paths(data: Any, *, max_paths: int = 5) -> list[str]:
     Paths are returned longest-value-first (most likely to be the AI answer).
     Array indices are replaced with ``*`` for generality.
     """
-    if not isinstance(data, (dict, list)):
+    if not isinstance(data, dict | list):
         return []
     hits: list[tuple[str, int]] = []  # (path, len)
     _detect_walk(data, [], hits)

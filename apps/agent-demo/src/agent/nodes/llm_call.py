@@ -74,7 +74,7 @@ def _track_tokens(response: Any, state: AgentState, model: str) -> dict:
         tokens_out = getattr(usage, "completion_tokens", 0) or 0
 
         # Guard against non-integer values (e.g. from mocks)
-        if not isinstance(tokens_in, (int, float)) or not isinstance(tokens_out, (int, float)):
+        if not isinstance(tokens_in, int | float) or not isinstance(tokens_out, int | float):
             return {}
 
         tokens_in = int(tokens_in)
@@ -295,15 +295,12 @@ async def llm_call_node(state: AgentState) -> AgentState:
         if getattr(message, "tool_calls", None):
             for tc in message.tool_calls:
                 import json
+
                 try:
                     args = json.loads(tc.function.arguments)
                 except Exception:
                     args = {}
-                tool_plan.append({
-                    "id": tc.id,
-                    "tool": tc.function.name,
-                    "args": args
-                })
+                tool_plan.append({"id": tc.id, "tool": tc.function.name, "args": args})
 
         elapsed_ms = int((time.perf_counter() - start) * 1000)
         logger.info("llm_call_ok", elapsed_ms=elapsed_ms, response_len=len(llm_text))
@@ -349,6 +346,7 @@ async def llm_call_node(state: AgentState) -> AgentState:
     except Exception as e:
         elapsed_ms = int((time.perf_counter() - start) * 1000)
         import traceback
+
         logger.error("llm_call_error", error=str(e), elapsed_ms=elapsed_ms, traceback=traceback.format_exc())
 
         return {

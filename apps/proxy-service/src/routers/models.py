@@ -13,7 +13,6 @@ logger = structlog.get_logger()
 router = APIRouter(tags=["models"])
 
 
-
 @router.get("/v1/models", response_model=ModelsResponse)
 async def list_models() -> ModelsResponse:
     """Return catalog of available models.
@@ -28,6 +27,5 @@ async def list_models() -> ModelsResponse:
 
     # External models catalog (always listed)
     models.extend(ModelInfo(**m) for m in EXTERNAL_MODELS)
-
 
     return ModelsResponse(models=models)

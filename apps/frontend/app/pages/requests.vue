@@ -46,13 +46,13 @@ const total = computed(() => data.value?.total ?? 0)
     />
 
     <requests-table
-      :items="items"
-      :total="total"
-      :loading="isLoading"
       v-model:page="page"
       v-model:page-size="pageSize"
       v-model:sort-by="sortBy"
       v-model:sort-order="sortOrder"
+      :items="items"
+      :total="total"
+      :loading="isLoading"
       :fetch-detail="fetchDetail"
     />
   </v-container>

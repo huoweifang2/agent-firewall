@@ -82,7 +82,7 @@ def calculate_risk_score(state: PipelineState) -> float:
             (
                 v
                 for k, v in flags.items()
-                if k.startswith("nemo_") and k != "nemo_blocked" and isinstance(v, (int, float))
+                if k.startswith("nemo_") and k != "nemo_blocked" and isinstance(v, int | float)
             ),
             default=0.0,
         )

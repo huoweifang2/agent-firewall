@@ -4,7 +4,7 @@
       <v-app-bar-nav-icon
         @click="drawer = !drawer"
       />
-      <v-app-bar-title></v-app-bar-title>
+      <v-app-bar-title/>
 
       <template #append>
         <health-indicator />

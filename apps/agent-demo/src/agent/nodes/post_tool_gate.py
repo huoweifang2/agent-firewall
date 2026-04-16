@@ -274,6 +274,7 @@ def check_size(text: str, max_size: int = MAX_TOOL_OUTPUT_SIZE) -> tuple[str, bo
 
 def is_tool_protected(tool_name: str, x_middlewares: str) -> bool:
     import json
+
     try:
         mws = json.loads(x_middlewares or "[]")
         for mw in mws:
@@ -284,11 +285,8 @@ def is_tool_protected(tool_name: str, x_middlewares: str) -> bool:
         pass
     return True
 
-def evaluate_tool_output(
-    tool_name: str,
-    raw_result: str,
-    x_middlewares: str = "[]"
-) -> tuple[str, PostGateResult]:
+
+def evaluate_tool_output(tool_name: str, raw_result: str, x_middlewares: str = "[]") -> tuple[str, PostGateResult]:
     if not is_tool_protected(tool_name, x_middlewares):
         return raw_result, {
             "decision": "PASS",

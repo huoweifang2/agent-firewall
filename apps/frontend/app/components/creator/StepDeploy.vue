@@ -69,8 +69,8 @@
             <v-btn
               color="primary"
               prepend-icon="mdi-arrow-right"
-              @click="navigateTo(`/agents/${agentId}`)"
               class="ml-4"
+              @click="navigateTo(`/agents/${agentId}`)"
             >
               Go to Agent Detail
             </v-btn>

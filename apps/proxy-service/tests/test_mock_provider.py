@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+
 from src.llm.mock_provider import (
     FALLBACK_RESPONSE,
     MOCK_MODEL_ID,
@@ -159,7 +160,6 @@ class TestModeRouting:
         get_settings.cache_clear()
 
     @pytest.mark.asyncio
-
     async def test_demo_mode_stream_returns_async_gen(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """MODE=demo + stream=True → returns async generator from MockProvider."""
         monkeypatch.setenv("MODE", "demo")

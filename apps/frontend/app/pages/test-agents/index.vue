@@ -52,12 +52,12 @@
 
       <div class="agent-page__sidebar">
         <agent-config
-          :agentId="config.agentId"
+          :agent-id="config.agentId"
           :role="config.role"
           :policy="config.policy"
           :model="config.model"
           :disabled="isLoading"
-          @update:agentId="handleTargetAgent"
+          @update:agent-id="handleTargetAgent"
           @update:role="switchRole"
           @update:policy="config.policy = $event"
           @update:model="config.model = $event"

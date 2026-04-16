@@ -47,19 +47,19 @@ async def agent_chat(
 
     async def event_generator():
         start = time.perf_counter()
-        
+
         async for event in graph.astream_events(initial_state, version="v2"):
             kind = event["event"]
-            
+
             if kind == "on_chat_model_stream":
                 chunk = event["data"]["chunk"]
                 if chunk.content:
                     yield f"event: chunk\ndata: {json.dumps({'content': chunk.content})}\n\n"
-                    
+
             elif kind == "on_tool_start":
                 kwargs = event["data"].get("input")
                 yield f"event: tool_start\ndata: {json.dumps({'name': event['name'], 'kwargs': kwargs})}\n\n"
-                
+
             elif kind == "on_tool_end":
                 output = event["data"].get("output", {})
                 if isinstance(output, dict):
@@ -69,10 +69,10 @@ async def agent_chat(
                     result = str(output)
                     allowed = True
                 yield f"event: tool_end\ndata: {json.dumps({'result': result, 'allowed': allowed})}\n\n"
-                
+
             elif kind == "on_chain_end" and event["name"] == "LangGraph":
                 final_state = event["data"]["output"]
-                
+
                 response_obj = AgentChatResponse(
                     session_id=final_state.get("session_id", ""),
                     response=final_state.get("final_response", ""),
@@ -94,11 +94,21 @@ async def agent_chat(
                         latency_ms=int((time.perf_counter() - start) * 1000),
                     ),
                     firewall_decision=FirewallDecision(
-                        decision=final_state.get("firewall_decision", {}).get("decision", "UNKNOWN") if final_state.get("firewall_decision") else "UNKNOWN",
-                        risk_score=final_state.get("firewall_decision", {}).get("risk_score", 0.0) if final_state.get("firewall_decision") else 0.0,
-                        intent=final_state.get("firewall_decision", {}).get("intent", "") if final_state.get("firewall_decision") else "",
-                        risk_flags=final_state.get("firewall_decision", {}).get("risk_flags", {}) if final_state.get("firewall_decision") else {},
-                        blocked_reason=final_state.get("firewall_decision", {}).get("blocked_reason") if final_state.get("firewall_decision") else None,
+                        decision=final_state.get("firewall_decision", {}).get("decision", "UNKNOWN")
+                        if final_state.get("firewall_decision")
+                        else "UNKNOWN",
+                        risk_score=final_state.get("firewall_decision", {}).get("risk_score", 0.0)
+                        if final_state.get("firewall_decision")
+                        else 0.0,
+                        intent=final_state.get("firewall_decision", {}).get("intent", "")
+                        if final_state.get("firewall_decision")
+                        else "",
+                        risk_flags=final_state.get("firewall_decision", {}).get("risk_flags", {})
+                        if final_state.get("firewall_decision")
+                        else {},
+                        blocked_reason=final_state.get("firewall_decision", {}).get("blocked_reason")
+                        if final_state.get("firewall_decision")
+                        else None,
                     ),
                     trace=final_state.get("trace", {}),
                 )

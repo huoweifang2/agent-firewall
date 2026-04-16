@@ -86,7 +86,7 @@ class TestScanResponseContract:
     def test_risk_score_is_float(self):
         for fn in [_scan_allow_response, _scan_block_response]:
             resp = fn()
-            assert isinstance(resp["risk_score"], (int, float))
+            assert isinstance(resp["risk_score"], int | float)
             assert 0.0 <= resp["risk_score"] <= 1.0
 
     def test_risk_flags_is_dict(self):

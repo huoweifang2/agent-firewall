@@ -102,6 +102,7 @@ def tool_executor_node(state: AgentState) -> AgentState:
         # Extract session_id directly from state
         user_id = state.get("session_id", "unknown")
         from src.agent.tools.registry import get_active_composio_apps
+
         apps = get_active_composio_apps(state.get("x_middlewares"))
 
         try:

@@ -65,18 +65,13 @@ class TestDetectProvider:
 
     @pytest.mark.parametrize(
         "model, expected",
-        [
-                                ],
+        [],
     )
     @pytest.mark.asyncio
-
-
     async def test_openai_no_prefix(self) -> None:
         assert format_litellm_model("deepseek/deepseek-chat", "openai") == "deepseek/deepseek-chat"
 
     @pytest.mark.asyncio
-
-
     async def test_anthropic_adds_prefix(self) -> None:
         assert format_litellm_model("claude-sonnet-4-6", "anthropic") == "anthropic/claude-sonnet-4-6"
 

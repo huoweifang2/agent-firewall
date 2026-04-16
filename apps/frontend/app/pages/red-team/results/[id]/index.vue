@@ -356,8 +356,8 @@
               v-for="fail in topFailures"
               :key="fail.scenario_id"
               class="px-0 mb-2"
-              @click="router.push(`/red-team/results/${runId}/scenario/${fail.scenario_id}`)"
               style="cursor: pointer;"
+              @click="router.push(`/red-team/results/${runId}/scenario/${fail.scenario_id}`)"
             >
               <template #prepend>
                 <v-icon
@@ -510,8 +510,8 @@
                 v-for="fail in topFailures"
                 :key="fail.scenario_id"
                 class="px-0 mb-2"
-                @click="router.push(`/red-team/results/${runId}/scenario/${fail.scenario_id}`)"
                 style="cursor: pointer;"
+                @click="router.push(`/red-team/results/${runId}/scenario/${fail.scenario_id}`)"
               >
                 <template #prepend>
                   <v-icon

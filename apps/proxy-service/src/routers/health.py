@@ -52,7 +52,6 @@ async def _check_redis() -> ServiceHealth:
         return ServiceHealth(status="error", detail=_safe_detail(exc))
 
 
-
 async def _check_langfuse(host: str) -> ServiceHealth:
     try:
         async with httpx.AsyncClient(timeout=3.0) as client:
