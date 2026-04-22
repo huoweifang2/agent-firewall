@@ -24,7 +24,8 @@
       <v-select
         :model-value="role"
         :items="roleItems"
-        :disabled="disabled"
+        :loading="isRuntimeLoading"
+        :disabled="disabled || !agentId"
         label="User Role"
         variant="outlined"
         density="compact"
@@ -32,6 +33,16 @@
         class="mb-4"
         @update:model-value="$emit('update:role', $event)"
       />
+
+      <v-alert
+        v-if="agentId && runtimeSpec"
+        variant="tonal"
+        color="info"
+        density="compact"
+        class="mb-4"
+      >
+        Runtime: {{ skills.length }} skills, {{ subAgents.length }} sub-agents, {{ runtimeSpec.tools.length }} tools
+      </v-alert>
 
       <v-select
         :model-value="model"
@@ -77,23 +88,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, toRef, watch } from 'vue'
 import { usePolicies } from '~/composables/usePolicies'
 import { useModels } from '~/composables/useModels'
 import { useAgents } from '~/composables/useAgents'
+import { useAgentRuntimeSpec } from '~/composables/useAgentRuntimeSpec'
 import { sortedPolicyItems } from '~/utils/policyOrder'
 
-defineProps<{
+const props = defineProps<{
   agentId?: string | null
-  role: 'customer' | 'admin'
+  role: string
   policy: string | null
   model: string
   disabled?: boolean
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   'update:agentId': [value: string | null]
-  'update:role': [value: 'customer' | 'admin']
+  'update:role': [value: string]
   'update:policy': [value: string | null]
   'update:model': [value: string]
   'new-conversation': []
@@ -102,11 +114,22 @@ defineEmits<{
 const { agents, isLoading: isAgentsLoading } = useAgents()
 const { policies, isLoading: isPoliciesLoading } = usePolicies()
 const { groupedModels, isLoading: isModelsLoading } = useModels()
+const { runtimeSpec, roles, skills, subAgents, isLoading: isRuntimeLoading } = useAgentRuntimeSpec(toRef(props, 'agentId'))
 
-const roleItems = [
-  { title: 'Customer', value: 'customer' },
-  { title: 'Admin', value: 'admin' },
-]
+const roleItems = computed(() => {
+  if (roles.value.length > 0) {
+    return roles.value.map((role) => ({
+      title: role.name,
+      value: role.name,
+    }))
+  }
+
+  if (props.role) {
+    return [{ title: props.role, value: props.role }]
+  }
+
+  return []
+})
 
 const PROVIDER_LABELS: Record<string, string> = {
   openai: 'OpenAI',
@@ -131,6 +154,20 @@ const modelItems = computed(() =>
 )
 
 const policyItems = computed(() => sortedPolicyItems(policies.value ?? []))
+
+watch(
+  [() => props.agentId, roleItems, runtimeSpec],
+  () => {
+    if (!props.agentId) return
+    const validRoles = roleItems.value.map((item) => item.value)
+    if (validRoles.includes(props.role)) return
+    const fallbackRole = runtimeSpec.value?.default_role ?? validRoles[0]
+    if (fallbackRole) {
+      emit('update:role', fallbackRole)
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <style lang="scss" scoped>

@@ -16,13 +16,16 @@ from src.db.session import async_session
 from src.wizard.models import (
     AccessType,
     Agent,
+    AgentDelegation,
     AgentEnvironment,
     AgentFramework,
     AgentRole,
+    AgentSkill,
     AgentStatus,
     AgentTool,
     RoleToolPermission,
     RolloutMode,
+    SkillScope,
     Sensitivity,
 )
 from src.wizard.services.config_gen import (
@@ -133,6 +136,20 @@ SEED_AGENTS: list[dict] = [
         "tools": ECOMMERCE_TOOLS,
         "roles": ECOMMERCE_ROLES,
         "permissions": ECOMMERCE_PERMISSIONS,
+        "skills": [
+            {
+                "name": "customer_support_tone",
+                "description": "Respond in a concise and helpful customer-support tone.",
+                "scope": SkillScope.SHARED,
+                "prompt_fragment": "Keep responses concise, operational, and customer-facing. Prefer action over explanation.",
+            },
+            {
+                "name": "handoff_to_python_specialist",
+                "description": "Delegate implementation-heavy or data-normalization tasks to the Python specialist.",
+                "scope": SkillScope.MAIN_AGENT,
+                "prompt_fragment": "When the task requires code-heavy transformation or deterministic data reshaping, prefer delegating to the Python Shop Agent.",
+            },
+        ],
     },
     {
         "agent": {
@@ -160,6 +177,14 @@ SEED_AGENTS: list[dict] = [
         "tools": ECOMMERCE_TOOLS,
         "roles": ECOMMERCE_ROLES,
         "permissions": ECOMMERCE_PERMISSIONS,
+        "skills": [
+            {
+                "name": "python_data_processing",
+                "description": "Handle transformation-heavy or deterministic processing tasks.",
+                "scope": SkillScope.SUB_AGENT,
+                "prompt_fragment": "You are the Python specialist. Focus on deterministic processing, normalization, and precise operational outputs.",
+            }
+        ],
     },
 ]
 
@@ -226,6 +251,53 @@ async def _assign_permissions(
             session.add(perm)
 
 
+async def _create_skills(
+    session: AsyncSession,
+    agent: Agent,
+    skills_data: list[dict],
+) -> None:
+    """Create skills for an agent."""
+    for skill_data in skills_data:
+        session.add(AgentSkill(agent_id=agent.id, **skill_data))
+    await session.flush()
+
+
+async def _ensure_seed_extensions(
+    session: AsyncSession,
+    seed_agents_by_name: dict[str, Agent],
+) -> None:
+    """Ensure skills and delegations exist even for already-seeded agents."""
+    for seed_def in SEED_AGENTS:
+        agent_name = seed_def["agent"]["name"]
+        agent = seed_agents_by_name.get(agent_name)
+        if agent is None:
+            continue
+
+        existing_skills = await session.execute(select(AgentSkill).where(AgentSkill.agent_id == agent.id))
+        if existing_skills.scalars().first() is None and seed_def.get("skills"):
+            await _create_skills(session, agent, seed_def["skills"])
+
+    parent = seed_agents_by_name.get("E-commerce Assistant")
+    child = seed_agents_by_name.get("Python Shop Agent")
+    if parent is not None and child is not None:
+        existing_binding = await session.execute(
+            select(AgentDelegation).where(
+                AgentDelegation.parent_agent_id == parent.id,
+                AgentDelegation.child_agent_id == child.id,
+            )
+        )
+        if existing_binding.scalar_one_or_none() is None:
+            session.add(
+                AgentDelegation(
+                    parent_agent_id=parent.id,
+                    child_agent_id=child.id,
+                    delegation_description="Use the Python Shop Agent for implementation-heavy or normalization tasks.",
+                    when_to_delegate="Delegate when the request needs structured data processing, normalization, or deterministic execution.",
+                )
+            )
+            await session.flush()
+
+
 async def _generate_and_cache_config(
     session: AsyncSession,
     agent: Agent,
@@ -272,11 +344,13 @@ async def _seed_one_agent(seed_def: dict) -> None:
 
         if existing is not None:
             # If agent exists but has no generated config, regenerate it
+            await _ensure_seed_extensions(session, {existing.name: existing})
             if existing.generated_config is None:
                 logger.info("seed_regenerate_config", agent=agent_name)
                 await _generate_and_cache_config(session, existing)
                 await session.commit()
             else:
+                await session.commit()
                 logger.debug("seed_agent_exists", name=agent_name)
             return
 
@@ -305,6 +379,10 @@ async def _seed_one_agent(seed_def: dict) -> None:
         await _assign_permissions(session, role_map, tool_map, seed_def["permissions"])
         await session.flush()
 
+        # ── Create skills ───────────────────────────────────────────
+        if seed_def.get("skills"):
+            await _create_skills(session, agent, seed_def["skills"])
+
         # ── Generate config + integration kit ───────────────────────
         await _generate_and_cache_config(session, agent)
 
@@ -323,6 +401,12 @@ async def seed_wizard() -> None:
     """Seed all demo agents with full configuration."""
     for seed_def in SEED_AGENTS:
         await _seed_one_agent(seed_def)
+
+    async with async_session() as session:
+        agents_result = await session.execute(select(Agent))
+        agents = {agent.name: agent for agent in agents_result.scalars().all()}
+        await _ensure_seed_extensions(session, agents)
+        await session.commit()
 
 
 # ═══════════════════════════════════════════════════════════════════════

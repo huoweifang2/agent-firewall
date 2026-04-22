@@ -8,6 +8,7 @@ export type RolloutMode = 'observe' | 'warn' | 'enforce'
 export type AgentStatus = 'draft' | 'active' | 'archived'
 export type AccessType = 'read' | 'write'
 export type Sensitivity = 'low' | 'medium' | 'high' | 'critical'
+export type SkillScope = 'main_agent' | 'sub_agent' | 'shared'
 export type GateDecisionType = 'rbac' | 'injection' | 'pii' | 'budget'
 export type GateAction = 'ALLOW' | 'DENY' | 'BLOCK' | 'REDACT' | 'WARN'
 export type TraceGate = 'pre_tool' | 'post_tool' | 'pre_llm' | 'post_llm'
@@ -179,6 +180,102 @@ export interface PermissionCheckResponse {
   allowed: boolean
   decision: string
   reason: string
+}
+
+// ─── Skills / Delegation ───
+
+export interface SkillRead {
+  id: string
+  agent_id: string
+  name: string
+  description: string
+  scope: SkillScope
+  prompt_fragment: string
+  constraints: Record<string, unknown> | null
+  output_contract: Record<string, unknown> | null
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface DelegationRead {
+  id: string
+  parent_agent_id: string
+  child_agent_id: string
+  child_agent_name: string | null
+  child_agent_description: string | null
+  delegation_description: string
+  when_to_delegate: string
+  sort_order: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+// ─── Runtime Spec ───
+
+export interface RuntimePermissionSpec {
+  tool_name: string
+  scopes: string[]
+  decision: string
+  sensitivity: Sensitivity
+  requires_confirmation: boolean
+}
+
+export interface RuntimeRoleSpec {
+  name: string
+  description: string
+  inherits_from: string | null
+  permissions: RuntimePermissionSpec[]
+  effective_tools: string[]
+}
+
+export interface RuntimeToolSpec {
+  name: string
+  description: string
+  category: string | null
+  provider_type: string
+  provider_ref: string
+  access_type: AccessType
+  sensitivity: Sensitivity
+  requires_confirmation: boolean
+  arg_schema: Record<string, unknown> | null
+  returns_pii: boolean
+  returns_secrets: boolean
+  rate_limit: number | null
+}
+
+export interface RuntimeSkillSpec {
+  name: string
+  description: string
+  scope: SkillScope
+  prompt_fragment: string
+  constraints: Record<string, unknown> | null
+  output_contract: Record<string, unknown> | null
+  sort_order: number
+}
+
+export interface RuntimeSubAgentSpec {
+  agent_id: string
+  name: string
+  description: string
+  delegation_description: string
+  when_to_delegate: string
+  skills_summary: string[]
+}
+
+export interface AgentRuntimeSpec {
+  agent_id: string
+  name: string
+  description: string
+  framework: AgentFramework
+  policy_pack: string | null
+  default_role: string | null
+  roles: RuntimeRoleSpec[]
+  tools: RuntimeToolSpec[]
+  skills: RuntimeSkillSpec[]
+  sub_agents: RuntimeSubAgentSpec[]
+  generated_config: Record<string, unknown> | null
 }
 
 // ─── Config ───

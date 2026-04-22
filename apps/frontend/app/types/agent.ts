@@ -2,11 +2,11 @@
 
 export interface AgentChatRequest {
   message: string
-  user_role: 'customer' | 'admin'
+  user_role: string
   session_id: string
+  agent_id?: string | null
   policy?: string
   model?: string
-  middlewares?: string
 }
 
 export interface ToolCall {
@@ -18,9 +18,12 @@ export interface ToolCall {
 }
 
 export interface AgentTrace {
+  agent_id: string
+  agent_name: string
   intent: string
   user_role: string
   allowed_tools: string[]
+  available_sub_agents: string[]
   iterations: number
   latency_ms: number
 }

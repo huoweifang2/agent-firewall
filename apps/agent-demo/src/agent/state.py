@@ -23,6 +23,7 @@ class PostGateResult(TypedDict, total=False):
 class ToolCallRecord(TypedDict, total=False):
     """A single tool invocation record."""
 
+    id: str
     tool: str
     args: dict[str, Any]
     result: str
@@ -55,14 +56,21 @@ class AgentState(TypedDict, total=False):
     """Shared state dict passed through every agent graph node."""
 
     # ── Input ──────────────────────────────────────────────
+    agent_id: str | None
+    agent_name: str
     session_id: str
-    user_role: str  # "customer" | "admin"
+    user_role: str
     message: str  # Current user message
     chat_history: list[dict[str, str]]  # Previous conversation turns
     policy: str  # Policy name for proxy
     model: str  # LLM model to use
     api_key: str | None  # External provider API key (from browser)
     x_middlewares: str | None  # Composio active middlewares config
+    runtime_spec: dict[str, Any] | None
+    available_sub_agents: list[dict[str, Any]]
+    skills: list[dict[str, Any]]
+    delegation_depth: int
+    max_delegation_depth: int
 
     # ── Analysis ───────────────────────────────────────────
     intent: str  # greeting, order_query, knowledge_search, admin_action, unknown
