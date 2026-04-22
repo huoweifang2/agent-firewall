@@ -115,6 +115,88 @@ class SearchKnowledgeBaseArgs(BaseModel):
         return v
 
 
+class GetOrdersArgs(BaseModel):
+    """Schema for getOrders tool arguments."""
+
+    model_config = {"extra": "forbid"}
+
+    order_id: str = Field(default="", max_length=10)
+    customer_id: str = Field(default="", max_length=50)
+
+    @field_validator("order_id", "customer_id")
+    @classmethod
+    def sanitize_fields(cls, v: str) -> str:
+        return _sanitize_string(v, 50)
+
+
+class SearchProductsArgs(BaseModel):
+    """Schema for searchProducts tool arguments."""
+
+    model_config = {"extra": "forbid"}
+
+    query: str = Field(..., min_length=1, max_length=200)
+
+    @field_validator("query")
+    @classmethod
+    def no_injection(cls, v: str) -> str:
+        matches = _scan_injection(v)
+        if matches:
+            raise ValueError(f"Injection pattern detected: {matches[0]}")
+        return v
+
+
+class GetUsersArgs(BaseModel):
+    """Schema for getUsers tool arguments."""
+
+    model_config = {"extra": "forbid"}
+
+    query: str = Field(default="", max_length=200)
+
+    @field_validator("query")
+    @classmethod
+    def sanitize_query(cls, v: str) -> str:
+        return _sanitize_string(v, 200)
+
+
+class UpdateOrderArgs(BaseModel):
+    """Schema for updateOrder tool arguments."""
+
+    model_config = {"extra": "forbid"}
+
+    order_id: str = Field(..., pattern=r"^ORD-\d{3,6}$", min_length=7, max_length=10)
+    status: str = Field(..., min_length=3, max_length=32)
+    note: str = Field(default="", max_length=500)
+
+    @field_validator("order_id", "status", "note")
+    @classmethod
+    def no_injection(cls, v: str) -> str:
+        if v:
+            matches = _scan_injection(v)
+            if matches:
+                raise ValueError(f"Injection pattern detected: {matches[0]}")
+        return v
+
+
+class UpdateUserArgs(BaseModel):
+    """Schema for updateUser tool arguments."""
+
+    model_config = {"extra": "forbid"}
+
+    user_id: str = Field(..., pattern=r"^USR-\d{3,6}$", min_length=7, max_length=10)
+    email: str = Field(default="", max_length=200)
+    name: str = Field(default="", max_length=120)
+    phone: str = Field(default="", max_length=40)
+
+    @field_validator("user_id", "email", "name", "phone")
+    @classmethod
+    def sanitize_fields(cls, v: str) -> str:
+        if v:
+            matches = _scan_injection(v)
+            if matches:
+                raise ValueError(f"Injection pattern detected: {matches[0]}")
+        return _sanitize_string(v, 200)
+
+
 class GetInternalSecretsArgs(BaseModel):
     """Schema for getInternalSecrets — no args allowed."""
 
@@ -174,8 +256,13 @@ class IssueRefundArgs(BaseModel):
 
 TOOL_SCHEMAS: dict[str, type[BaseModel]] = {
     "getOrderStatus": GetOrderStatusArgs,
+    "getOrders": GetOrdersArgs,
     "searchKnowledgeBase": SearchKnowledgeBaseArgs,
+    "searchProducts": SearchProductsArgs,
     "getInternalSecrets": GetInternalSecretsArgs,
+    "getUsers": GetUsersArgs,
+    "updateOrder": UpdateOrderArgs,
+    "updateUser": UpdateUserArgs,
     "getCustomerProfile": GetCustomerProfileArgs,
     "issueRefund": IssueRefundArgs,
 }

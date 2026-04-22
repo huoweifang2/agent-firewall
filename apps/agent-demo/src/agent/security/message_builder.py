@@ -15,9 +15,15 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from src.agent.runtime_access import (
+    delegation_tool_name,
+    get_runtime_skills,
+    get_runtime_sub_agents,
+    get_runtime_tools,
+)
 from src.agent.security.sanitizer import sanitize_chat_history, sanitize_user_input
 from src.agent.state import AgentState
-from src.agent.tools.registry import get_tools_description
+from src.agent.tools.registry import describe_external_tool, get_tools_description
 
 # ── System prompt template ────────────────────────────────────────────
 # No user-derived content. Template variables only from RBAC / config.
@@ -53,15 +59,36 @@ TOOL_OUTPUT_SUFFIX = "\n[/TOOL_OUTPUT — end of untrusted data]"
 # ── Builder functions ─────────────────────────────────────────────────
 
 
-def build_system_message(allowed_tools: list[str]) -> dict[str, str]:
+def build_system_message(allowed_tools: list[str], state: AgentState) -> dict[str, str]:
     """Build the system message from template + tool descriptions.
 
     No user input, no tool output, no chat history.
     """
-    tools_desc = get_tools_description(allowed_tools)
+    runtime_spec = state.get("runtime_spec")
+    internal_desc = get_tools_description([name for name in allowed_tools if not name.startswith("delegate_to_")])
+    external_lines = []
+    for tool in get_runtime_tools(runtime_spec):
+        if tool.get("name") in allowed_tools:
+            external_lines.append(f"- {tool['name']}: {describe_external_tool(tool)}")
+    delegation_lines = []
+    for sub_agent in get_runtime_sub_agents(runtime_spec):
+        delegation_lines.append(
+            f"- {delegation_tool_name(sub_agent)}: Delegate to {sub_agent.get('name', 'sub-agent')} "
+            f"when {sub_agent.get('when_to_delegate', 'specialized help is needed')}."
+        )
+    skill_lines = []
+    for skill in get_runtime_skills(runtime_spec, scopes={"main_agent", "shared"}):
+        fragment = str(skill.get("prompt_fragment", "")).strip()
+        if fragment:
+            skill_lines.append(f"- {skill.get('name')}: {fragment}")
+    tools_desc = "\n".join(filter(None, [internal_desc, *external_lines, *delegation_lines]))
+    skills_desc = "\n".join(skill_lines) or "- No additional runtime skills configured."
     return {
         "role": "system",
-        "content": SYSTEM_PROMPT_TEMPLATE.format(tools_description=tools_desc),
+        "content": (
+            SYSTEM_PROMPT_TEMPLATE.format(tools_description=tools_desc)
+            + f"\n\nRuntime skills:\n{skills_desc}\n"
+        ),
     }
 
 
@@ -127,7 +154,7 @@ def build_messages(state: AgentState) -> list[dict[str, str]]:
     messages: list[dict[str, str]] = []
 
     # 1. System prompt — no user/tool data
-    messages.append(build_system_message(allowed_tools))
+    messages.append(build_system_message(allowed_tools, state))
 
     # 2. Chat history — re-sanitized
     raw_history = state.get("chat_history", [])

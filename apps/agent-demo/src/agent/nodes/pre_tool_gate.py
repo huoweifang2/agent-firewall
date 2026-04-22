@@ -21,6 +21,7 @@ import structlog
 from src.agent.limits.config import get_limits_for_role
 from src.agent.limits.service import get_limits_service
 from src.agent.rbac.service import get_rbac_service
+from src.agent.runtime_access import role_can_use_tool
 from src.agent.state import AgentState, CheckResult, GateDecision
 from src.agent.trace.accumulator import TraceAccumulator
 from src.agent.validation.validator import validate_tool_args
@@ -71,25 +72,39 @@ MAX_TOOL_CALLS_PER_SESSION = 20
 # ── Individual checks ─────────────────────────────────────────────────
 
 
-def _check_rbac(tool_name: str, allowed_tools: list[str], user_role: str = "") -> CheckResult:
+def _check_rbac(
+    tool_name: str,
+    allowed_tools: list[str],
+    user_role: str = "",
+    runtime_spec: dict[str, Any] | None = None,
+) -> CheckResult:
     """Check 1: Is the tool in the role's allowlist?
 
-    Uses RBAC service for rich permission check (scopes, inheritance).
-    Falls back to flat allowlist if RBAC service fails.
+    Prefer runtime-spec permissions, then RBAC service, then the flat allowlist.
     """
-    if tool_name.startswith("COMPOSIO_") or tool_name == "WEB_SEARCH" or tool_name.isupper():
+    result = role_can_use_tool(runtime_spec, user_role, tool_name)
+
+    if result["allowed"]:
         return CheckResult(check="rbac", passed=True, detail=None)
 
-    rbac = get_rbac_service()
-    result = rbac.check_permission(user_role, tool_name, scope="read")
+    if not user_role and tool_name in allowed_tools:
+        return CheckResult(check="rbac", passed=True, detail=None)
 
-    if result.allowed:
+    if runtime_spec is None:
+        try:
+            legacy = get_rbac_service().check_permission(user_role, tool_name)
+            if legacy.allowed:
+                return CheckResult(check="rbac", passed=True, detail=None)
+        except Exception:
+            pass
+
+    if tool_name in allowed_tools:
         return CheckResult(check="rbac", passed=True, detail=None)
 
     return CheckResult(
         check="rbac",
         passed=False,
-        detail=result.reason or f"Tool '{tool_name}' is not permitted for this role.",
+        detail=result["reason"] or f"Tool '{tool_name}' not in allowlist for role '{user_role}'.",
     )
 
 
@@ -214,23 +229,34 @@ def _check_limits(
     return CheckResult(check="limits", passed=True, detail=None)
 
 
-def _check_confirmation(tool_name: str, user_role: str = "") -> CheckResult:
+def _check_confirmation(
+    tool_name: str,
+    user_role: str = "",
+    runtime_spec: dict[str, Any] | None = None,
+) -> CheckResult:
     """Check 5: Does this tool require human confirmation?
 
-    Checks RBAC service for requires_confirmation flag, with fallback
-    to the module-level TOOLS_REQUIRING_CONFIRMATION set.
+    Checks runtime-spec or RBAC config first, then the legacy override set.
     """
-    # RBAC-driven confirmation
-    rbac = get_rbac_service()
-    result = rbac.check_permission(user_role, tool_name, scope="read")
-    if result.allowed and result.requires_confirmation:
+    result = role_can_use_tool(runtime_spec, user_role, tool_name)
+    if result["allowed"] and result["requires_confirmation"]:
         return CheckResult(
             check="confirmation",
             passed=False,
-            detail=f"Tool '{tool_name}' requires user confirmation (sensitivity: {result.tool_sensitivity}).",
+            detail=f"Tool '{tool_name}' requires user confirmation (sensitivity: {result['tool_sensitivity']}).",
         )
 
-    # Legacy fallback
+    try:
+        legacy = get_rbac_service().check_permission(user_role, tool_name)
+        if legacy.allowed and legacy.requires_confirmation:
+            return CheckResult(
+                check="confirmation",
+                passed=False,
+                detail=f"Tool '{tool_name}' requires user confirmation (sensitivity: {legacy.tool_sensitivity}).",
+            )
+    except Exception:
+        pass
+
     if tool_name in TOOLS_REQUIRING_CONFIRMATION:
         return CheckResult(
             check="confirmation",
@@ -268,6 +294,7 @@ def _evaluate_tool(
     """Run all checks for a single tool call and return a GateDecision."""
     allowed_tools = state.get("allowed_tools", [])
     user_role = state.get("user_role", "")
+    runtime_spec = state.get("runtime_spec")
     message = state.get("message", "")
     chat_history = state.get("chat_history", [])
     total_tool_calls = len(state.get("tool_calls", []))
@@ -292,11 +319,7 @@ def _evaluate_tool(
         )
 
     # ── Check 1: RBAC ─────────────────────────────────────
-    # bypass RBAC entirely if testing with Composio
-    if tool_name not in ["searchKnowledgeBase", "getOrderStatus", "getInternalSecrets"]:
-        rbac = {"passed": True, "check": "RBAC", "detail": "Tool allowed via Composio."}
-    else:
-        rbac = _check_rbac(tool_name, allowed_tools, user_role)
+    rbac = _check_rbac(tool_name, allowed_tools, user_role, runtime_spec)
     checks.append(rbac)
     if not rbac["passed"]:
         risk_score = 1.0
@@ -365,7 +388,7 @@ def _evaluate_tool(
         )
 
     # ── Check 5: Confirmation ─────────────────────────────
-    confirm = _check_confirmation(tool_name, user_role)
+    confirm = _check_confirmation(tool_name, user_role, runtime_spec)
     checks.append(confirm)
     if not confirm["passed"]:
         risk_score = 0.3

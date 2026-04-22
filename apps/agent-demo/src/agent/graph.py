@@ -12,7 +12,7 @@ from src.agent.nodes.policy import policy_check_node
 from src.agent.nodes.post_tool_gate import post_tool_gate_node
 from src.agent.nodes.pre_tool_gate import pre_tool_gate_node
 from src.agent.nodes.response import response_node
-from src.agent.nodes.tools import tool_executor_node
+from src.agent.nodes.tools import tool_executor_node, tool_router_node
 from src.agent.state import AgentState
 
 
@@ -37,6 +37,13 @@ def _after_llm_call(state: AgentState) -> str:
         return "pre_tool_gate"
 
     return "response"
+
+
+def _after_tool_router(state: AgentState) -> str:
+    """Route after deterministic tool planning."""
+    if state.get("tool_plan", []):
+        return "pre_tool_gate"
+    return "llm_call"
 
 
 def _after_gate(state: AgentState) -> str:
@@ -81,6 +88,7 @@ def build_agent_graph() -> StateGraph:
     graph.add_node("input", input_node)
     graph.add_node("intent", intent_node)
     graph.add_node("policy_check", policy_check_node)
+    graph.add_node("tool_router", tool_router_node)
     graph.add_node("pre_tool_gate", pre_tool_gate_node)
     graph.add_node("tool_executor", tool_executor_node)
     graph.add_node("post_tool_gate", post_tool_gate_node)
@@ -102,7 +110,15 @@ def build_agent_graph() -> StateGraph:
         },
     )
     graph.add_edge("intent", "policy_check")
-    graph.add_edge("policy_check", "llm_call")
+    graph.add_edge("policy_check", "tool_router")
+    graph.add_conditional_edges(
+        "tool_router",
+        _after_tool_router,
+        {
+            "pre_tool_gate": "pre_tool_gate",
+            "llm_call": "llm_call",
+        },
+    )
 
     # After LLM → check if tools called
     graph.add_conditional_edges(

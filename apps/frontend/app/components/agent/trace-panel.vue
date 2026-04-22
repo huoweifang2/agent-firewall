@@ -11,6 +11,11 @@
     </v-card-text>
 
     <v-card-text v-else>
+      <div v-if="trace.agent_name" class="trace-row mb-3">
+        <span class="text-caption text-grey">Agent</span>
+        <span class="text-body-2 font-weight-medium">{{ trace.agent_name }}</span>
+      </div>
+
       <div class="trace-row mb-3">
         <span class="text-caption text-grey">Intent</span>
         <v-chip size="small" label>{{ trace.intent }}</v-chip>
@@ -32,6 +37,21 @@
             variant="outlined"
           >
             {{ tool }}
+          </v-chip>
+        </div>
+      </div>
+
+      <div v-if="trace.available_sub_agents.length" class="mb-3">
+        <span class="text-caption text-grey d-block mb-1">Sub-agents</span>
+        <div class="d-flex flex-wrap ga-1">
+          <v-chip
+            v-for="subAgent in trace.available_sub_agents"
+            :key="subAgent"
+            size="x-small"
+            label
+            variant="outlined"
+          >
+            {{ subAgent }}
           </v-chip>
         </div>
       </div>

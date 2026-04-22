@@ -15,11 +15,17 @@ import structlog
 from litellm import acompletion
 from litellm.exceptions import APIError
 
+from src.agent.runtime_access import delegation_tool_name, get_runtime_sub_agents, get_runtime_tool
 from src.agent.limits.config import get_limits_for_role
 from src.agent.limits.service import get_limits_service
 from src.agent.security.message_builder import build_messages
 from src.agent.state import AgentState
-from src.agent.tools.registry import get_llm_tool_schemas
+from src.agent.tools.registry import (
+    fetch_composio_schemas,
+    get_internal_tool_schema,
+    normalize_external_tool_schema,
+    parse_app_refs,
+)
 from src.agent.trace.accumulator import TraceAccumulator
 from src.config import Settings, get_settings
 
@@ -163,6 +169,74 @@ async def _scan_via_proxy(
     return data
 
 
+def _delegate_tool_schema(sub_agent: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "type": "function",
+        "function": {
+            "name": delegation_tool_name(sub_agent),
+            "description": (
+                f"Delegate the task to sub-agent {sub_agent.get('name', 'sub-agent')}. "
+                f"{sub_agent.get('delegation_description', '')}"
+            ).strip(),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task": {
+                        "type": "string",
+                        "description": "The concrete sub-task to delegate.",
+                    }
+                },
+                "required": ["task"],
+            },
+        },
+    }
+
+
+def _build_runtime_tool_schemas(state: AgentState, session_id: str) -> list[dict[str, Any]]:
+    runtime_spec = state.get("runtime_spec")
+    allowed_tools = state.get("allowed_tools", [])
+    schemas: list[dict[str, Any]] = []
+
+    composio_app_refs: list[str] = []
+    for tool_name in allowed_tools:
+        tool_spec = get_runtime_tool(runtime_spec, tool_name)
+        if tool_spec is None:
+            schema = get_internal_tool_schema(tool_name)
+            if schema is not None:
+                schemas.append(schema)
+            continue
+
+        provider_type = tool_spec.get("provider_type", "internal")
+        if provider_type == "internal":
+            schema = get_internal_tool_schema(tool_name)
+            if schema is not None:
+                schemas.append(schema)
+        elif provider_type == "composio":
+            composio_app_refs.extend(parse_app_refs(tool_spec))
+        else:
+            schemas.append(normalize_external_tool_schema(tool_name, tool_spec))
+
+    if composio_app_refs:
+        schemas.extend(fetch_composio_schemas(sorted(set(composio_app_refs)), user_id=session_id))
+
+    for sub_agent in get_runtime_sub_agents(runtime_spec):
+        schemas.append(_delegate_tool_schema(sub_agent))
+
+    return schemas
+
+
+def _fallback_response_from_tools(state: AgentState) -> str | None:
+    tool_calls = [tc for tc in state.get("tool_calls", []) if tc.get("allowed", True)]
+    if not tool_calls:
+        return None
+
+    latest = tool_calls[-1]
+    result = str(latest.get("sanitized_result") or latest.get("result") or "").strip()
+    if not result:
+        return None
+    return result
+
+
 async def llm_call_node(state: AgentState) -> AgentState:
     """Call LLM with firewall scan + direct provider call (two-phase).
 
@@ -243,6 +317,7 @@ async def llm_call_node(state: AgentState) -> AgentState:
                 "llm_messages": messages,
                 "llm_response": "",
                 "firewall_decision": firewall_decision,
+                "tool_plan": [],
                 "final_response": f"I'm sorry, but I can't process that request. {blocked_reason}",
                 "trace": trace.data,
             }
@@ -260,9 +335,7 @@ async def llm_call_node(state: AgentState) -> AgentState:
         # with the complete message set including system prompt and tool
         # results so the model can actually use tool outputs in its answer.
         direct_model, direct_kwargs = _resolve_direct_llm(model_name, api_key, settings)
-        x_middlewares = state.get("x_middlewares", "[]")
-        role = state.get("user_role", "customer")
-        tool_schemas = get_llm_tool_schemas(x_middlewares, role, user_id=session_id)
+        tool_schemas = _build_runtime_tool_schemas(state, session_id)
 
         completion_kwargs = direct_kwargs.copy()
         if tool_schemas:
@@ -333,13 +406,15 @@ async def llm_call_node(state: AgentState) -> AgentState:
         logger.warning("llm_call_api_error", status=e.status_code, elapsed_ms=elapsed_ms)
 
         error_msg = f"LLM service error: {e}"
+        fallback_response = _fallback_response_from_tools(state)
         return {
             **state,
             "llm_messages": messages,
             "llm_response": "",
             "firewall_decision": firewall_decision,
+            "tool_plan": [],
             "errors": [*state.get("errors", []), error_msg],
-            "final_response": "I'm experiencing technical difficulties. Please try again.",
+            "final_response": fallback_response or "I'm experiencing technical difficulties. Please try again.",
             "trace": trace.data,
         }
 
@@ -348,13 +423,15 @@ async def llm_call_node(state: AgentState) -> AgentState:
         import traceback
 
         logger.error("llm_call_error", error=str(e), elapsed_ms=elapsed_ms, traceback=traceback.format_exc())
+        fallback_response = _fallback_response_from_tools(state)
 
         return {
             **state,
             "llm_messages": messages,
             "llm_response": "",
             "firewall_decision": firewall_decision,
+            "tool_plan": [],
             "errors": [*state.get("errors", []), str(e)],
-            "final_response": "I'm experiencing technical difficulties. Please try again.",
+            "final_response": fallback_response or "I'm experiencing technical difficulties. Please try again.",
             "trace": trace.data,
         }

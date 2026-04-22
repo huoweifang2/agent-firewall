@@ -9,10 +9,9 @@ export function useAgentChat() {
 
   const config = reactive({
     agentId: null as string | null,
-    role: 'customer' as 'customer' | 'admin',
+    role: 'customer' as string,
     policy: 'balanced' as string | null,
     model: '' as string,
-    middlewares: '' as string,
   })
 
   const sessionId = ref(generateSessionId())
@@ -62,11 +61,11 @@ export function useAgentChat() {
     try {
       const stream = agentService.streamChat({
         message: text,
+        agent_id: config.agentId,
         user_role: config.role,
         session_id: sessionId.value,
         model: config.model,
         ...(config.policy ? { policy: config.policy } : {}),
-        middlewares: config.middlewares,
       })
 
       const msgId = crypto.randomUUID()
@@ -151,7 +150,7 @@ export function useAgentChat() {
     }
   }
 
-  function switchRole(newRole: 'customer' | 'admin') {
+  function switchRole(newRole: string) {
     if (newRole === config.role) return
     config.role = newRole
     sessionId.value = generateSessionId()

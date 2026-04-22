@@ -44,8 +44,9 @@ def memory_node(state: AgentState) -> AgentState:
 
     # Centralized: flush to proxy-service if agent_id is configured
     settings = get_settings()
-    if settings.agent_id:
-        _flush_trace_to_proxy(trace_dict, settings)
+    target_agent_id = state.get("agent_id") or settings.agent_id
+    if target_agent_id:
+        _flush_trace_to_proxy(trace_dict, settings, str(target_agent_id))
     else:
         # Fallback: in-memory store (legacy)
         get_trace_store().save(trace_dict)
@@ -64,11 +65,11 @@ def memory_node(state: AgentState) -> AgentState:
     }
 
 
-def _flush_trace_to_proxy(trace_dict: dict, settings) -> None:
+def _flush_trace_to_proxy(trace_dict: dict, settings, agent_id: str) -> None:
     """POST trace to proxy-service centralized trace store (fire-and-forget)."""
     proxy_base = settings.proxy_base_url.rstrip("/")
     # proxy_base_url is like http://localhost:8000/v1 — we need /v1/agents/{id}/traces/ingest
-    url = f"{proxy_base}/agents/{settings.agent_id}/traces/ingest"
+    url = f"{proxy_base}/agents/{agent_id}/traces/ingest"
     try:
         with httpx.Client(timeout=10.0) as client:
             resp = client.post(url, json=trace_dict)

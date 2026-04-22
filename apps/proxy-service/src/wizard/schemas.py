@@ -12,6 +12,7 @@ from src.wizard.models import (
     AgentEnvironment,
     AgentFramework,
     AgentStatus,
+    SkillScope,
     GateAction,
     GateDecisionType,
     IncidentCategory,
@@ -236,6 +237,176 @@ class PermissionCheckResponse(BaseModel):
     allowed: bool
     decision: str  # "allow" | "deny" | "confirm"
     reason: str
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Skill schemas
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class SkillCreate(BaseModel):
+    """Schema for adding a skill to an agent."""
+
+    name: str = Field(..., min_length=2, max_length=128)
+    description: str = ""
+    scope: SkillScope = SkillScope.SHARED
+    prompt_fragment: str = ""
+    constraints: dict | None = None
+    output_contract: dict | None = None
+    sort_order: int = 0
+
+
+class SkillUpdate(BaseModel):
+    """Schema for partial skill update."""
+
+    name: str | None = Field(None, min_length=2, max_length=128)
+    description: str | None = None
+    scope: SkillScope | None = None
+    prompt_fragment: str | None = None
+    constraints: dict | None = None
+    output_contract: dict | None = None
+    sort_order: int | None = None
+
+
+class SkillRead(BaseModel):
+    """Read schema for an agent skill."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    agent_id: uuid.UUID
+    name: str
+    description: str
+    scope: SkillScope
+    prompt_fragment: str
+    constraints: dict | None
+    output_contract: dict | None
+    sort_order: int
+    created_at: datetime
+    updated_at: datetime
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Delegation schemas
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class DelegationCreate(BaseModel):
+    """Create a sub-agent delegation binding."""
+
+    child_agent_id: uuid.UUID
+    delegation_description: str = ""
+    when_to_delegate: str = ""
+    sort_order: int = 0
+    is_active: bool = True
+
+
+class DelegationUpdate(BaseModel):
+    """Update a sub-agent delegation binding."""
+
+    delegation_description: str | None = None
+    when_to_delegate: str | None = None
+    sort_order: int | None = None
+    is_active: bool | None = None
+
+
+class DelegationRead(BaseModel):
+    """Read schema for a delegation binding."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    parent_agent_id: uuid.UUID
+    child_agent_id: uuid.UUID
+    child_agent_name: str | None = None
+    child_agent_description: str | None = None
+    delegation_description: str
+    when_to_delegate: str
+    sort_order: int
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# Runtime spec schemas
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class RuntimePermissionSpec(BaseModel):
+    """Role -> tool permission in runtime shape."""
+
+    tool_name: str
+    scopes: list[str]
+    decision: str
+    sensitivity: Sensitivity
+    requires_confirmation: bool
+
+
+class RuntimeRoleSpec(BaseModel):
+    """Resolved runtime role entry."""
+
+    name: str
+    description: str
+    inherits_from: str | None = None
+    permissions: list[RuntimePermissionSpec] = Field(default_factory=list)
+    effective_tools: list[str] = Field(default_factory=list)
+
+
+class RuntimeToolSpec(BaseModel):
+    """Runtime tool definition."""
+
+    name: str
+    description: str
+    category: str | None = None
+    provider_type: str
+    provider_ref: str
+    access_type: AccessType
+    sensitivity: Sensitivity
+    requires_confirmation: bool
+    arg_schema: dict | None = None
+    returns_pii: bool = False
+    returns_secrets: bool = False
+    rate_limit: int | None = None
+
+
+class RuntimeSkillSpec(BaseModel):
+    """Runtime skill definition."""
+
+    name: str
+    description: str
+    scope: SkillScope
+    prompt_fragment: str
+    constraints: dict | None = None
+    output_contract: dict | None = None
+    sort_order: int = 0
+
+
+class RuntimeSubAgentSpec(BaseModel):
+    """Delegatable child agent entry."""
+
+    agent_id: uuid.UUID
+    name: str
+    description: str
+    delegation_description: str
+    when_to_delegate: str
+    skills_summary: list[str] = Field(default_factory=list)
+
+
+class AgentRuntimeSpec(BaseModel):
+    """Complete agent runtime spec resolved from wizard state."""
+
+    agent_id: uuid.UUID
+    name: str
+    description: str
+    framework: AgentFramework
+    policy_pack: str | None = None
+    default_role: str | None = None
+    roles: list[RuntimeRoleSpec] = Field(default_factory=list)
+    tools: list[RuntimeToolSpec] = Field(default_factory=list)
+    skills: list[RuntimeSkillSpec] = Field(default_factory=list)
+    sub_agents: list[RuntimeSubAgentSpec] = Field(default_factory=list)
+    generated_config: dict | None = None
 
 
 # ═══════════════════════════════════════════════════════════════════════

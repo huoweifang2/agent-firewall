@@ -20,16 +20,6 @@ export const agentService = {
   async chat(request: AgentChatRequest): Promise<AgentChatResponse> {
     const headers: Record<string, string> = {}
 
-    // Use requested middlewares or fallback to localStorage
-    if (request.middlewares) {
-      headers['x-middlewares'] = request.middlewares
-    } else if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('middleware-config')
-      if (stored) {
-        headers['x-middlewares'] = stored
-      }
-    }
-
     // Inject API key for external providers
     if (request.model) {
       const provider = detectProviderClient(request.model)
@@ -48,16 +38,8 @@ export const agentService = {
   async *streamChat(request: AgentChatRequest): AsyncGenerator<{ event: string; data: any }> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
       'x-correlation-id': crypto.randomUUID()
-    }
-
-    if (request.middlewares) {
-      headers['x-middlewares'] = request.middlewares
-    } else if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('middleware-config')
-      if (stored) {
-        headers['x-middlewares'] = stored
-      }
     }
 
     if (request.model) {

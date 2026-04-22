@@ -8,7 +8,8 @@ import time
 import structlog
 
 from src.agent.state import AgentState, ToolCallRecord
-from src.agent.tools.registry import execute_tool
+from src.agent.tools.commerce import extract_status_from_message
+from src.agent.tools.hub import execute_tool_call
 from src.agent.trace.accumulator import TraceAccumulator
 
 logger = structlog.get_logger()
@@ -39,17 +40,48 @@ def _select_tools_for_intent(state: AgentState) -> list[dict]:
             order_id = ""
         if "getOrderStatus" in allowed:
             plans.append({"tool": "getOrderStatus", "args": {"order_id": order_id or "unknown"}})
+        elif "getOrders" in allowed:
+            plans.append({"tool": "getOrders", "args": {"order_id": order_id}})
 
     elif intent == "knowledge_search":
         if "searchKnowledgeBase" in allowed:
             plans.append({"tool": "searchKnowledgeBase", "args": {"query": state.get("message", "")}})
+        elif "searchProducts" in allowed:
+            plans.append({"tool": "searchProducts", "args": {"query": state.get("message", "")}})
 
     elif intent == "admin_action":
+        if "updateOrder" in allowed and "update order" in message:
+            status = extract_status_from_message(message) or "processing"
+            order_match = re.search(r"ord-(\d{3,6})", message)
+            order_id = f"ORD-{order_match.group(1)}" if order_match else "ORD-001"
+            plans.append({"tool": "updateOrder", "args": {"order_id": order_id, "status": status}})
+
+        elif "updateUser" in allowed and "update user" in message:
+            user_match = re.search(r"usr-(\d{3,6})", message)
+            email_match = re.search(r"[\w.+-]+@[\w.-]+\.\w+", message)
+            phone_match = re.search(r"\+?\d[\d\- ]{7,}", message)
+            user_id = f"USR-{user_match.group(1)}" if user_match else "USR-001"
+            plans.append(
+                {
+                    "tool": "updateUser",
+                    "args": {
+                        "user_id": user_id,
+                        "email": email_match.group(0) if email_match else "",
+                        "phone": phone_match.group(0) if phone_match else "",
+                    },
+                }
+            )
+
+        elif "getUsers" in allowed and any(kw in message for kw in ["user", "users", "customer", "customers"]):
+            plans.append({"tool": "getUsers", "args": {"query": state.get("message", "")}})
+
         # Try secrets first if allowed, also search KB for context
-        if "getInternalSecrets" in allowed:
+        elif "getInternalSecrets" in allowed:
             plans.append({"tool": "getInternalSecrets", "args": {}})
         if "searchKnowledgeBase" in allowed and any(kw in message for kw in ["info", "help", "how"]):
             plans.append({"tool": "searchKnowledgeBase", "args": {"query": state.get("message", "")}})
+        elif "searchProducts" in allowed and any(kw in message for kw in ["product", "products", "catalog"]):
+            plans.append({"tool": "searchProducts", "args": {"query": state.get("message", "")}})
 
     elif intent == "greeting":
         # No tools needed for greetings
@@ -59,6 +91,8 @@ def _select_tools_for_intent(state: AgentState) -> list[dict]:
         # Default: try KB search
         if "searchKnowledgeBase" in allowed:
             plans.append({"tool": "searchKnowledgeBase", "args": {"query": state.get("message", "")}})
+        elif "searchProducts" in allowed:
+            plans.append({"tool": "searchProducts", "args": {"query": state.get("message", "")}})
 
     return plans
 
@@ -81,7 +115,7 @@ def tool_router_node(state: AgentState) -> AgentState:
     }
 
 
-def tool_executor_node(state: AgentState) -> AgentState:
+async def tool_executor_node(state: AgentState) -> AgentState:
     """Execute planned tool calls and collect results.
 
     Only executes tools that passed the pre-tool gate (tool_plan is
@@ -98,16 +132,9 @@ def tool_executor_node(state: AgentState) -> AgentState:
         args = plan.get("args", {})
         call_id = plan.get("id", "call_unknown")
 
-        # Rely on pre-tool gate for safety now instead of strict local list.
-        # Extract session_id directly from state
-        user_id = state.get("session_id", "unknown")
-        from src.agent.tools.registry import get_active_composio_apps
-
-        apps = get_active_composio_apps(state.get("x_middlewares"))
-
         try:
             t0 = time.perf_counter()
-            result = execute_tool(tool_name, args, user_id=user_id, apps=apps)
+            result = await execute_tool_call(state, tool_name, args)
             dur_ms = int((time.perf_counter() - t0) * 1000)
             tool_calls.append(
                 {

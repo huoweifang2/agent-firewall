@@ -9,8 +9,9 @@ class AgentChatRequest(BaseModel):
     """POST /agent/chat request body."""
 
     message: str = Field(..., min_length=1, max_length=4096)
-    user_role: str = Field(default="customer", pattern=r"^(customer|admin)$")
+    user_role: str = Field(default="customer", min_length=1, max_length=128)
     session_id: str = Field(..., min_length=1, max_length=128)
+    agent_id: str | None = Field(default=None, max_length=128)
     policy: str | None = Field(default=None, max_length=64, description="Policy name override (default: from config)")
     model: str | None = Field(default=None, max_length=128, description="Model override (default: from config)")
 
@@ -28,9 +29,12 @@ class ToolCallInfo(BaseModel):
 class AgentTrace(BaseModel):
     """Agent-level trace metadata."""
 
+    agent_id: str = ""
+    agent_name: str = ""
     intent: str = "unknown"
     user_role: str = "customer"
     allowed_tools: list[str] = Field(default_factory=list)
+    available_sub_agents: list[str] = Field(default_factory=list)
     iterations: int = 0
     latency_ms: int = 0
 

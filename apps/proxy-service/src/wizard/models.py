@@ -67,6 +67,14 @@ class AgentStatus(str, enum.Enum):
     ARCHIVED = "archived"
 
 
+class SkillScope(str, enum.Enum):
+    """Where a skill applies in the runtime."""
+
+    MAIN_AGENT = "main_agent"
+    SHARED = "shared"
+    SUB_AGENT = "sub_agent"
+
+
 class Agent(UUIDMixin, TimestampMixin, Base):
     """Registered agent configuration."""
 
@@ -280,6 +288,75 @@ class RoleToolPermission(UUIDMixin, Base):
 
     def __repr__(self) -> str:
         return f"<RoleToolPermission role_id={self.role_id} tool_id={self.tool_id}>"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# AgentSkill
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class AgentSkill(UUIDMixin, TimestampMixin, Base):
+    """A prompt/runtime skill bound to an agent."""
+
+    __tablename__ = "agent_skills"
+
+    agent_id: Mapped[_uuid.UUID] = mapped_column(
+        ForeignKey("agents.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    scope: Mapped[SkillScope] = mapped_column(
+        Enum(SkillScope, name="skill_scope"),
+        nullable=False,
+        default=SkillScope.SHARED,
+    )
+    prompt_fragment: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    constraints: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    output_contract: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    agent: Mapped[Agent] = relationship("Agent", backref="skills", lazy="selectin")
+
+    def __repr__(self) -> str:
+        return f"<AgentSkill name={self.name!r} agent_id={self.agent_id}>"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# AgentDelegation
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class AgentDelegation(UUIDMixin, TimestampMixin, Base):
+    """A parent -> child agent delegation binding."""
+
+    __tablename__ = "agent_delegations"
+
+    parent_agent_id: Mapped[_uuid.UUID] = mapped_column(
+        ForeignKey("agents.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    child_agent_id: Mapped[_uuid.UUID] = mapped_column(
+        ForeignKey("agents.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    delegation_description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    when_to_delegate: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    parent_agent: Mapped[Agent] = relationship("Agent", foreign_keys=[parent_agent_id], backref="sub_agents")
+    child_agent: Mapped[Agent] = relationship("Agent", foreign_keys=[child_agent_id], lazy="selectin")
+
+    __table_args__ = (
+        Index("ix_agent_delegations_parent_child", "parent_agent_id", "child_agent_id", unique=True),
+    )
+
+    def __repr__(self) -> str:
+        return f"<AgentDelegation parent={self.parent_agent_id} child={self.child_agent_id}>"
 
 
 # ═══════════════════════════════════════════════════════════════════════

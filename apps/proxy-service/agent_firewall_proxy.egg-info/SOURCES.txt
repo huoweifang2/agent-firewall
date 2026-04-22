@@ -7,7 +7,7 @@ agent_firewall_proxy.egg-info/top_level.txt
 src/__init__.py
 src/config.py
 src/dependencies.py
-src/logging.py
+src/logger.py
 src/main.py
 src/db/__init__.py
 src/db/seed.py
@@ -15,7 +15,6 @@ src/db/session.py
 src/llm/__init__.py
 src/llm/client.py
 src/llm/exceptions.py
-src/llm/mock_provider.py
 src/llm/providers.py
 src/llm/streaming.py
 src/models/__init__.py

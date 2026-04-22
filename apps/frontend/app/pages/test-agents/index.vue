@@ -95,7 +95,6 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { useAgentChat } from '~/composables/useAgentChat'
-import { useAgents } from '~/composables/useAgents'
 import { useScenarios } from '~/composables/useScenarios'
 import { useModels } from '~/composables/useModels'
 import { useRememberedModel } from '~/composables/useRememberedModel'
@@ -119,7 +118,6 @@ const {
 
 const { scenarios, isLoading: scenariosLoading } = useScenarios('agent')
 const { groupedModels, refreshAvailability } = useModels()
-const { getAgent } = useAgents()
 const rememberedModel = useRememberedModel('agent')
 
 const showScenarios = ref(false)
@@ -133,20 +131,8 @@ const scenarioDecisionColor = computed(() => {
 
 async function handleTargetAgent(id: string | null) {
   config.agentId = id
-  if (!id) {
-    config.middlewares = ''
-    return
-  }
-  try {
-    const agent = await getAgent(id)
-    if (agent && agent.tools) {
-      config.middlewares = agent.tools.map(t => t.name).join(',')
-    } else {
-      config.middlewares = ''
-    }
-  } catch (err) {
-    console.error('Failed to fetch agent tools:', err)
-  }
+  activeScenario.value = null
+  newConversation()
 }
 
 /**
