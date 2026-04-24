@@ -21,7 +21,7 @@ up:
 	@echo "🚀  Agent-Firewall is starting (full stack)..."
 	@echo "    Frontend:       http://localhost:3000"
 	@echo "    Proxy API:      http://localhost:8000"
-	@echo "    Agent Demo:     http://localhost:8002"
+	@echo "    Agent API:      http://localhost:8002"
 	@echo "    Langfuse:       http://localhost:3001"
 	@echo ""
 
@@ -34,7 +34,7 @@ dev:
 	@echo ""
 	@echo "🔧  Infrastructure started. Run apps locally:"
 	@echo "    cd apps/proxy-service && uv run uvicorn src.main:app --reload --port 8000"
-	@echo "    cd apps/agent-demo && uv run uvicorn src.main:app --reload --port 8002"
+	@echo "    cd apps/agent && uv run uvicorn src.main:app --reload --port 8002"
 	@echo "    cd apps/frontend && npm run dev"
 
 dev-all:
@@ -43,14 +43,14 @@ dev-all:
 	@echo "🚀  Starting local apps concurrently. Press Ctrl+C to stop all."
 	@trap 'echo "🛑 Stopping all services..."; kill 0' SIGINT; \
 	(cd apps/proxy-service && uv run uvicorn src.main:app --reload --port 8000) & \
-	(cd apps/agent-demo && uv run uvicorn src.main:app --reload --port 8002) & \
+	(cd apps/agent && uv run uvicorn src.main:app --reload --port 8002) & \
 	(cd apps/frontend && npm run dev) & \
 	wait
 
 setup:
 	@echo "📦 Syncing dependencies with uv..."
 	cd apps/proxy-service && uv sync
-	cd apps/agent-demo && uv sync
+	cd apps/agent && uv sync
 	cd apps/frontend && npm install
 	@echo "✅ Dependencies synced"
 
@@ -75,17 +75,17 @@ ps:
 # ── Lint ────────────────────────────────────────────────
 lint:
 	cd apps/proxy-service && ruff check src/ tests/ && ruff format --check src/ tests/
-	cd apps/agent-demo && ruff check src/ tests/ && ruff format --check src/ tests/
+	cd apps/agent && ruff check src/ tests/ && ruff format --check src/ tests/
 	cd apps/frontend && npx eslint .
 
 lint-fix:
 	cd apps/proxy-service && ruff check --fix src/ tests/ && ruff format src/ tests/
-	cd apps/agent-demo && ruff check --fix src/ tests/ && ruff format src/ tests/
+	cd apps/agent && ruff check --fix src/ tests/ && ruff format src/ tests/
 	cd apps/frontend && npx eslint . --fix
 
 format:
 	cd apps/proxy-service && ruff format src/ tests/
-	cd apps/agent-demo && ruff format src/ tests/
+	cd apps/agent && ruff format src/ tests/
 	cd apps/frontend && npx eslint . --fix
 
 # ── Pre-commit ──────────────────────────────────────────
@@ -99,7 +99,7 @@ pre-commit:
 # ── Test ────────────────────────────────────────────────
 test:
 	cd apps/proxy-service && uv run pytest tests/ -v
-	cd apps/agent-demo && uv run pytest tests/ -v
+	cd apps/agent && uv run pytest tests/ -v
 
 test-cov:
 	cd apps/proxy-service && uv run pytest tests/ -v --cov=src --cov-report=html

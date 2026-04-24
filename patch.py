@@ -1,6 +1,6 @@
 import re
 
-with open("apps/agent-demo/src/agent/security/message_builder.py", "r") as f:
+with open("apps/agent/src/agent/security/message_builder.py", "r") as f:
     content = f.read()
 
 new_func = '''def wrap_tool_results(tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -63,5 +63,5 @@ content = re.sub(
     flags=re.DOTALL
 )
 
-with open("apps/agent-demo/src/agent/security/message_builder.py", "w") as f:
+with open("apps/agent/src/agent/security/message_builder.py", "w") as f:
     f.write(content)

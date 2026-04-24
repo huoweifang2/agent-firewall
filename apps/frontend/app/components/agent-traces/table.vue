@@ -124,7 +124,7 @@
       <div class="text-center py-6">
         <v-icon icon="mdi-chart-timeline-variant" size="48" color="grey-lighten-1" />
         <p class="text-body-2 text-medium-emphasis mt-2">No agent traces found</p>
-        <p class="text-caption text-medium-emphasis">Send messages in the Agent Demo to generate traces</p>
+        <p class="text-caption text-medium-emphasis">Send messages in the Agent workspace to generate traces</p>
       </div>
     </template>
   </v-data-table-server>

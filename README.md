@@ -29,7 +29,7 @@ The most common way to run the project for testing or development is starting al
    ```
 
 3. **Configure API Keys:**
-   Create or edit the `.env` files in `apps/agent-demo/` and `apps/proxy-service/` to include the required API keys for the LLM providers and Composio tools. For example:
+   Create or edit the `.env` files in `apps/agent/` and `apps/proxy-service/` to include the required API keys for the LLM providers and Composio tools. For example:
    ```env
    # Example .env configuration
    DEEPSEEK_API_KEY="your-deepseek-api-key"
@@ -38,9 +38,9 @@ The most common way to run the project for testing or development is starting al
 
 4. **Start the full development environment:**
    ```bash
-   make dev-all
+   ./start-local.sh
    ```
-   *(This starts the backend proxy, agent mock endpoints, frontend portal, as well as the required Docker infrastructure (DB, Redis, Langfuse) concurrently).*
+   *(This starts the backend proxy, agent service, frontend portal, as well as the required Docker infrastructure (DB, Redis, Langfuse) concurrently.)*
 
 5. **Access the portal:**
    Open **http://localhost:3000** in your browser.

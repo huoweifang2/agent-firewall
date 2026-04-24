@@ -29,7 +29,7 @@ Agent-Firewall 是一个毕业设计项目，致力于为支持工具调用（To
    ```
 
 3. **配置 API 密钥 (API Keys)：**
-   启动应用前，请在 `apps/agent-demo/.env` 与 `apps/proxy-service/.env`（如果不存在请自行创建）中填入你所使用的模型与集成工具的真实 API 密钥。例如：
+   启动应用前，请在 `apps/agent/.env` 与 `apps/proxy-service/.env`（如果不存在请自行创建）中填入你所使用的模型与集成工具的真实 API 密钥。例如：
    ```env
    # .env 示例
    DEEPSEEK_API_KEY="your-deepseek-api-key"
@@ -38,9 +38,9 @@ Agent-Firewall 是一个毕业设计项目，致力于为支持工具调用（To
 
 4. **启动完整开发环境：**
    ```bash
-   make dev-all
+   ./start-local.sh
    ```
-   *(该命令会并发启动后端代理、Agent Mock 接口、前端界面，以及必需的 Docker 基础设施如 DB, Redis, Langfuse 等)*
+   *(该命令会并发启动后端代理、Agent 服务、前端界面，以及必需的 Docker 基础设施如 DB, Redis, Langfuse 等)*
 
 5. **访问前端平台：**
    在浏览器中打开 **http://localhost:3000**。

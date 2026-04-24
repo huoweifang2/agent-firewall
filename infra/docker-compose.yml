@@ -87,17 +87,17 @@ services:
     networks:
       - agent-firewall
 
-  agent-demo:
+  agent:
     build:
-      context: ../apps/agent-demo
+      context: ../apps/agent
     profiles: ["full"]
-    env_file: 
-      - ../apps/agent-demo/.env
+    env_file:
+      - ../apps/agent/.env
     ports:
       - "8002:8002"
     environment:
       PROXY_BASE_URL: http://proxy-service:8000/v1
-      AGENT_ID: ${AGENT_ID_DEMO:-}
+      AGENT_ID: ${AGENT_ID_AGENT:-}
       DEFAULT_MODEL: deepseek-chat
       DEFAULT_MODEL_PREFIX: deepseek
       DEFAULT_POLICY: balanced
@@ -121,7 +121,7 @@ services:
       NUXT_PUBLIC_REFERENCE_CHAT_TARGET_URL: http://localhost:8010
     depends_on:
       - proxy-service
-      - agent-demo
+      - agent
     networks:
       - agent-firewall
 

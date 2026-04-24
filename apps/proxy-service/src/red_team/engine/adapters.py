@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 # Default endpoints
 # ---------------------------------------------------------------------------
 
-_DEMO_AGENT_URL = "http://agent-demo:8002/agent/chat"
+_AGENT_URL = "http://agent:8002/agent/chat"
 
 # Maximum response body size to keep in memory (512 KB). Anything longer
 # is truncated before normalisation and DB storage to prevent OOM / bloat.
@@ -51,12 +51,12 @@ _MAX_RESPONSE_BODY_BYTES = 512 * 1024
 class RealHttpClient:
     """Send prompts to target endpoints via httpx.
 
-    For demo targets the chat payload includes ``role`` and ``session_id``
-    required by the demo agent.
+    For local agent targets the chat payload includes ``role`` and ``session_id``
+    required by the agent runtime.
     """
 
     async def send_prompt(self, prompt: str, target_config: dict[str, Any]) -> HttpResponse:
-        endpoint_url = rewrite_localhost_for_docker(target_config.get("endpoint_url") or _DEMO_AGENT_URL)
+        endpoint_url = rewrite_localhost_for_docker(target_config.get("endpoint_url") or _AGENT_URL)
         timeout_s: int = target_config.get("timeout_s", 30)
 
         headers: dict[str, str] = {"Content-Type": "application/json"}
@@ -67,7 +67,7 @@ class RealHttpClient:
         elif auth_header := target_config.get("_decrypted_auth"):
             headers["Authorization"] = auth_header
 
-        # Payload shape: template > demo agent > OpenAI fallback
+        # Payload shape: template > local agent runtime > OpenAI fallback
         request_template: str | None = target_config.get("request_template")
         if request_template:
             escaped_prompt = json.dumps(prompt)[1:-1]  # JSON-safe string (no wrapping quotes)

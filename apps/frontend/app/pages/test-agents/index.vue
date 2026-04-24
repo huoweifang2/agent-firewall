@@ -103,7 +103,7 @@ import type { ScenarioItem } from '~/types/scenarios'
 
 const ATTACK_SUBMIT_DELAY_MS = 300
 
-definePageMeta({ title: 'Agent Demo' })
+definePageMeta({ title: 'Agent' })
 
 const {
   messages,

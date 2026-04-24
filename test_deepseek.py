@@ -3,7 +3,7 @@ import asyncio
 from litellm import acompletion
 from dotenv import load_dotenv
 load_dotenv(".env")
-load_dotenv("apps/agent-demo/.env")
+load_dotenv("apps/agent/.env")
 import litellm
 litellm.set_verbose=True
 

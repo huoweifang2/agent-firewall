@@ -1,4 +1,4 @@
-// ─── Agent Demo types ───
+// ─── Agent runtime types ───
 
 export interface AgentChatRequest {
   message: string
