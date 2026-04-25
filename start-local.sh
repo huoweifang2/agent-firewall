@@ -60,10 +60,10 @@ ensure_port_free 8002 "Agent"
 ensure_port_free 3000 "Frontend"
 
 echo "[start-local] Starting local application services..."
-(cd apps/proxy-service && uv run uvicorn src.main:app --reload --host 127.0.0.1 --port 8000) &
+(cd apps/proxy-service && uv run python -m uvicorn src.main:app --reload --host 127.0.0.1 --port 8000) &
 PROXY_PID=$!
 
-(cd apps/agent && uv run uvicorn src.main:app --reload --host 127.0.0.1 --port 8002) &
+(cd apps/agent && uv run python -m uvicorn src.main:app --reload --host 127.0.0.1 --port 8002) &
 AGENT_PID=$!
 
 (cd apps/frontend && npm run dev) &

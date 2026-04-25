@@ -33,8 +33,8 @@ dev:
 	cd infra && docker compose up db redis langfuse -d
 	@echo ""
 	@echo "🔧  Infrastructure started. Run apps locally:"
-	@echo "    cd apps/proxy-service && uv run uvicorn src.main:app --reload --port 8000"
-	@echo "    cd apps/agent && uv run uvicorn src.main:app --reload --port 8002"
+	@echo "    cd apps/proxy-service && uv run python -m uvicorn src.main:app --reload --port 8000"
+	@echo "    cd apps/agent && uv run python -m uvicorn src.main:app --reload --port 8002"
 	@echo "    cd apps/frontend && npm run dev"
 
 dev-all:
@@ -42,8 +42,8 @@ dev-all:
 	cd infra && docker compose up db redis langfuse -d
 	@echo "🚀  Starting local apps concurrently. Press Ctrl+C to stop all."
 	@trap 'echo "🛑 Stopping all services..."; kill 0' SIGINT; \
-	(cd apps/proxy-service && uv run uvicorn src.main:app --reload --port 8000) & \
-	(cd apps/agent && uv run uvicorn src.main:app --reload --port 8002) & \
+	(cd apps/proxy-service && uv run python -m uvicorn src.main:app --reload --port 8000) & \
+	(cd apps/agent && uv run python -m uvicorn src.main:app --reload --port 8002) & \
 	(cd apps/frontend && npm run dev) & \
 	wait
 
