@@ -44,6 +44,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Ensure tables exist (dev convenience — production uses Alembic)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    from src.wizard.schema_compat import ensure_agent_hierarchy_columns
+
+    await ensure_agent_hierarchy_columns(engine)
 
     await seed_policies()
     await seed_denylist()

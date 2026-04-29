@@ -67,6 +67,21 @@ class AgentStatus(str, enum.Enum):
     ARCHIVED = "archived"
 
 
+class AgentKind(str, enum.Enum):
+    """Agent hierarchy role."""
+
+    MAIN_AGENT = "main_agent"
+    SUB_AGENT = "sub_agent"
+
+
+class AgentCreatedFrom(str, enum.Enum):
+    """How an agent was created."""
+
+    MANUAL = "manual"
+    SANDBOX_CHAT = "sandbox_chat"
+    TEMPLATE = "template"
+
+
 class SkillScope(str, enum.Enum):
     """Where a skill applies in the runtime."""
 
@@ -128,6 +143,19 @@ class Agent(UUIDMixin, TimestampMixin, Base):
         default=AgentStatus.DRAFT,
     )
     is_reference: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    # ── Hierarchy ───────────────────────────────────────────────────
+    agent_kind: Mapped[AgentKind] = mapped_column(
+        Enum(AgentKind, name="agent_kind"),
+        nullable=False,
+        default=AgentKind.MAIN_AGENT,
+    )
+    created_from: Mapped[AgentCreatedFrom] = mapped_column(
+        Enum(AgentCreatedFrom, name="agent_created_from"),
+        nullable=False,
+        default=AgentCreatedFrom.MANUAL,
+    )
+    template_key: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     # ── Generated config cache (spec 28e) ────────────────────────────
     generated_config: Mapped[dict | None] = mapped_column(JSONB, nullable=True)

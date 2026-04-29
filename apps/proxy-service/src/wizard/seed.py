@@ -16,17 +16,19 @@ from src.db.session import async_session
 from src.wizard.models import (
     AccessType,
     Agent,
+    AgentCreatedFrom,
     AgentDelegation,
     AgentEnvironment,
     AgentFramework,
+    AgentKind,
     AgentRole,
     AgentSkill,
     AgentStatus,
     AgentTool,
     RoleToolPermission,
     RolloutMode,
-    SkillScope,
     Sensitivity,
+    SkillScope,
 )
 from src.wizard.services.config_gen import (
     generate_limits_yaml,
@@ -132,6 +134,9 @@ SEED_AGENTS: list[dict] = [
             "is_reference": True,
             "rollout_mode": RolloutMode.ENFORCE,
             "policy_pack": "customer_support",
+            "agent_kind": AgentKind.MAIN_AGENT,
+            "created_from": AgentCreatedFrom.TEMPLATE,
+            "template_key": "reference_ecommerce",
         },
         "tools": ECOMMERCE_TOOLS,
         "roles": ECOMMERCE_ROLES,
@@ -173,6 +178,9 @@ SEED_AGENTS: list[dict] = [
             "is_reference": True,
             "rollout_mode": RolloutMode.OBSERVE,
             "policy_pack": "internal_copilot",
+            "agent_kind": AgentKind.SUB_AGENT,
+            "created_from": AgentCreatedFrom.TEMPLATE,
+            "template_key": "reference_ecommerce",
         },
         "tools": ECOMMERCE_TOOLS,
         "roles": ECOMMERCE_ROLES,
@@ -272,6 +280,9 @@ async def _ensure_seed_extensions(
         agent = seed_agents_by_name.get(agent_name)
         if agent is None:
             continue
+        agent.agent_kind = seed_def["agent"].get("agent_kind", agent.agent_kind)
+        agent.created_from = seed_def["agent"].get("created_from", agent.created_from)
+        agent.template_key = seed_def["agent"].get("template_key", agent.template_key)
 
         existing_skills = await session.execute(select(AgentSkill).where(AgentSkill.agent_id == agent.id))
         if existing_skills.scalars().first() is None and seed_def.get("skills"):

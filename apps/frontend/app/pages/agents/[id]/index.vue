@@ -37,6 +37,21 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="delegationDialog" max-width="560">
+      <v-card>
+        <v-card-title>Edit Delegation</v-card-title>
+        <v-card-text>
+          <v-textarea v-model="delegationForm.delegation_description" label="Description" variant="outlined" rows="2" />
+          <v-textarea v-model="delegationForm.when_to_delegate" label="When to delegate" variant="outlined" rows="3" />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="delegationDialog = false">Cancel</v-btn>
+          <v-btn color="primary" :loading="isUpdatingDelegation" @click="saveDelegationEdit">Save</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <div v-if="loading" class="text-center py-12">
       <v-progress-circular indeterminate size="48" />
     </div>
@@ -44,6 +59,7 @@
     <template v-else-if="agent">
       <v-tabs v-model="activeTab" density="compact" class="mb-4">
         <v-tab value="overview">Overview</v-tab>
+        <v-tab value="team">Agent Team</v-tab>
         <v-tab value="tools">Tools</v-tab>
         <v-tab value="roles">Roles</v-tab>
         <v-tab value="config">Config</v-tab>
@@ -147,6 +163,61 @@
               </v-card>
             </v-col>
           </v-row>
+        </v-tabs-window-item>
+
+        <!-- Agent Team -->
+        <v-tabs-window-item value="team">
+          <v-card variant="outlined" class="pa-4">
+            <div class="d-flex align-center justify-space-between mb-3">
+              <div>
+                <h3 class="text-subtitle-1">Agent Team</h3>
+                <p class="text-body-2 text-medium-emphasis mb-0">
+                  Main agents delegate to active subagents through runtime tools.
+                </p>
+              </div>
+              <v-chip v-if="agent.agent_kind" variant="tonal" size="small">
+                {{ agent.agent_kind }}
+              </v-chip>
+            </div>
+
+            <template v-if="agent.agent_kind === 'main_agent'">
+              <v-list v-if="delegations.length" lines="three">
+                <v-list-item
+                  v-for="binding in delegations"
+                  :key="binding.id"
+                  :title="binding.child_agent_name || binding.child_agent_id"
+                  :subtitle="binding.when_to_delegate || binding.delegation_description || 'No delegation rule'"
+                >
+                  <template #prepend>
+                    <v-icon icon="mdi-call-split" />
+                  </template>
+                  <template #append>
+                    <div class="d-flex align-center ga-2">
+                      <v-switch
+                        :model-value="binding.is_active"
+                        color="success"
+                        density="compact"
+                        hide-details
+                        :loading="isUpdatingDelegation"
+                        @update:model-value="(v: boolean | null) => setDelegationActive(binding.id, !!v)"
+                      />
+                      <v-btn size="small" variant="text" icon="mdi-pencil" @click="openDelegationEdit(binding)" />
+                      <v-btn size="small" variant="text" icon="mdi-arrow-right" @click="navigateTo(`/agents/${binding.child_agent_id}`)" />
+                    </div>
+                  </template>
+                </v-list-item>
+              </v-list>
+              <div v-else class="text-center py-8 text-medium-emphasis">
+                No subagents are bound to this main agent.
+              </div>
+            </template>
+
+            <template v-else>
+              <v-alert type="info" variant="tonal">
+                This is a subagent. It has its own tools, roles, skills, and runtime spec.
+              </v-alert>
+            </template>
+          </v-card>
         </v-tabs-window-item>
 
         <!-- Tools -->
@@ -415,11 +486,12 @@ import { useAgents } from '~/composables/useAgents'
 import { useAgentTools } from '~/composables/useAgentTools'
 import { useAgentRoles } from '~/composables/useAgentRoles'
 import { useAgentConfig } from '~/composables/useAgentConfig'
+import { useAgentDelegations } from '~/composables/useAgentDelegations'
 import { useAgentKit } from '~/composables/useAgentKit'
 import { useAgentValidation } from '~/composables/useAgentValidation'
 import { useAgentRollout } from '~/composables/useAgentRollout'
 import { useAgentTracesList, useAgentIncidents } from '~/composables/useWizardTraces'
-import type { AgentRead, RoleRead, RolloutMode, Sensitivity, IncidentSeverity, IncidentStatus } from '~/types/wizard'
+import type { AgentRead, DelegationRead, RoleRead, RolloutMode, Sensitivity, IncidentSeverity, IncidentStatus } from '~/types/wizard'
 
 definePageMeta({ title: 'Agent Detail' })
 
@@ -431,10 +503,17 @@ const agent = ref<AgentRead | null>(null)
 const error = ref(false)
 const activeTab = ref('overview')
 const showDeleteDialog = ref(false)
+const delegationDialog = ref(false)
+const editingDelegation = ref<DelegationRead | null>(null)
+const delegationForm = ref({
+  delegation_description: '',
+  when_to_delegate: '',
+})
 
 const { getAgent, deleteAgent, isDeleting } = useAgents()
 const { tools } = useAgentTools(() => agentId.value)
 const { roles, matrix: permMatrix } = useAgentRoles(() => agentId.value)
+const { delegations, updateDelegation, isUpdating: isUpdatingDelegation } = useAgentDelegations(() => agentId.value)
 const { config, generate: genConfig, isGenerating: configGenerating } = useAgentConfig(() => agentId.value)
 const { kit, generate: genKit, isGenerating: kitGenerating, download: downloadKit } = useAgentKit(() => agentId.value)
 const { latest: latestValidation, run: runVal, isRunning: validationRunning } = useAgentValidation(() => agentId.value)
@@ -547,6 +626,31 @@ const doDelete = async () => {
 
 const updateIncidentStatus = async (incidentId: string, status: IncidentStatus) => {
   try { await updateIncident({ incidentId, status }) } catch { /* */ }
+}
+
+const setDelegationActive = async (bindingId: string, isActive: boolean) => {
+  try { await updateDelegation({ bindingId, body: { is_active: isActive } }) } catch { /* */ }
+}
+
+const openDelegationEdit = (binding: DelegationRead) => {
+  editingDelegation.value = binding
+  delegationForm.value = {
+    delegation_description: binding.delegation_description,
+    when_to_delegate: binding.when_to_delegate,
+  }
+  delegationDialog.value = true
+}
+
+const saveDelegationEdit = async () => {
+  if (!editingDelegation.value) return
+  try {
+    await updateDelegation({
+      bindingId: editingDelegation.value.id,
+      body: { ...delegationForm.value },
+    })
+    delegationDialog.value = false
+  }
+  catch { /* */ }
 }
 
 // Load agent

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed } from 'vue'
 import { api } from '~/services/api'
 import type {
+  OpenClawSkillsResponse,
   ToolCreate,
   ToolRead,
   ToolUpdate,
@@ -25,6 +26,7 @@ export const useAgentTools = (agentId: () => string) => {
       api.post<ToolRead>(`/v1/agents/${agentId()}/tools`, body).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKey.value })
+      queryClient.invalidateQueries({ queryKey: ['agent-runtime-spec'] })
     },
   })
 
@@ -33,6 +35,7 @@ export const useAgentTools = (agentId: () => string) => {
       api.patch<ToolRead>(`/v1/agents/${agentId()}/tools/${toolId}`, body).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKey.value })
+      queryClient.invalidateQueries({ queryKey: ['agent-runtime-spec'] })
     },
   })
 
@@ -41,6 +44,16 @@ export const useAgentTools = (agentId: () => string) => {
       api.delete(`/v1/agents/${agentId()}/tools/${toolId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKey.value })
+      queryClient.invalidateQueries({ queryKey: ['agent-runtime-spec'] })
+    },
+  })
+
+  const importOpenClawMutation = useMutation({
+    mutationFn: (skills: string[]) =>
+      api.post<ToolRead[]>(`/v1/agents/${agentId()}/tools/openclaw/import`, { skills }).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKey.value })
+      queryClient.invalidateQueries({ queryKey: ['agent-runtime-spec'] })
     },
   })
 
@@ -52,8 +65,18 @@ export const useAgentTools = (agentId: () => string) => {
     createTool: createMutation.mutateAsync,
     updateTool: updateMutation.mutateAsync,
     deleteTool: deleteMutation.mutateAsync,
+    importOpenClawTools: importOpenClawMutation.mutateAsync,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
+    isImportingOpenClaw: importOpenClawMutation.isPending,
   }
 }
+
+export const useOpenClawSkills = () => useQuery<OpenClawSkillsResponse>({
+  queryKey: ['openclaw-skills'],
+  queryFn: () => api.get<OpenClawSkillsResponse>('/v1/openclaw/skills', {
+    params: { eligible_only: true },
+  }).then(r => r.data),
+  staleTime: 60_000,
+})

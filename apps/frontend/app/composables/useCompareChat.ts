@@ -1,12 +1,13 @@
 /**
- * Composable for the Compare Playground.
+ * Composable for Compare.
  *
- * Fires the SAME prompt through two paths IN PARALLEL:
+ * Current implementation fires the SAME prompt through two LLM paths IN PARALLEL:
  *   1. Protected  — POST proxy/v1/chat/completions (full Agent-Firewall pipeline)
  *   2. Unprotected — DIRECT to provider API (browser → api.openai.com etc.)
  *
- * The right panel proves the raw model accepts dangerous prompts.
- * The left panel proves Agent-Firewall blocks them.  One-line URL change.
+ * The data shape below is kept close to the planned Agent Compare mode:
+ * one prompt, one protected path, one direct/less-protected path, with
+ * firewall decisions attached to the protected side.
  *
  * For providers without browser CORS support (Anthropic, Google), the
  * right panel falls back to the proxy's /v1/chat/direct endpoint
@@ -29,6 +30,13 @@ import type { ChatMessage, PipelineDecision, ApiError } from '~/types/api'
 export interface CompareTimings {
   protected: number | null // ms
   direct: number | null // ms
+}
+
+export interface CompareAgentMetadata {
+  agent_id?: string | null
+  session_id?: string | null
+  tool_trace?: Record<string, unknown> | null
+  firewall_decision?: PipelineDecision | null
 }
 
 /** Which phase is currently running. */

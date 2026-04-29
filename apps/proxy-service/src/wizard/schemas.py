@@ -9,10 +9,11 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from src.wizard.models import (
     AccessType,
+    AgentCreatedFrom,
     AgentEnvironment,
     AgentFramework,
+    AgentKind,
     AgentStatus,
-    SkillScope,
     GateAction,
     GateDecisionType,
     IncidentCategory,
@@ -22,6 +23,7 @@ from src.wizard.models import (
     RiskLevel,
     RolloutMode,
     Sensitivity,
+    SkillScope,
     TraceDecision,
     TraceGate,
 )
@@ -42,6 +44,9 @@ class AgentCreate(BaseModel):
     handles_secrets: bool = False
     calls_external_apis: bool = False
     policy_pack: str | None = None
+    agent_kind: AgentKind = AgentKind.MAIN_AGENT
+    created_from: AgentCreatedFrom = AgentCreatedFrom.MANUAL
+    template_key: str | None = Field(default=None, max_length=64)
 
 
 class AgentUpdate(BaseModel):
@@ -60,6 +65,9 @@ class AgentUpdate(BaseModel):
     calls_external_apis: bool | None = None
     status: AgentStatus | None = None
     policy_pack: str | None = None
+    agent_kind: AgentKind | None = None
+    created_from: AgentCreatedFrom | None = None
+    template_key: str | None = Field(default=None, max_length=64)
 
 
 class AgentRead(BaseModel):
@@ -85,6 +93,9 @@ class AgentRead(BaseModel):
     rollout_mode: RolloutMode
     status: AgentStatus
     is_reference: bool
+    agent_kind: AgentKind
+    created_from: AgentCreatedFrom
+    template_key: str | None
     generated_config: dict | None = None
     generated_kit: dict | None = None
     created_at: datetime
@@ -98,6 +109,60 @@ class AgentListResponse(BaseModel):
     total: int
     page: int
     per_page: int
+
+
+class AgentTeamSubAgent(BaseModel):
+    """Subagent entry in a hierarchical team view."""
+
+    agent: AgentRead
+    binding: DelegationRead | None = None
+    tools_count: int = 0
+    roles_count: int = 0
+    skills_count: int = 0
+    last_trace_at: datetime | None = None
+
+
+class AgentTeamRead(BaseModel):
+    """Main agent with its direct subagents."""
+
+    main_agent: AgentRead
+    sub_agents: list[AgentTeamSubAgent] = Field(default_factory=list)
+    tools_count: int = 0
+    roles_count: int = 0
+    skills_count: int = 0
+    last_trace_at: datetime | None = None
+
+
+class AgentTeamsResponse(BaseModel):
+    """Hierarchical agent list response."""
+
+    items: list[AgentTeamRead]
+    total: int
+
+
+class SubAgentCreateRequest(BaseModel):
+    """Create and bind a new subagent under a main agent."""
+
+    name: str = Field(..., min_length=2, max_length=128)
+    description: str = ""
+    team: str | None = None
+    framework: AgentFramework = AgentFramework.LANGGRAPH
+    environment: AgentEnvironment = AgentEnvironment.DEV
+    policy_pack: str | None = None
+    template_key: str | None = Field(default=None, max_length=64)
+    tools: list[ToolCreate] = Field(default_factory=list)
+    roles: list[RoleCreate] = Field(default_factory=list)
+    skills: list[SkillCreate] = Field(default_factory=list)
+    delegation_description: str = ""
+    when_to_delegate: str = ""
+    sort_order: int = 0
+    is_active: bool = True
+
+
+class AgentTeamTemplateCreate(BaseModel):
+    """Create an agent team from a named template."""
+
+    template_key: str = "coordinator_team"
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -152,6 +217,33 @@ class ToolRead(BaseModel):
     rate_limit: int | None
     created_at: datetime
     updated_at: datetime
+
+
+class OpenClawSkillRead(BaseModel):
+    """Redacted OpenClaw skill metadata for tool import UI."""
+
+    name: str
+    description: str = ""
+    source: str | None = None
+    bundled: bool = False
+    eligible: bool = False
+    disabled: bool = False
+    blocked_by_allowlist: bool = False
+    emoji: str | None = None
+    homepage: str | None = None
+    missing: dict = Field(default_factory=dict)
+
+
+class OpenClawSkillsResponse(BaseModel):
+    """Available OpenClaw skills response."""
+
+    items: list[OpenClawSkillRead] = Field(default_factory=list)
+
+
+class OpenClawImportRequest(BaseModel):
+    """Import OpenClaw skills as Agent-Firewall tools."""
+
+    skills: list[str] = Field(..., min_length=1)
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -367,6 +459,8 @@ class RuntimeToolSpec(BaseModel):
     arg_schema: dict | None = None
     returns_pii: bool = False
     returns_secrets: bool = False
+    pre_gate_enabled: bool = True
+    post_gate_enabled: bool = True
     rate_limit: int | None = None
 
 
@@ -399,6 +493,9 @@ class AgentRuntimeSpec(BaseModel):
     agent_id: uuid.UUID
     name: str
     description: str
+    agent_kind: AgentKind = AgentKind.MAIN_AGENT
+    created_from: AgentCreatedFrom = AgentCreatedFrom.MANUAL
+    template_key: str | None = None
     framework: AgentFramework
     policy_pack: str | None = None
     default_role: str | None = None
@@ -643,7 +740,13 @@ class TraceRunCreate(BaseModel):
     iterations: list[dict] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
     limits_hit: str | None = None
-    # Overflow: user_message, final_response, policy, node_timings
+    agent_kind: str | None = None
+    parent_agent_id: str | None = None
+    delegated_from: str | None = None
+    delegated_to: str | None = None
+    task: str | None = None
+    tool_flow: list[dict] = Field(default_factory=list)
+    # Overflow: user_message, final_response, policy, node_timings, hierarchy context
     user_message: str | None = None
     final_response: str | None = None
     policy: str | None = None
@@ -691,6 +794,12 @@ class TraceRunDetail(BaseModel):
     iterations: list[dict]
     errors: list
     limits_hit: str | None
+    agent_kind: str | None = None
+    parent_agent_id: str | None = None
+    delegated_from: str | None = None
+    delegated_to: str | None = None
+    task: str | None = None
+    tool_flow: list[dict] = Field(default_factory=list)
     user_message: str | None = None
     final_response: str | None = None
     policy: str | None = None

@@ -15,16 +15,14 @@ import structlog
 from litellm import acompletion
 from litellm.exceptions import APIError
 
-from src.agent.runtime_access import delegation_tool_name, get_runtime_sub_agents, get_runtime_tool
 from src.agent.limits.config import get_limits_for_role
 from src.agent.limits.service import get_limits_service
+from src.agent.runtime_access import delegation_tool_name, get_runtime_sub_agents, get_runtime_tool
 from src.agent.security.message_builder import build_messages
 from src.agent.state import AgentState
 from src.agent.tools.registry import (
-    fetch_composio_schemas,
     get_internal_tool_schema,
     normalize_external_tool_schema,
-    parse_app_refs,
 )
 from src.agent.trace.accumulator import TraceAccumulator
 from src.config import Settings, get_settings
@@ -197,7 +195,6 @@ def _build_runtime_tool_schemas(state: AgentState, session_id: str) -> list[dict
     allowed_tools = state.get("allowed_tools", [])
     schemas: list[dict[str, Any]] = []
 
-    composio_app_refs: list[str] = []
     for tool_name in allowed_tools:
         tool_spec = get_runtime_tool(runtime_spec, tool_name)
         if tool_spec is None:
@@ -211,13 +208,8 @@ def _build_runtime_tool_schemas(state: AgentState, session_id: str) -> list[dict
             schema = get_internal_tool_schema(tool_name)
             if schema is not None:
                 schemas.append(schema)
-        elif provider_type == "composio":
-            composio_app_refs.extend(parse_app_refs(tool_spec))
         else:
             schemas.append(normalize_external_tool_schema(tool_name, tool_spec))
-
-    if composio_app_refs:
-        schemas.extend(fetch_composio_schemas(sorted(set(composio_app_refs)), user_id=session_id))
 
     for sub_agent in get_runtime_sub_agents(runtime_spec):
         schemas.append(_delegate_tool_schema(sub_agent))

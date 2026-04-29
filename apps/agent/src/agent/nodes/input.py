@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import structlog
 
+from src.agent.limits.service import get_limits_service
 from src.agent.runtime_access import get_runtime_skills, get_runtime_sub_agents, resolve_effective_role
 from src.agent.runtime_loader import load_runtime_spec
-from src.agent.limits.service import get_limits_service
 from src.agent.security.sanitizer import sanitize_user_input
 from src.agent.state import AgentState
 from src.agent.trace.accumulator import TraceAccumulator
@@ -50,6 +50,12 @@ async def input_node(state: AgentState) -> AgentState:
     trace = TraceAccumulator()
     trace.start(
         session_id=session_id,
+        agent_id=str(state.get("agent_id") or settings.agent_id or ""),
+        agent_name=runtime_spec.get("name", "") if runtime_spec else "",
+        agent_kind=runtime_spec.get("agent_kind", "") if runtime_spec else "",
+        parent_agent_id=state.get("parent_agent_id"),
+        delegated_from=state.get("delegated_from"),
+        task=state.get("delegated_task"),
         user_role=effective_role,
         policy=state.get("policy", ""),
         model=state.get("model", ""),

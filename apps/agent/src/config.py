@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     default_max_tokens: int = 1024
     litellm_log_level: str = "ERROR"
 
+    # OpenClaw tool provider
+    openclaw_bin: str = "openclaw"
+    openclaw_agent_id: str = "coder"
+    openclaw_agent_local: bool = False
+    openclaw_timeout_seconds: int = 120
+
     # Agent
     max_iterations: int = 3
     max_turns: int = 20

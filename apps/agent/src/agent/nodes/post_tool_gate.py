@@ -19,6 +19,7 @@ from typing import Any
 
 import structlog
 
+from src.agent.runtime_access import get_runtime_tool
 from src.agent.state import AgentState, PostGateResult, ToolCallRecord
 from src.agent.trace.accumulator import TraceAccumulator
 
@@ -272,8 +273,12 @@ def check_size(text: str, max_size: int = MAX_TOOL_OUTPUT_SIZE) -> tuple[str, bo
 # ── Per-result Gate ───────────────────────────────────────────────────
 
 
-def is_tool_protected(tool_name: str, x_middlewares: str) -> bool:
+def is_tool_protected(tool_name: str, x_middlewares: str, runtime_spec: dict[str, Any] | None = None) -> bool:
     import json
+
+    tool_spec = get_runtime_tool(runtime_spec, tool_name)
+    if isinstance(tool_spec, dict) and isinstance(tool_spec.get("post_gate_enabled"), bool):
+        return bool(tool_spec["post_gate_enabled"])
 
     try:
         mws = json.loads(x_middlewares or "[]")
@@ -286,11 +291,16 @@ def is_tool_protected(tool_name: str, x_middlewares: str) -> bool:
     return True
 
 
-def evaluate_tool_output(tool_name: str, raw_result: str, x_middlewares: str = "[]") -> tuple[str, PostGateResult]:
-    if not is_tool_protected(tool_name, x_middlewares):
+def evaluate_tool_output(
+    tool_name: str,
+    raw_result: str,
+    x_middlewares: str = "[]",
+    runtime_spec: dict[str, Any] | None = None,
+) -> tuple[str, PostGateResult]:
+    if not is_tool_protected(tool_name, x_middlewares, runtime_spec):
         return raw_result, {
             "decision": "PASS",
-            "reason": "Unprotected tool bypassed.",
+            "reason": "Post-tool gate disabled for this runtime tool.",
             "secrets_count": 0,
             "pii_count": 0,
             "injection_score": 0.0,
@@ -400,7 +410,12 @@ def post_tool_gate_node(state: AgentState) -> AgentState:
 
         raw_result = tc.get("result", "")
         x_middlewares = state.get("x_middlewares", "[]")
-        sanitized, post_gate = evaluate_tool_output(tc["tool"], raw_result, x_middlewares)
+        sanitized, post_gate = evaluate_tool_output(
+            tc["tool"],
+            raw_result,
+            x_middlewares,
+            state.get("runtime_spec"),
+        )
 
         # Merge into a new record (preserve all existing fields)
         updated: ToolCallRecord = {

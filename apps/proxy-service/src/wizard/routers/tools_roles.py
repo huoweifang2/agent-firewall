@@ -12,12 +12,15 @@ from sqlalchemy.orm import selectinload
 
 from src.db.session import get_db
 from src.wizard.models import (
+    AccessType,
     Agent,
     AgentRole,
     AgentTool,
     RoleToolPermission,
+    Sensitivity,
 )
 from src.wizard.schemas import (
+    OpenClawImportRequest,
     PermissionBatchSet,
     PermissionCheckResponse,
     PermissionMatrixResponse,
@@ -29,6 +32,7 @@ from src.wizard.schemas import (
     ToolRead,
     ToolUpdate,
 )
+from src.wizard.services.openclaw import openclaw_arg_schema, openclaw_tool_name
 from src.wizard.services.permissions import (
     build_permission_matrix,
     check_permission,
@@ -106,6 +110,64 @@ async def list_tools(
 
     result = await db.execute(select(AgentTool).where(AgentTool.agent_id == agent_id).order_by(AgentTool.name))
     return result.scalars().all()
+
+
+@router.post("/tools/openclaw/import", response_model=list[ToolRead], status_code=201)
+async def import_openclaw_tools(
+    agent_id: uuid.UUID,
+    body: OpenClawImportRequest,
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> list[ToolRead]:
+    """Import OpenClaw skills as generic Agent-Firewall tools."""
+    await _get_agent_or_404(agent_id, db)
+
+    requested_skills = list(dict.fromkeys(skill.strip() for skill in body.skills if skill.strip()))
+    if not requested_skills:
+        raise HTTPException(status_code=422, detail="At least one OpenClaw skill is required")
+
+    tool_names = [openclaw_tool_name(skill) for skill in requested_skills]
+    existing = await db.execute(select(AgentTool).where(AgentTool.agent_id == agent_id, AgentTool.name.in_(tool_names)))
+    existing_names = [tool.name for tool in existing.scalars().all()]
+    if existing_names:
+        raise HTTPException(status_code=409, detail=f"OpenClaw tools already exist: {', '.join(existing_names)}")
+
+    created: list[AgentTool] = []
+    for skill in requested_skills:
+        tool = AgentTool(
+            agent_id=agent_id,
+            name=openclaw_tool_name(skill),
+            description=f"Execute the OpenClaw '{skill}' skill.",
+            category="openclaw",
+            access_type=AccessType.WRITE,
+            sensitivity=Sensitivity.MEDIUM,
+            arg_schema=openclaw_arg_schema(skill),
+            returns_pii=False,
+            returns_secrets=False,
+        )
+        apply_smart_defaults(tool)
+        db.add(tool)
+        created.append(tool)
+
+    await db.flush()
+
+    roles_result = await db.execute(select(AgentRole).where(AgentRole.agent_id == agent_id).order_by(AgentRole.name))
+    roles = list(roles_result.scalars().all())
+    for tool in created:
+        scopes = ["read", "write"] if tool.access_type == AccessType.WRITE else ["read"]
+        for role in roles:
+            db.add(RoleToolPermission(role_id=role.id, tool_id=tool.id, scopes=scopes))
+
+    await db.commit()
+    for tool in created:
+        await db.refresh(tool)
+
+    logger.info(
+        "openclaw_tools_imported",
+        agent_id=str(agent_id),
+        skills=requested_skills,
+        tools=[tool.name for tool in created],
+    )
+    return created
 
 
 @router.patch("/tools/{tool_id}", response_model=ToolRead)

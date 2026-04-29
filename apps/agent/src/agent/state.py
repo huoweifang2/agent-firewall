@@ -58,6 +58,9 @@ class AgentState(TypedDict, total=False):
     # ── Input ──────────────────────────────────────────────
     agent_id: str | None
     agent_name: str
+    parent_agent_id: str | None
+    delegated_from: str | None
+    delegated_task: str | None
     session_id: str
     user_role: str
     message: str  # Current user message
@@ -65,7 +68,7 @@ class AgentState(TypedDict, total=False):
     policy: str  # Policy name for proxy
     model: str  # LLM model to use
     api_key: str | None  # External provider API key (from browser)
-    x_middlewares: str | None  # Composio active middlewares config
+    x_middlewares: str | None  # Active external tool middleware config
     runtime_spec: dict[str, Any] | None
     available_sub_agents: list[dict[str, Any]]
     skills: list[dict[str, Any]]

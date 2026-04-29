@@ -31,6 +31,12 @@ class AgentTrace(BaseModel):
 
     agent_id: str = ""
     agent_name: str = ""
+    agent_kind: str = ""
+    parent_agent_id: str | None = None
+    delegated_from: str | None = None
+    delegated_to: str | None = None
+    task: str | None = None
+    tool_flow: list[dict] = Field(default_factory=list)
     intent: str = "unknown"
     user_role: str = "customer"
     allowed_tools: list[str] = Field(default_factory=list)

@@ -21,7 +21,7 @@ import structlog
 from src.agent.limits.config import get_limits_for_role
 from src.agent.limits.service import get_limits_service
 from src.agent.rbac.service import get_rbac_service
-from src.agent.runtime_access import role_can_use_tool
+from src.agent.runtime_access import get_runtime_tool, role_can_use_tool
 from src.agent.state import AgentState, CheckResult, GateDecision
 from src.agent.trace.accumulator import TraceAccumulator
 from src.agent.validation.validator import validate_tool_args
@@ -269,13 +269,17 @@ def _check_confirmation(
 # ── Gate evaluation ───────────────────────────────────────────────────
 
 
-def is_tool_protected(tool_name: str, x_middlewares: str) -> bool:
+def is_tool_protected(tool_name: str, x_middlewares: str, runtime_spec: dict[str, Any] | None = None) -> bool:
     import json
+
+    tool_spec = get_runtime_tool(runtime_spec, tool_name)
+    if isinstance(tool_spec, dict) and isinstance(tool_spec.get("pre_gate_enabled"), bool):
+        return bool(tool_spec["pre_gate_enabled"])
 
     try:
         mws = json.loads(x_middlewares or "[]")
         for mw in mws:
-            # We match tool_name prefixes like ASANA_ if it's ASANA from Composio
+            # We match external tool prefixes like ASANA_ when middleware names are app-level.
             app_prefix = mw.get("name", "").upper() + "_"
             if tool_name.upper().startswith(app_prefix):
                 return mw.get("protected", False)
@@ -307,12 +311,12 @@ def _evaluate_tool(
     risk_score = 0.0
 
     x_middlewares = state.get("x_middlewares", "[]")
-    if not is_tool_protected(tool_name, x_middlewares):
+    if not is_tool_protected(tool_name, x_middlewares, runtime_spec):
         return GateDecision(
             tool=tool_name,
             args=args,
             decision="ALLOW",
-            reason="Unprotected external tool bypassed.",
+            reason="Pre-tool gate disabled for this runtime tool.",
             checks=[],
             modified_args=args,
             risk_score=0.0,

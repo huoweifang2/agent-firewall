@@ -2,255 +2,228 @@
   <v-container fluid class="agents-page">
     <div class="d-flex align-center justify-space-between mb-6">
       <div>
-        <h1 class="text-h5 mb-1">Agents</h1>
+        <h1 class="text-h5 mb-1">My Agents</h1>
         <p class="text-body-2 text-medium-emphasis">
-          Register, configure and monitor your AI agents
+          Main agents own their subagents, tools, delegation rules, and traces.
         </p>
       </div>
       <div class="d-flex ga-2">
-        <v-btn
-          variant="text"
-          icon="mdi-book-open-outline"
-          title="Integration Guide"
-          @click="navigateTo('/agents/integration-guide')"
-        />
         <v-btn variant="text" icon="mdi-refresh" :loading="isLoading" @click="refetch" />
+        <v-btn variant="tonal" prepend-icon="mdi-shape-plus-outline" @click="navigateTo('/agents/templates')">
+          Templates
+        </v-btn>
         <v-btn color="primary" prepend-icon="mdi-plus" @click="navigateTo('/agents/new')">
-          New Agent
+          New Main Agent
         </v-btn>
       </div>
     </div>
 
-    <!-- Search / Filter bar -->
-    <v-row class="mb-4">
-      <v-col cols="12" sm="6" md="4">
-        <v-text-field
-          v-model="search"
-          prepend-inner-icon="mdi-magnify"
-          label="Search agents"
-          variant="outlined"
-          density="compact"
-          hide-details
-          clearable
-        />
-      </v-col>
-      <v-col cols="6" sm="3" md="2">
-        <v-select
-          v-model="riskFilter"
-          :items="riskOptions"
-          label="Risk"
-          variant="outlined"
-          density="compact"
-          hide-details
-          clearable
-        />
-      </v-col>
-      <v-col cols="6" sm="3" md="2">
-        <v-select
-          v-model="rolloutFilter"
-          :items="rolloutOptions"
-          label="Rollout"
-          variant="outlined"
-          density="compact"
-          hide-details
-          clearable
-        />
-      </v-col>
-    </v-row>
+    <v-text-field
+      v-model="search"
+      prepend-inner-icon="mdi-magnify"
+      label="Search agent teams"
+      variant="outlined"
+      density="compact"
+      hide-details
+      clearable
+      class="mb-4"
+      style="max-width: 420px"
+    />
 
-    <!-- Loading -->
-    <div v-if="isLoading && !agents.length">
-      <v-row>
-        <v-col v-for="n in 3" :key="n" cols="12">
-          <v-skeleton-loader type="table-row" />
-        </v-col>
-      </v-row>
+    <div v-if="isLoading && !teams.length" class="py-8">
+      <v-skeleton-loader v-for="n in 3" :key="n" type="list-item-avatar-three-line" class="mb-2" />
     </div>
 
-    <!-- Empty state -->
-    <v-card
-      v-else-if="!agents.length"
-      variant="outlined"
-      class="text-center pa-12"
-    >
-      <v-icon icon="mdi-robot-outline" size="80" color="primary" class="mb-4" />
-      <h2 class="text-h6 mb-2">No agents registered yet</h2>
+    <v-card v-else-if="!teams.length" variant="outlined" class="text-center pa-12">
+      <v-icon icon="mdi-account-supervisor-circle-outline" size="72" color="primary" class="mb-4" />
+      <h2 class="text-h6 mb-2">No agent teams yet</h2>
       <p class="text-body-2 text-medium-emphasis mb-6">
-        Register your first agent to start protecting it with Agent-Firewall
+        Create a coordinator team or start with an empty main agent.
       </p>
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="navigateTo('/agents/new')">
-        Register your first agent
-      </v-btn>
+      <div class="d-flex justify-center ga-2">
+        <v-btn color="primary" prepend-icon="mdi-shape-plus-outline" @click="navigateTo('/agents/templates')">
+          Use Template
+        </v-btn>
+        <v-btn variant="tonal" prepend-icon="mdi-plus" @click="navigateTo('/agents/new')">
+          Empty Main Agent
+        </v-btn>
+      </div>
     </v-card>
 
-    <!-- Agent table -->
-    <v-card v-else variant="outlined">
-      <v-data-table
-        :headers="headers"
-        :items="filteredAgents"
-        :items-per-page="20"
-        hover
-        class="agents-table"
-        @click:row="(_: unknown, row: { item: AgentRead }) => navigateTo(`/agents/${row.item.id}`)"
+    <div v-else class="d-flex flex-column ga-3">
+      <v-card
+        v-for="team in filteredTeams"
+        :key="team.main_agent.id"
+        variant="outlined"
+        class="agent-team"
       >
-        <template #item.name="{ item }">
-          <div class="d-flex align-center ga-2">
-            <v-icon icon="mdi-robot-outline" size="18" />
+        <div class="agent-team__main" @click="navigateTo(`/agents/${team.main_agent.id}`)">
+          <div class="d-flex align-center ga-3">
+            <v-avatar color="primary" variant="tonal" rounded="sm">
+              <v-icon icon="mdi-account-supervisor-circle-outline" />
+            </v-avatar>
             <div>
-              <div class="font-weight-medium">{{ item.name }}</div>
-              <div class="text-caption text-medium-emphasis text-truncate" style="max-width: 300px">
-                {{ item.description || '—' }}
+              <div class="d-flex align-center ga-2">
+                <h2 class="text-subtitle-1 mb-0">{{ team.main_agent.name }}</h2>
+                <v-chip size="x-small" color="primary" variant="tonal">main</v-chip>
+                <v-chip size="x-small" :color="rolloutColor(team.main_agent.rollout_mode)" variant="tonal">
+                  {{ team.main_agent.rollout_mode }}
+                </v-chip>
+              </div>
+              <p class="text-body-2 text-medium-emphasis mb-0">
+                {{ team.main_agent.description || 'No description' }}
+              </p>
+              <div class="text-caption text-medium-emphasis mt-1">
+                {{ team.tools_count }} tools · {{ team.roles_count }} roles · {{ team.skills_count }} skills · {{ team.sub_agents.length }} subagents
               </div>
             </div>
           </div>
-        </template>
-
-        <template #item.risk_level="{ item }">
-          <v-chip
-            v-if="item.risk_level"
-            :color="riskColor(item.risk_level)"
-            size="small"
-            variant="tonal"
-          >
-            {{ item.risk_level }}
-          </v-chip>
-          <span v-else class="text-medium-emphasis">—</span>
-        </template>
-
-        <template #item.rollout_mode="{ item }">
-          <v-chip
-            :color="rolloutColor(item.rollout_mode)"
-            size="small"
-            variant="tonal"
-          >
-            {{ item.rollout_mode }}
-          </v-chip>
-        </template>
-
-        <template #item.tools="{ item }">
-          {{ item.generated_config ? '✓' : '—' }}
-        </template>
-
-        <template #item.created_at="{ item }">
-          <span class="text-caption">{{ formatDate(item.created_at) }}</span>
-        </template>
-
-        <template #item.actions="{ item }">
           <div class="d-flex ga-1" @click.stop>
-            <v-btn size="x-small" variant="text" icon="mdi-pencil" @click="navigateTo(`/agents/${item.id}/edit`)" />
-            <v-btn size="x-small" variant="text" icon="mdi-delete" color="red" @click="confirmDelete(item)" />
+            <v-btn size="small" variant="text" icon="mdi-plus" title="Add subagent" @click="openSubAgentDialog(team.main_agent.id)" />
+            <v-btn size="small" variant="text" icon="mdi-flask-outline" title="Open sandbox" @click="openSandbox(team.main_agent.id)" />
+            <v-btn size="small" variant="text" icon="mdi-pencil" title="Edit" @click="navigateTo(`/agents/${team.main_agent.id}/edit`)" />
           </div>
-        </template>
-      </v-data-table>
+        </div>
 
-      <!-- Delete confirmation dialog -->
-      <v-dialog v-model="showDeleteDialog" max-width="440">
-        <v-card>
-          <v-card-title class="text-h6">Delete Agent</v-card-title>
-          <v-card-text>
-            Are you sure you want to delete <strong>{{ agentToDelete?.name }}</strong>?
-            This action cannot be undone.
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer />
-            <v-btn variant="text" @click="showDeleteDialog = false">Cancel</v-btn>
-            <v-btn color="red" variant="flat" :loading="isDeleting" @click="doDelete">Delete</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-    </v-card>
+        <v-divider v-if="team.sub_agents.length" />
+
+        <v-list v-if="team.sub_agents.length" density="compact" lines="two" class="py-0">
+          <v-list-item
+            v-for="sub in team.sub_agents"
+            :key="sub.agent.id"
+            class="agent-team__sub"
+            @click="navigateTo(`/agents/${sub.agent.id}`)"
+          >
+            <template #prepend>
+              <v-icon icon="mdi-subdirectory-arrow-right" color="medium-emphasis" class="mr-1" />
+              <v-avatar color="secondary" variant="tonal" rounded="sm" size="32">
+                <v-icon icon="mdi-robot-outline" size="18" />
+              </v-avatar>
+            </template>
+            <v-list-item-title>
+              <span class="font-weight-medium">{{ sub.agent.name }}</span>
+              <v-chip size="x-small" class="ml-2" variant="tonal">subagent</v-chip>
+            </v-list-item-title>
+            <v-list-item-subtitle>
+              {{ sub.binding?.when_to_delegate || sub.agent.description || 'No delegation rule' }}
+            </v-list-item-subtitle>
+            <template #append>
+              <span class="text-caption text-medium-emphasis">
+                {{ sub.tools_count }} tools · {{ sub.skills_count }} skills
+              </span>
+            </template>
+          </v-list-item>
+        </v-list>
+
+        <div v-else class="px-4 pb-4 text-body-2 text-medium-emphasis">
+          No subagents yet.
+        </div>
+      </v-card>
+    </div>
+
+    <v-dialog v-model="subAgentDialog" max-width="560">
+      <v-card>
+        <v-card-title>Create Subagent</v-card-title>
+        <v-card-text>
+          <v-form v-model="subAgentValid">
+            <v-text-field
+              v-model="subAgentForm.name"
+              label="Name"
+              variant="outlined"
+              :rules="[(v: string) => !!v?.trim() || 'Required']"
+            />
+            <v-textarea v-model="subAgentForm.description" label="Responsibility" variant="outlined" rows="2" />
+            <v-textarea v-model="subAgentForm.when_to_delegate" label="When to delegate" variant="outlined" rows="2" />
+          </v-form>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="subAgentDialog = false">Cancel</v-btn>
+          <v-btn color="primary" :disabled="!subAgentValid" :loading="isCreatingSubAgent" @click="createSubAgentFromDialog">
+            Create
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { useAgents } from '~/composables/useAgents'
-import type { AgentRead, RiskLevel, RolloutMode } from '~/types/wizard'
+import { computed, reactive, ref } from 'vue'
+import { useAgentTeams } from '~/composables/useAgentTeams'
+import type { RolloutMode } from '~/types/wizard'
 
-definePageMeta({ title: 'Agents' })
+definePageMeta({ title: 'My Agents' })
 
 const search = ref('')
-const riskFilter = ref<string | null>(null)
-const rolloutFilter = ref<string | null>(null)
-
-const riskOptions = ['low', 'medium', 'high', 'critical']
-const rolloutOptions = ['observe', 'warn', 'enforce']
-
-// Debounced search value sent to the server
-const debouncedSearch = ref<string | undefined>(undefined)
-let searchTimeout: ReturnType<typeof setTimeout> | null = null
-watch(search, (v) => {
-  if (searchTimeout) clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    debouncedSearch.value = v?.trim() || undefined
-  }, 300)
+const selectedMainAgentId = ref<string | null>(null)
+const subAgentDialog = ref(false)
+const subAgentValid = ref(false)
+const subAgentForm = reactive({
+  name: '',
+  description: '',
+  when_to_delegate: '',
 })
 
-const riskLevel = computed(() => riskFilter.value || undefined)
-const rolloutMode = computed(() => rolloutFilter.value || undefined)
+const { teams, isLoading, refetch, createSubAgent, isCreatingSubAgent } = useAgentTeams()
 
-const { agents, isLoading, refetch, deleteAgent, isDeleting } = useAgents({
-  search: debouncedSearch,
-  riskLevel,
-  rolloutMode,
+const filteredTeams = computed(() => {
+  const q = search.value.trim().toLowerCase()
+  if (!q) return teams.value
+  return teams.value.filter((team) => {
+    const mainMatch = [team.main_agent.name, team.main_agent.description].some(v => (v || '').toLowerCase().includes(q))
+    const subMatch = team.sub_agents.some(sub => [sub.agent.name, sub.agent.description, sub.binding?.when_to_delegate]
+      .some(v => (v || '').toLowerCase().includes(q)))
+    return mainMatch || subMatch
+  })
 })
 
-// No client-side filtering needed — server handles search + filters
-const filteredAgents = computed(() => agents.value)
-
-const headers = [
-  { title: 'Agent', key: 'name', sortable: true },
-  { title: 'Risk', key: 'risk_level', sortable: true, width: '120' },
-  { title: 'Rollout', key: 'rollout_mode', sortable: true, width: '120' },
-  { title: 'Config', key: 'tools', sortable: false, width: '80' },
-  { title: 'Created', key: 'created_at', sortable: true, width: '160' },
-  { title: '', key: 'actions', sortable: false, width: '100' },
-]
-
-const riskColor = (level: RiskLevel): string =>
-  ({ low: 'green', medium: 'amber', high: 'orange', critical: 'red' })[level] ?? 'grey'
-
-const rolloutColor = (mode: RolloutMode): string =>
+const rolloutColor = (mode: RolloutMode) =>
   ({ observe: 'blue', warn: 'amber', enforce: 'green' })[mode] ?? 'grey'
 
-// ─── Delete ───
-const showDeleteDialog = ref(false)
-const agentToDelete = ref<AgentRead | null>(null)
-
-const confirmDelete = (agent: AgentRead) => {
-  agentToDelete.value = agent
-  showDeleteDialog.value = true
+const openSubAgentDialog = (mainAgentId: string) => {
+  selectedMainAgentId.value = mainAgentId
+  subAgentForm.name = ''
+  subAgentForm.description = ''
+  subAgentForm.when_to_delegate = ''
+  subAgentDialog.value = true
 }
 
-const doDelete = async () => {
-  if (!agentToDelete.value) return
-  try {
-    await deleteAgent(agentToDelete.value.id)
-    showDeleteDialog.value = false
-    agentToDelete.value = null
-  }
-  catch { /* */ }
+const createSubAgentFromDialog = async () => {
+  if (!selectedMainAgentId.value) return
+  await createSubAgent({
+    mainAgentId: selectedMainAgentId.value,
+    body: {
+      name: subAgentForm.name,
+      description: subAgentForm.description,
+      when_to_delegate: subAgentForm.when_to_delegate,
+      delegation_description: subAgentForm.description,
+      template_key: 'manual_subagent',
+    },
+  })
+  subAgentDialog.value = false
 }
 
-const formatDate = (iso: string): string => {
-  const d = new Date(iso)
-  const now = new Date()
-  const diff = now.getTime() - d.getTime()
-  const mins = Math.floor(diff / 60_000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
-  return d.toLocaleDateString()
+const openSandbox = (agentId: string) => {
+  navigateTo(`/test-agents?agent=${agentId}`)
 }
 </script>
 
 <style lang="scss" scoped>
-.agents-table {
-  :deep(tr) {
+.agent-team {
+  overflow: hidden;
+
+  &__main {
     cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  &__sub {
+    cursor: pointer;
+    padding-left: 24px;
   }
 }
 </style>

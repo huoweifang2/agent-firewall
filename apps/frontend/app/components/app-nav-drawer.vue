@@ -85,9 +85,9 @@ const entryItems: NavItem[] = [
 
 // --- Agents (agent workspace) ---
 const agentItems: NavItem[] = [
-  { title: 'Creator', icon: 'mdi-magic-staff', to: '/agents/new' },
-  { title: 'My Agents', icon: 'mdi-robot-outline', to: '/agents' },
   { title: 'Agent Sandbox', icon: 'mdi-flask-outline', to: '/test-agents' },
+  { title: 'My Agents', icon: 'mdi-robot-outline', to: '/agents' },
+  { title: 'Templates', icon: 'mdi-shape-plus-outline', to: '/agents/templates' },
   { title: 'Agent Traces', icon: 'mdi-timeline-clock-outline', to: '/agent-traces' },
 ]
 

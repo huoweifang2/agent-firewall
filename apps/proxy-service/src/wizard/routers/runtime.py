@@ -10,7 +10,19 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.session import get_db
-from src.wizard.models import Agent, AgentDelegation, AgentSkill
+from src.wizard.models import (
+    AccessType,
+    Agent,
+    AgentCreatedFrom,
+    AgentDelegation,
+    AgentKind,
+    AgentRole,
+    AgentSkill,
+    AgentStatus,
+    AgentTool,
+    RoleToolPermission,
+    Sensitivity,
+)
 from src.wizard.schemas import (
     AgentRuntimeSpec,
     DelegationCreate,
@@ -19,8 +31,11 @@ from src.wizard.schemas import (
     SkillCreate,
     SkillRead,
     SkillUpdate,
+    SubAgentCreateRequest,
 )
+from src.wizard.services.risk import apply_risk_classification
 from src.wizard.services.runtime_spec import build_agent_runtime_spec
+from src.wizard.services.tools import apply_smart_defaults
 
 logger = structlog.get_logger()
 router = APIRouter(prefix="/agents/{agent_id}", tags=["runtime"])
@@ -126,6 +141,80 @@ def _delegation_to_read(binding: AgentDelegation) -> DelegationRead:
     )
 
 
+async def _unique_agent_name(db: AsyncSession, name: str) -> str:
+    existing = await db.execute(select(Agent.name).where(Agent.name == name))
+    if existing.scalar_one_or_none() is None:
+        return name
+    for idx in range(2, 1000):
+        candidate = f"{name} {idx}"
+        result = await db.execute(select(Agent.name).where(Agent.name == candidate))
+        if result.scalar_one_or_none() is None:
+            return candidate
+    raise HTTPException(status_code=409, detail="Unable to generate a unique subagent name")
+
+
+async def _seed_default_subagent_resources(
+    db: AsyncSession,
+    child: Agent,
+    body: SubAgentCreateRequest,
+) -> None:
+    tool_specs = body.tools or [
+        {
+            "name": "WEB_SEARCH",
+            "description": "Search the web for research and source gathering.",
+            "category": "Search",
+            "access_type": AccessType.READ,
+            "sensitivity": Sensitivity.LOW,
+            "returns_pii": False,
+            "returns_secrets": False,
+            "arg_schema": None,
+        }
+    ]
+    tools: dict[str, AgentTool] = {}
+    for spec in tool_specs:
+        payload = spec.model_dump() if hasattr(spec, "model_dump") else dict(spec)
+        tool = AgentTool(agent_id=child.id, **payload)
+        apply_smart_defaults(tool)
+        db.add(tool)
+        await db.flush()
+        tools[tool.name] = tool
+
+    role_specs = body.roles or [
+        {
+            "name": "operator",
+            "description": "Default subagent operator role.",
+            "inherits_from": None,
+        }
+    ]
+    roles: list[AgentRole] = []
+    for spec in role_specs:
+        payload = spec.model_dump() if hasattr(spec, "model_dump") else dict(spec)
+        role = AgentRole(agent_id=child.id, **payload)
+        db.add(role)
+        await db.flush()
+        roles.append(role)
+
+    if roles:
+        for tool in tools.values():
+            scopes = ["read", "write"] if tool.access_type == AccessType.WRITE else ["read"]
+            db.add(RoleToolPermission(role_id=roles[0].id, tool_id=tool.id, scopes=scopes))
+
+    skill_specs = body.skills or [
+        {
+            "name": "focused_execution",
+            "description": "Handle delegated tasks independently and return concise structured results.",
+            "scope": "sub_agent",
+            "prompt_fragment": "You are a focused subagent. Complete only the delegated task and return concise, structured results.",
+            "constraints": None,
+            "output_contract": None,
+            "sort_order": 0,
+        }
+    ]
+    for spec in skill_specs:
+        payload = spec.model_dump() if hasattr(spec, "model_dump") else dict(spec)
+        db.add(AgentSkill(agent_id=child.id, **payload))
+
+
 @router.get("/sub-agents", response_model=list[DelegationRead])
 async def list_sub_agents(
     agent_id: uuid.UUID,
@@ -170,6 +259,58 @@ async def create_sub_agent(
     await db.commit()
     await db.refresh(binding, attribute_names=["child_agent"])
     logger.info("sub_agent_created", agent_id=str(agent_id), child_agent_id=str(body.child_agent_id))
+    return _delegation_to_read(binding)
+
+
+@router.post("/sub-agents/create", response_model=DelegationRead, status_code=201)
+async def create_and_bind_sub_agent(
+    agent_id: uuid.UUID,
+    body: SubAgentCreateRequest,
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> DelegationRead:
+    """Create a new subagent and bind it under a main agent."""
+    parent = await _get_agent_or_404(agent_id, db)
+    if parent.agent_kind != AgentKind.MAIN_AGENT:
+        raise HTTPException(status_code=422, detail="Only main agents can create subagents")
+
+    child_name = await _unique_agent_name(db, body.name)
+    child = Agent(
+        name=child_name,
+        description=body.description,
+        team=body.team if body.team is not None else parent.team,
+        framework=body.framework,
+        environment=body.environment,
+        is_public_facing=False,
+        has_tools=True,
+        has_write_actions=any(t.access_type == AccessType.WRITE for t in body.tools),
+        touches_pii=False,
+        handles_secrets=False,
+        calls_external_apis=bool(body.tools),
+        policy_pack=body.policy_pack or parent.policy_pack,
+        status=AgentStatus.ACTIVE,
+        agent_kind=AgentKind.SUB_AGENT,
+        created_from=AgentCreatedFrom.SANDBOX_CHAT,
+        template_key=body.template_key,
+    )
+    apply_risk_classification(child)
+    db.add(child)
+    await db.flush()
+
+    await _seed_default_subagent_resources(db, child, body)
+
+    binding = AgentDelegation(
+        parent_agent_id=parent.id,
+        child_agent_id=child.id,
+        delegation_description=body.delegation_description
+        or f"Delegate specialized tasks to {child.name}.",
+        when_to_delegate=body.when_to_delegate or "Use this subagent when its specialization matches the user task.",
+        sort_order=body.sort_order,
+        is_active=body.is_active,
+    )
+    db.add(binding)
+    await db.commit()
+    await db.refresh(binding, attribute_names=["child_agent"])
+    logger.info("sub_agent_created_from_parent", agent_id=str(agent_id), child_agent_id=str(child.id))
     return _delegation_to_read(binding)
 
 

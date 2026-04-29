@@ -1,113 +1,372 @@
 <template>
-  <div class="middleware-page pa-4">
-    <h1 class="text-h4 mb-4">Middleware Config</h1>
-    <p class="mb-6 text-body-1 text-medium-emphasis">
-      Manage active Composer toolkits and MCP integrations. 
-      <br >
-      <strong>Default behavior is zero-protection.</strong> You must explicitly enable Pre-Gate and Post-Gate interception.
-    </p>
+  <v-container fluid class="middleware-page pa-4">
+    <div class="middleware-page__header">
+      <div>
+        <h1 class="text-h5 mb-1">
+          <v-icon start>mdi-transfer-right</v-icon>
+          OpenClaw Middleware
+        </h1>
+        <p class="text-body-2 text-medium-emphasis mb-0">
+          Bind OpenClaw skills to the selected Agent and configure the runtime gates used by Agent Sandbox.
+        </p>
+      </div>
+      <v-btn
+        icon="mdi-refresh"
+        variant="text"
+        :loading="isAgentsLoading || isToolsLoading || isSkillsLoading"
+        @click="refreshAll"
+      />
+    </div>
 
-    <v-card class="mb-4" variant="outlined">
-      <v-toolbar color="transparent" density="compact">
-        <v-toolbar-title class="text-subtitle-1">Composio Toolkits</v-toolbar-title>
+    <v-sheet border rounded class="pa-3 mb-4">
+      <div class="middleware-page__agent-row">
+        <v-select
+          v-model="selectedAgentId"
+          :items="agentItems"
+          :loading="isAgentsLoading"
+          item-title="title"
+          item-value="value"
+          label="Agent"
+          variant="outlined"
+          density="compact"
+          hide-details
+          class="middleware-page__agent-select"
+        />
+        <v-chip v-if="selectedAgent" size="small" variant="tonal" color="primary">
+          {{ selectedAgent.name }}
+        </v-chip>
+        <v-chip v-if="enabledOpenClawTools.length" size="small" variant="tonal" color="success">
+          {{ enabledOpenClawTools.length }} OpenClaw enabled
+        </v-chip>
+      </div>
+    </v-sheet>
+
+    <v-alert
+      v-if="!selectedAgentId && !isAgentsLoading"
+      type="info"
+      variant="tonal"
+      class="mb-4"
+    >
+      Create or select a main agent before binding OpenClaw skills.
+    </v-alert>
+
+    <v-alert
+      v-if="errorText"
+      type="error"
+      variant="tonal"
+      closable
+      class="mb-4"
+      @click:close="errorText = ''"
+    >
+      {{ errorText }}
+    </v-alert>
+
+    <v-sheet border rounded>
+      <v-toolbar density="compact" color="transparent">
+        <v-toolbar-title class="text-subtitle-1">OpenClaw Skills</v-toolbar-title>
+        <template #append>
+          <v-chip size="x-small" variant="outlined" label>
+            Runtime config
+          </v-chip>
+        </template>
       </v-toolbar>
       <v-divider />
-      
-      <v-table>
+
+      <div v-if="isSkillsLoading || isToolsLoading" class="text-center py-8">
+        <v-progress-circular indeterminate color="primary" />
+      </div>
+
+      <v-table v-else density="comfortable" class="middleware-table">
         <thead>
           <tr>
-            <th class="text-left">Integration</th>
+            <th class="text-left">Skill</th>
             <th class="text-center">Enabled</th>
-            <th class="text-center">Pre-Tool Gate (Injection & RBAC)</th>
-            <th class="text-center">Post-Tool Gate (PII Scrape)</th>
+            <th class="text-center">Pre-Tool Gate</th>
+            <th class="text-center">Post-Tool Gate</th>
+            <th class="text-left">Runtime Tool</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(tool, i) in integrations" :key="i">
+          <tr v-if="!openClawSkills.length">
+            <td colspan="5" class="text-center text-medium-emphasis py-8">
+              No eligible OpenClaw skills were returned by the backend.
+            </td>
+          </tr>
+          <tr v-for="skill in openClawSkills" :key="skill.name">
             <td>
-              <div class="d-flex align-center">
-                <v-icon :icon="tool.icon" class="mr-2" color="primary"/>
-                <strong>{{ tool.name }}</strong>
+              <div class="d-flex align-center ga-3">
+                <v-avatar color="primary" variant="tonal" rounded="sm" size="32">
+                  <span class="text-caption">{{ skill.emoji || 'OC' }}</span>
+                </v-avatar>
+                <div class="middleware-table__skill">
+                  <div class="text-subtitle-2">{{ skill.name }}</div>
+                  <div class="text-caption text-medium-emphasis">{{ skill.description || 'OpenClaw skill' }}</div>
+                </div>
               </div>
             </td>
             <td class="text-center">
               <v-switch
-                v-model="tool.enabled"
+                :model-value="!!toolForSkill(skill.name)"
                 color="success"
                 hide-details
                 density="compact"
                 class="d-inline-flex"
-                @change="saveConfig"
+                :disabled="!selectedAgentId || isMutatingSkill(skill.name)"
+                :loading="isMutatingSkill(skill.name)"
+                @update:model-value="toggleSkill(skill.name, !!$event)"
               />
             </td>
             <td class="text-center">
               <v-switch
-                v-model="tool.preGate"
-                :disabled="!tool.enabled"
+                :model-value="preGateEnabled(toolForSkill(skill.name))"
                 color="warning"
                 hide-details
                 density="compact"
                 class="d-inline-flex"
-                @change="saveConfig"
+                :disabled="!toolForSkill(skill.name) || isUpdating"
+                @update:model-value="setProtection(skill.name, 'pre_gate_enabled', !!$event)"
               />
             </td>
             <td class="text-center">
               <v-switch
-                v-model="tool.postGate"
-                :disabled="!tool.enabled"
+                :model-value="postGateEnabled(toolForSkill(skill.name))"
                 color="warning"
                 hide-details
                 density="compact"
                 class="d-inline-flex"
-                @change="saveConfig"
+                :disabled="!toolForSkill(skill.name) || isUpdating"
+                @update:model-value="setProtection(skill.name, 'post_gate_enabled', !!$event)"
               />
+            </td>
+            <td>
+              <code v-if="toolForSkill(skill.name)" class="text-caption">{{ toolForSkill(skill.name)?.name }}</code>
+              <span v-else class="text-caption text-medium-emphasis">Not bound</span>
             </td>
           </tr>
         </tbody>
       </v-table>
-    </v-card>
-  </div>
+    </v-sheet>
+
+    <v-snackbar v-model="snackbar" :timeout="2600" :color="snackbarColor">
+      {{ snackbarText }}
+    </v-snackbar>
+  </v-container>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useAgents } from '~/composables/useAgents'
+import { useAgentTools, useOpenClawSkills } from '~/composables/useAgentTools'
+import type { ToolRead } from '~/types/wizard'
 
-const integrations = ref([
-  { name: 'WEB_SEARCH', icon: 'mdi-web', enabled: false, preGate: false, postGate: false },
-  { name: 'GITHUB', icon: 'mdi-github', enabled: false, preGate: false, postGate: false },
-  { name: 'SLACK', icon: 'mdi-slack', enabled: false, preGate: false, postGate: false },
-  { name: 'FILE', icon: 'mdi-folder', enabled: false, preGate: false, postGate: false },
-  { name: 'GMAIL', icon: 'mdi-gmail', enabled: false, preGate: false, postGate: false },
-])
+definePageMeta({ title: 'OpenClaw Middleware' })
 
-onMounted(() => {
-  const saved = localStorage.getItem('middleware-config')
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved)
-      // Merge saved state into the base integrations array
-      for (const p of parsed) {
-        const existing = integrations.value.find(i => i.name === p.name)
-        if (existing) {
-          existing.enabled = p.enabled
-          existing.preGate = p.preGate
-          existing.postGate = p.postGate
-        }
-      }
-    } catch (e) {
-      console.error(e)
-    }
+type ProtectionKey = 'pre_gate_enabled' | 'post_gate_enabled'
+
+const mainAgentKind = computed(() => 'main_agent')
+const selectedAgentId = ref('')
+const pendingSkill = ref('')
+const errorText = ref('')
+const snackbar = ref(false)
+const snackbarText = ref('')
+const snackbarColor = ref('success')
+
+const { agents, isLoading: isAgentsLoading, refetch: refetchAgents } = useAgents({ agentKind: mainAgentKind })
+const {
+  tools,
+  isLoading: isToolsLoading,
+  deleteTool,
+  updateTool,
+  importOpenClawTools,
+  isDeleting,
+  isUpdating,
+  isImportingOpenClaw,
+  refetch: refetchTools,
+} = useAgentTools(() => selectedAgentId.value)
+const { data: skillsResponse, isLoading: isSkillsLoading, refetch: refetchSkills } = useOpenClawSkills()
+
+const openClawSkills = computed(() => skillsResponse.value?.items ?? [])
+const enabledOpenClawTools = computed(() => tools.value.filter(t => t.category === 'openclaw' || t.name.startsWith('openclaw_')))
+const selectedAgent = computed(() => agents.value.find(agent => agent.id === selectedAgentId.value) ?? null)
+const agentItems = computed(() =>
+  agents.value.map(agent => ({
+    title: agent.name,
+    value: agent.id,
+  })),
+)
+
+watch(
+  agents,
+  (items) => {
+    if (selectedAgentId.value && items.some(agent => agent.id === selectedAgentId.value)) return
+    selectedAgentId.value = items[0]?.id ?? ''
+  },
+  { immediate: true },
+)
+
+function openClawToolName(skillName: string) {
+  const slug = skillName.trim().replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '').toLowerCase()
+  return `openclaw_${slug || 'skill'}`.slice(0, 64)
+}
+
+function toolForSkill(skillName: string): ToolRead | undefined {
+  const name = openClawToolName(skillName)
+  return tools.value.find(tool => tool.name === name)
+}
+
+function providerConfig(tool?: ToolRead): Record<string, unknown> {
+  const provider = tool?.arg_schema?.provider
+  return provider && typeof provider === 'object' && !Array.isArray(provider)
+    ? provider as Record<string, unknown>
+    : {}
+}
+
+function protectionConfig(tool?: ToolRead): Record<string, unknown> {
+  const protection = providerConfig(tool).protection
+  return protection && typeof protection === 'object' && !Array.isArray(protection)
+    ? protection as Record<string, unknown>
+    : {}
+}
+
+function gateEnabled(tool: ToolRead | undefined, key: ProtectionKey): boolean {
+  const protection = protectionConfig(tool)
+  if (typeof protection[key] === 'boolean') return protection[key]
+
+  const provider = providerConfig(tool)
+  if (typeof provider[key] === 'boolean') return provider[key] as boolean
+
+  return true
+}
+
+function preGateEnabled(tool?: ToolRead) {
+  return gateEnabled(tool, 'pre_gate_enabled')
+}
+
+function postGateEnabled(tool?: ToolRead) {
+  return gateEnabled(tool, 'post_gate_enabled')
+}
+
+function withProtection(tool: ToolRead, key: ProtectionKey, enabled: boolean): Record<string, unknown> {
+  const currentSchema = tool.arg_schema ? { ...tool.arg_schema } : {}
+  const currentProvider = providerConfig(tool)
+  const currentProtection = protectionConfig(tool)
+
+  return {
+    ...currentSchema,
+    provider: {
+      ...currentProvider,
+      protection: {
+        ...currentProtection,
+        [key]: enabled,
+      },
+    },
   }
-})
+}
 
-function saveConfig() {
-  localStorage.setItem('middleware-config', JSON.stringify(integrations.value))
+function isMutatingSkill(skillName: string) {
+  return pendingSkill.value === skillName || isImportingOpenClaw.value || isDeleting.value
+}
+
+function notify(text: string, color = 'success') {
+  snackbarText.value = text
+  snackbarColor.value = color
+  snackbar.value = true
+}
+
+async function toggleSkill(skillName: string, enabled: boolean) {
+  if (!selectedAgentId.value) return
+  pendingSkill.value = skillName
+  errorText.value = ''
+  try {
+    const existing = toolForSkill(skillName)
+    if (enabled && !existing) {
+      await importOpenClawTools([skillName])
+      notify(`${skillName} enabled`)
+    } else if (!enabled && existing) {
+      await deleteTool(existing.id)
+      notify(`${skillName} disabled`, 'info')
+    }
+    await refetchTools()
+    await refetchAgents()
+  } catch (err) {
+    errorText.value = err instanceof Error ? err.message : `Failed to update ${skillName}`
+  } finally {
+    pendingSkill.value = ''
+  }
+}
+
+async function setProtection(skillName: string, key: ProtectionKey, enabled: boolean) {
+  const tool = toolForSkill(skillName)
+  if (!tool) return
+  errorText.value = ''
+  try {
+    await updateTool({
+      toolId: tool.id,
+      body: {
+        arg_schema: withProtection(tool, key, enabled),
+      },
+    })
+    notify(`${skillName} ${key === 'pre_gate_enabled' ? 'pre-tool' : 'post-tool'} gate ${enabled ? 'enabled' : 'disabled'}`)
+  } catch (err) {
+    errorText.value = err instanceof Error ? err.message : `Failed to update ${skillName}`
+  }
+}
+
+async function refreshAll() {
+  await Promise.all([
+    refetchAgents(),
+    selectedAgentId.value ? refetchTools() : Promise.resolve(),
+    refetchSkills(),
+  ])
 }
 </script>
 
 <style scoped>
 .middleware-page {
-  max-width: 1000px;
+  max-width: 1180px;
   margin: 0 auto;
+}
+
+.middleware-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.middleware-page__agent-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.middleware-page__agent-select {
+  max-width: 360px;
+  min-width: 260px;
+}
+
+.middleware-table__skill {
+  max-width: 520px;
+}
+
+.middleware-table :deep(th) {
+  white-space: nowrap;
+}
+
+.middleware-table :deep(td) {
+  vertical-align: middle;
+}
+
+@media (max-width: 720px) {
+  .middleware-page__header {
+    align-items: flex-start;
+  }
+
+  .middleware-page__agent-select {
+    max-width: none;
+    min-width: 100%;
+  }
 }
 </style>

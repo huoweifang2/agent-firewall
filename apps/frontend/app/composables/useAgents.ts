@@ -15,6 +15,7 @@ export const useAgents = (params?: {
   status?: Ref<string | undefined>
   riskLevel?: Ref<string | undefined>
   rolloutMode?: Ref<string | undefined>
+  agentKind?: Ref<string | undefined>
 }) => {
   const queryClient = useQueryClient()
 
@@ -26,6 +27,7 @@ export const useAgents = (params?: {
     params?.status?.value,
     params?.riskLevel?.value,
     params?.rolloutMode?.value,
+    params?.agentKind?.value,
   ])
 
   const { data, isLoading, error, refetch } = useQuery<AgentListResponse>({
@@ -38,6 +40,7 @@ export const useAgents = (params?: {
       if (params?.status?.value) qp.set('status', params.status.value)
       if (params?.riskLevel?.value) qp.set('risk_level', params.riskLevel.value)
       if (params?.rolloutMode?.value) qp.set('rollout_mode', params.rolloutMode.value)
+      if (params?.agentKind?.value) qp.set('agent_kind', params.agentKind.value)
       return api.get<AgentListResponse>(`/v1/agents?${qp}`).then(r => r.data)
     },
     staleTime: 0,

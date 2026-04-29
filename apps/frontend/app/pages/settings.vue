@@ -112,6 +112,75 @@
             </v-btn>
           </v-card-text>
         </v-card>
+
+        <v-sheet border rounded class="pa-4 mt-6 openclaw-config">
+          <div class="d-flex align-center justify-space-between mb-3">
+            <div class="d-flex align-center">
+              <v-icon icon="mdi-console" size="22" class="mr-2" />
+              <span class="text-subtitle-1 font-weight-medium">OpenClaw Runtime</span>
+            </div>
+            <v-btn
+              icon="mdi-refresh"
+              size="small"
+              variant="text"
+              :loading="openClawLoading"
+              @click="loadOpenClawConfig"
+            />
+          </div>
+
+          <v-alert
+            v-if="openClawError"
+            type="warning"
+            variant="tonal"
+            density="compact"
+            class="mb-3"
+          >
+            {{ openClawError }}
+          </v-alert>
+
+          <v-row dense>
+            <v-col cols="12" sm="6">
+              <v-text-field
+                :model-value="openClawConfig?.openclaw_bin || ''"
+                label="OPENCLAW_BIN"
+                variant="outlined"
+                density="compact"
+                hide-details
+                readonly
+              />
+            </v-col>
+            <v-col cols="12" sm="6">
+              <v-text-field
+                :model-value="openClawConfig?.openclaw_agent_id || ''"
+                label="OPENCLAW_AGENT_ID"
+                variant="outlined"
+                density="compact"
+                hide-details
+                readonly
+              />
+            </v-col>
+            <v-col cols="12" sm="6">
+              <v-text-field
+                :model-value="String(openClawConfig?.openclaw_timeout_seconds ?? '')"
+                label="OPENCLAW_TIMEOUT_SECONDS"
+                variant="outlined"
+                density="compact"
+                hide-details
+                readonly
+              />
+            </v-col>
+            <v-col cols="12" sm="6">
+              <v-switch
+                :model-value="openClawConfig?.openclaw_agent_local ?? false"
+                label="OPENCLAW_AGENT_LOCAL"
+                color="primary"
+                density="compact"
+                hide-details
+                readonly
+              />
+            </v-col>
+          </v-row>
+        </v-sheet>
       </v-col>
     </v-row>
 
@@ -181,8 +250,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useApiKeys, PROVIDERS } from '~/composables/useApiKeys'
+import { agentService } from '~/services/agentService'
 import type { ProviderDef, StoredKey } from '~/composables/useApiKeys'
 
 definePageMeta({ title: 'Settings' })
@@ -199,6 +269,13 @@ const addRemember = ref(false)
 const snackbar = ref(false)
 const snackbarText = ref('')
 const snackbarColor = ref('success')
+const openClawLoading = ref(false)
+const openClawError = ref('')
+const openClawConfig = ref<Awaited<ReturnType<typeof agentService.getOpenClawConfig>> | null>(null)
+
+onMounted(() => {
+  loadOpenClawConfig()
+})
 
 function getStoredKey(providerId: string): StoredKey | undefined {
   return keys.value.find((k) => k.provider === providerId)
@@ -228,6 +305,18 @@ function handleRemove(providerId: string, providerName: string) {
   snackbarText.value = `${providerName} key removed`
   snackbarColor.value = 'info'
   snackbar.value = true
+}
+
+async function loadOpenClawConfig() {
+  openClawLoading.value = true
+  openClawError.value = ''
+  try {
+    openClawConfig.value = await agentService.getOpenClawConfig()
+  } catch (err) {
+    openClawError.value = err instanceof Error ? err.message : 'Agent runtime is not reachable'
+  } finally {
+    openClawLoading.value = false
+  }
 }
 </script>
 
@@ -274,5 +363,9 @@ function handleRemove(providerId: string, providerName: string) {
   &:hover {
     color: rgba(var(--v-theme-on-surface), 0.7) !important;
   }
+}
+
+.openclaw-config {
+  background: rgba(var(--v-theme-on-surface), 0.02);
 }
 </style>

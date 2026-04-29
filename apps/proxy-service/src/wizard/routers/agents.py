@@ -10,7 +10,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.session import get_db
-from src.wizard.models import Agent, AgentStatus, RiskLevel, RolloutMode
+from src.wizard.models import Agent, AgentKind, AgentStatus, RiskLevel, RolloutMode
 from src.wizard.schemas import AgentCreate, AgentListResponse, AgentRead, AgentUpdate
 from src.wizard.services.risk import apply_risk_classification
 
@@ -61,6 +61,7 @@ async def list_agents(
     status: AgentStatus | None = None,
     risk_level: RiskLevel | None = None,
     rollout_mode: RolloutMode | None = None,
+    agent_kind: AgentKind | None = None,
     team: str | None = None,
     db: AsyncSession = Depends(get_db),  # noqa: B008
 ) -> AgentListResponse:
@@ -87,6 +88,8 @@ async def list_agents(
         stmt = stmt.where(Agent.risk_level == risk_level)
     if rollout_mode is not None:
         stmt = stmt.where(Agent.rollout_mode == rollout_mode)
+    if agent_kind is not None:
+        stmt = stmt.where(Agent.agent_kind == agent_kind)
     if team is not None:
         stmt = stmt.where(Agent.team == team)
 

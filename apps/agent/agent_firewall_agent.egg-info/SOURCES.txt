@@ -42,9 +42,9 @@ src/agent/tools/orders.py
 src/agent/tools/registry.py
 src/agent/tools/secrets.py
 src/agent/tools/providers/__init__.py
-src/agent/tools/providers/composio.py
 src/agent/tools/providers/internal.py
 src/agent/tools/providers/mcp.py
+src/agent/tools/providers/openclaw.py
 src/agent/trace/__init__.py
 src/agent/trace/accumulator.py
 src/agent/trace/langfuse.py
@@ -65,6 +65,7 @@ tests/test_intent.py
 tests/test_limits.py
 tests/test_llm_call_transport.py
 tests/test_mock_llm.py
+tests/test_openclaw_provider.py
 tests/test_policy_check.py
 tests/test_post_tool_gate.py
 tests/test_pre_tool_gate.py

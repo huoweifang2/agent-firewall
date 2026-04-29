@@ -29,11 +29,12 @@ Agent-Firewall 是一个毕业设计项目，致力于为支持工具调用（To
    ```
 
 3. **配置 API 密钥 (API Keys)：**
-   启动应用前，请在 `apps/agent/.env` 与 `apps/proxy-service/.env`（如果不存在请自行创建）中填入你所使用的模型与集成工具的真实 API 密钥。例如：
+   启动应用前，请在 `apps/agent/.env` 与 `apps/proxy-service/.env`（如果不存在请自行创建）中填入你所使用的模型与 OpenClaw 桥接配置。例如：
    ```env
    # .env 示例
    DEEPSEEK_API_KEY="your-deepseek-api-key"
-   COMPOSIO_API_KEY="your-composio-api-key"
+   OPENCLAW_BIN="openclaw"
+   OPENCLAW_AGENT_ID="coder"
    ```
 
 4. **启动完整开发环境：**
@@ -61,7 +62,7 @@ Agent-Firewall 是一个毕业设计项目，致力于为支持工具调用（To
 
 ### 🔍 智能体运行层约束 (Agent-Level Enforcement)
 在智能体执行工具调用的环节，本系统设置了两道关卡拦截并强制执行安全策略：
-- **工具生态集成 (Tool Integrations)：** 基于 Composio SDK 驱动，提供一站式的外部应用与工具挂载能力。
+- **工具生态集成 (Tool Integrations)：** 基于 OpenClaw skill 桥接，将外部能力挂载为受 Agent-Firewall 管控的工具。
 - **前置评估 (Pre-tool gate)：** 角色权限控制 (RBAC)、参数注入检测、额度预算、用户二次确认
 - **后置评估 (Post-tool gate)：** PII 数据清洗、API 密钥/凭据泄露反扫、防间接注入
 

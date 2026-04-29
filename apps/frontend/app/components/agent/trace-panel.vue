@@ -13,7 +13,15 @@
     <v-card-text v-else>
       <div v-if="trace.agent_name" class="trace-row mb-3">
         <span class="text-caption text-grey">Agent</span>
-        <span class="text-body-2 font-weight-medium">{{ trace.agent_name }}</span>
+        <span class="text-body-2 font-weight-medium">
+          {{ trace.agent_name }}
+          <v-chip v-if="trace.agent_kind" size="x-small" class="ml-1" variant="tonal">{{ trace.agent_kind }}</v-chip>
+        </span>
+      </div>
+
+      <div v-if="trace.delegated_from" class="trace-row mb-3">
+        <span class="text-caption text-grey">Delegated from</span>
+        <span class="text-body-2 font-weight-medium">{{ trace.delegated_from }}</span>
       </div>
 
       <div class="trace-row mb-3">
@@ -54,6 +62,22 @@
             {{ subAgent }}
           </v-chip>
         </div>
+      </div>
+
+      <div v-if="trace.tool_flow?.length" class="mb-3">
+        <span class="text-caption text-grey d-block mb-1">Tool flow</span>
+        <v-list density="compact" class="pa-0">
+          <v-list-item
+            v-for="(step, i) in trace.tool_flow"
+            :key="i"
+            :title="String(step.delegated_to || step.tool || step.event)"
+            :subtitle="String(step.task || step.result_preview || '')"
+          >
+            <template #prepend>
+              <v-icon :icon="step.event === 'create_subagent' ? 'mdi-robot-plus-outline' : 'mdi-call-split'" size="18" />
+            </template>
+          </v-list-item>
+        </v-list>
       </div>
 
       <div class="trace-row mb-3">

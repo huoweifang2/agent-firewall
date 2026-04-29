@@ -29,7 +29,7 @@ from src.agent.tools.registry import describe_external_tool, get_tools_descripti
 # No user-derived content. Template variables only from RBAC / config.
 
 SYSTEM_PROMPT_TEMPLATE = """\
-You are a highly capable, autonomous AI Assistant powered by Composio integrations.
+You are a highly capable, autonomous AI Assistant powered by Agent-Firewall tool integrations.
 You can perform a wide variety of tasks using the tools provided to you.
 
 You have access to the following tools:

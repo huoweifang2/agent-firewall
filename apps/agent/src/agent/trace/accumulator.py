@@ -66,6 +66,12 @@ class TraceAccumulator:
         self,
         *,
         session_id: str,
+        agent_id: str = "",
+        agent_name: str = "",
+        agent_kind: str = "",
+        parent_agent_id: str | None = None,
+        delegated_from: str | None = None,
+        task: str | None = None,
         request_id: str = "",
         user_role: str = "customer",
         policy: str = "",
@@ -81,6 +87,13 @@ class TraceAccumulator:
                 "_perf_start": self._start_time,
                 "trace_id": str(uuid4()),
                 "session_id": session_id,
+                "agent_id": agent_id,
+                "agent_name": agent_name,
+                "agent_kind": agent_kind,
+                "parent_agent_id": parent_agent_id,
+                "delegated_from": delegated_from,
+                "task": _redact(task or ""),
+                "tool_flow": [],
                 "request_id": request_id or str(uuid4()),
                 "timestamp": datetime.now(UTC).isoformat(),
                 "user_role": user_role,
@@ -185,6 +198,26 @@ class TraceAccumulator:
             }
         )
         self._trace.setdefault("counters", {})["tool_calls"] = self._trace.get("counters", {}).get("tool_calls", 0) + 1
+
+    def record_tool_flow(
+        self,
+        *,
+        event: str,
+        tool: str,
+        delegated_to: str | None = None,
+        task: str | None = None,
+        result_preview: str | None = None,
+    ) -> None:
+        """Record high-level orchestration events for main/subagent flows."""
+        self._trace.setdefault("tool_flow", []).append(
+            {
+                "event": event,
+                "tool": tool,
+                "delegated_to": delegated_to,
+                "task": _redact(task or ""),
+                "result_preview": _redact((result_preview or "")[:200]),
+            }
+        )
 
     # ── Post-tool gate ────────────────────────────────────
 

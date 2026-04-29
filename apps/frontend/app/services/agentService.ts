@@ -17,6 +17,16 @@ agentApi.interceptors.request.use((config) => {
 })
 
 export const agentService = {
+  async getOpenClawConfig(): Promise<{
+    openclaw_bin: string
+    openclaw_agent_id: string
+    openclaw_agent_local: boolean
+    openclaw_timeout_seconds: number
+  }> {
+    const { data } = await agentApi.get('/agent/openclaw/config')
+    return data
+  },
+
   async chat(request: AgentChatRequest): Promise<AgentChatResponse> {
     const headers: Record<string, string> = {}
 

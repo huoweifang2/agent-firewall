@@ -49,6 +49,12 @@ def _build_response_obj(final_state: dict, started_at: float) -> AgentChatRespon
         agent_trace=AgentTrace(
             agent_id=str(final_state.get("agent_id", "")),
             agent_name=final_state.get("agent_name", ""),
+            agent_kind=(final_state.get("runtime_spec") or {}).get("agent_kind", ""),
+            parent_agent_id=final_state.get("parent_agent_id"),
+            delegated_from=final_state.get("delegated_from"),
+            delegated_to=(final_state.get("trace") or {}).get("delegated_to"),
+            task=final_state.get("delegated_task"),
+            tool_flow=(final_state.get("trace") or {}).get("tool_flow", []),
             intent=final_state.get("intent", "unknown"),
             user_role=final_state.get("user_role", "customer"),
             allowed_tools=final_state.get("allowed_tools", []),

@@ -29,11 +29,12 @@ The most common way to run the project for testing or development is starting al
    ```
 
 3. **Configure API Keys:**
-   Create or edit the `.env` files in `apps/agent/` and `apps/proxy-service/` to include the required API keys for the LLM providers and Composio tools. For example:
+   Create or edit the `.env` files in `apps/agent/` and `apps/proxy-service/` to include the required API keys for the LLM providers and OpenClaw bridge. For example:
    ```env
    # Example .env configuration
    DEEPSEEK_API_KEY="your-deepseek-api-key"
-   COMPOSIO_API_KEY="your-composio-api-key"
+   OPENCLAW_BIN="openclaw"
+   OPENCLAW_AGENT_ID="coder"
    ```
 
 4. **Start the full development environment:**
@@ -61,7 +62,7 @@ The most common way to run the project for testing or development is starting al
 
 ### 🔍 Agent-Level Enforcement
 Intercepts and enforces policy at two gates during tool execution:
-- **Tool Integrations:** Powered by the Composio SDK for seamless and extensive third-party application execution.
+- **Tool Integrations:** Powered by OpenClaw skills exposed through the Agent-Firewall tool bridge.
 - **Pre-tool gate:** RBAC, argument injection scan, budget, confirmation
 - **Post-tool gate:** PII redaction, secrets scan, indirect injection
 

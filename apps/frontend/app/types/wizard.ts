@@ -6,6 +6,8 @@ export type RiskLevel = 'low' | 'medium' | 'high' | 'critical'
 export type ProtectionLevel = 'proxy_only' | 'agent_runtime' | 'full'
 export type RolloutMode = 'observe' | 'warn' | 'enforce'
 export type AgentStatus = 'draft' | 'active' | 'archived'
+export type AgentKind = 'main_agent' | 'sub_agent'
+export type AgentCreatedFrom = 'manual' | 'sandbox_chat' | 'template'
 export type AccessType = 'read' | 'write'
 export type Sensitivity = 'low' | 'medium' | 'high' | 'critical'
 export type SkillScope = 'main_agent' | 'sub_agent' | 'shared'
@@ -32,6 +34,9 @@ export interface AgentCreate {
   handles_secrets?: boolean
   calls_external_apis?: boolean
   policy_pack?: string | null
+  agent_kind?: AgentKind
+  created_from?: AgentCreatedFrom
+  template_key?: string | null
 }
 
 export interface AgentUpdate {
@@ -48,6 +53,9 @@ export interface AgentUpdate {
   calls_external_apis?: boolean
   status?: AgentStatus
   policy_pack?: string | null
+  agent_kind?: AgentKind
+  created_from?: AgentCreatedFrom
+  template_key?: string | null
 }
 
 export interface AgentRead {
@@ -69,6 +77,9 @@ export interface AgentRead {
   rollout_mode: RolloutMode
   status: AgentStatus
   is_reference: boolean
+  agent_kind: AgentKind
+  created_from: AgentCreatedFrom
+  template_key: string | null
   generated_config: Record<string, unknown> | null
   generated_kit: Record<string, unknown> | null
   created_at: string
@@ -80,6 +91,47 @@ export interface AgentListResponse {
   total: number
   page: number
   per_page: number
+}
+
+export interface AgentTeamSubAgent {
+  agent: AgentRead
+  binding: DelegationRead | null
+  tools_count: number
+  roles_count: number
+  skills_count: number
+  last_trace_at: string | null
+}
+
+export interface AgentTeamRead {
+  main_agent: AgentRead
+  sub_agents: AgentTeamSubAgent[]
+  tools_count: number
+  roles_count: number
+  skills_count: number
+  last_trace_at: string | null
+}
+
+export interface AgentTeamsResponse {
+  items: AgentTeamRead[]
+  total: number
+}
+
+export interface SubAgentCreateRequest {
+  name: string
+  description?: string
+  team?: string | null
+  framework?: AgentFramework
+  environment?: AgentEnvironment
+  policy_pack?: string | null
+  template_key?: string | null
+  delegation_description?: string
+  when_to_delegate?: string
+  sort_order?: number
+  is_active?: boolean
+}
+
+export interface AgentTeamTemplateCreate {
+  template_key: string
 }
 
 // ─── Tool ───
@@ -123,6 +175,23 @@ export interface ToolRead {
   rate_limit: number | null
   created_at: string
   updated_at: string
+}
+
+export interface OpenClawSkillRead {
+  name: string
+  description: string
+  source: string | null
+  bundled: boolean
+  eligible: boolean
+  disabled: boolean
+  blocked_by_allowlist: boolean
+  emoji: string | null
+  homepage: string | null
+  missing: Record<string, unknown>
+}
+
+export interface OpenClawSkillsResponse {
+  items: OpenClawSkillRead[]
 }
 
 // ─── Role ───
@@ -242,6 +311,8 @@ export interface RuntimeToolSpec {
   arg_schema: Record<string, unknown> | null
   returns_pii: boolean
   returns_secrets: boolean
+  pre_gate_enabled: boolean
+  post_gate_enabled: boolean
   rate_limit: number | null
 }
 
@@ -268,6 +339,9 @@ export interface AgentRuntimeSpec {
   agent_id: string
   name: string
   description: string
+  agent_kind: AgentKind
+  created_from: AgentCreatedFrom
+  template_key: string | null
   framework: AgentFramework
   policy_pack: string | null
   default_role: string | null

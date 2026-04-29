@@ -48,6 +48,8 @@ def get_allowed_tools_for_role(runtime_spec: dict[str, Any] | None, role_name: s
     if role is None:
         return []
     tools = list(role.get("effective_tools", []))
+    if runtime_spec.get("agent_kind") == "main_agent":
+        tools.append("createSubAgent")
     tools.extend(get_delegate_tool_names(runtime_spec))
     return sorted(dict.fromkeys(tools))
 
@@ -62,6 +64,16 @@ def role_can_use_tool(runtime_spec: dict[str, Any] | None, role_name: str, tool_
             "requires_confirmation": result.requires_confirmation,
             "tool_sensitivity": result.tool_sensitivity,
             "scopes_granted": list(result.scopes_granted),
+        }
+
+    if tool_name == "createSubAgent" and runtime_spec.get("agent_kind") == "main_agent":
+        return {
+            "allowed": True,
+            "decision": "allow",
+            "reason": "Main agents may create subagents in the sandbox.",
+            "requires_confirmation": False,
+            "tool_sensitivity": "medium",
+            "scopes_granted": ["create", "delegate"],
         }
 
     if is_delegate_tool_name(runtime_spec, tool_name):
@@ -107,6 +119,22 @@ def role_can_use_tool(runtime_spec: dict[str, Any] | None, role_name: str, tool_
 
 
 def get_runtime_tool(runtime_spec: dict[str, Any] | None, tool_name: str) -> dict[str, Any] | None:
+    if tool_name == "createSubAgent":
+        return {
+            "name": "createSubAgent",
+            "description": "Create and bind a new subagent under the current main agent.",
+            "provider_type": "internal",
+            "provider_ref": "createSubAgent",
+            "access_type": "write",
+            "sensitivity": "medium",
+            "requires_confirmation": False,
+            "arg_schema": None,
+            "returns_pii": False,
+            "returns_secrets": False,
+            "pre_gate_enabled": True,
+            "post_gate_enabled": True,
+            "rate_limit": None,
+        }
     if runtime_spec is None:
         return None
     for tool in runtime_spec.get("tools", []):

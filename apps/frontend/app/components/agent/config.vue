@@ -2,7 +2,7 @@
   <v-card variant="flat" class="agent-config">
     <v-card-title class="text-subtitle-1">
       <v-icon class="main-icon" start>mdi-cog</v-icon>
-      Agent Config
+      OpenClaw Shell
     </v-card-title>
 
     <v-card-text>
@@ -111,7 +111,8 @@ const emit = defineEmits<{
   'new-conversation': []
 }>()
 
-const { agents, isLoading: isAgentsLoading } = useAgents()
+const mainAgentKind = computed(() => 'main_agent')
+const { agents, isLoading: isAgentsLoading } = useAgents({ agentKind: mainAgentKind })
 const { policies, isLoading: isPoliciesLoading } = usePolicies()
 const { groupedModels, isLoading: isModelsLoading } = useModels()
 const { runtimeSpec, roles, skills, subAgents, isLoading: isRuntimeLoading } = useAgentRuntimeSpec(toRef(props, 'agentId'))

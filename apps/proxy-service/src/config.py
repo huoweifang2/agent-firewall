@@ -71,6 +71,10 @@ class Settings(BaseSettings):
     litellm_log_level: str = "ERROR"
     request_timeout: int = 120  # seconds — max wait for LLM response
 
+    # OpenClaw integration
+    openclaw_bin: str = "openclaw"
+    openclaw_timeout_seconds: int = 30
+
     # App
     mode: str = "dev"  # "dev" | "real"
     default_policy: str = "balanced"

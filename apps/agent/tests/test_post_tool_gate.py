@@ -349,6 +349,24 @@ class TestEvaluateToolOutput:
         assert gate["original_length"] == len(raw)
         assert gate["sanitized_length"] > 0
 
+    def test_runtime_tool_can_disable_post_gate(self):
+        runtime_spec = {
+            "tools": [
+                {
+                    "name": "openclaw_weather",
+                    "provider_type": "openclaw",
+                    "post_gate_enabled": False,
+                }
+            ]
+        }
+        raw = "Customer email: alice@example.com"
+
+        sanitized, gate = evaluate_tool_output("openclaw_weather", raw, runtime_spec=runtime_spec)
+
+        assert sanitized == raw
+        assert gate["decision"] == "PASS"
+        assert gate["reason"] == "Post-tool gate disabled for this runtime tool."
+
 
 # ══════════════════════════════════════════════════════════════════════
 # post_tool_gate_node (full node)

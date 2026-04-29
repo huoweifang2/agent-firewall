@@ -7,6 +7,7 @@ import time
 
 import structlog
 
+from src.agent.runtime_access import get_sub_agent_by_delegate_tool, is_delegate_tool_name
 from src.agent.state import AgentState, ToolCallRecord
 from src.agent.tools.commerce import extract_status_from_message
 from src.agent.tools.hub import execute_tool_call
@@ -147,6 +148,23 @@ async def tool_executor_node(state: AgentState) -> AgentState:
             )
             # Trace (spec 07)
             trace.record_tool_execution(tool_name, args, result, dur_ms)
+            if tool_name == "createSubAgent":
+                trace.record_tool_flow(
+                    event="create_subagent",
+                    tool=tool_name,
+                    delegated_to=str(args.get("name", "")),
+                    task=str(args.get("description", "")),
+                    result_preview=result,
+                )
+            elif is_delegate_tool_name(state.get("runtime_spec"), tool_name):
+                sub_agent = get_sub_agent_by_delegate_tool(state.get("runtime_spec"), tool_name) or {}
+                trace.record_tool_flow(
+                    event="delegate_task",
+                    tool=tool_name,
+                    delegated_to=str(sub_agent.get("name", tool_name)),
+                    task=str(args.get("task", "")),
+                    result_preview=result,
+                )
             logger.info("tool_executed", tool=tool_name, result_len=len(result))
         except Exception as e:
             error_msg = f"Tool error: {e}"

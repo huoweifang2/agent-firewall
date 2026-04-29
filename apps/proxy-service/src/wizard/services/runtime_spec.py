@@ -20,7 +20,7 @@ from src.wizard.schemas import (
 )
 from src.wizard.services.permissions import resolve_permissions_for_role
 
-_KNOWN_PROVIDER_TYPES = {"internal", "composio", "mcp"}
+_KNOWN_PROVIDER_TYPES = {"internal", "mcp", "openclaw"}
 
 
 async def _load_agent(agent_id: uuid.UUID, db: AsyncSession) -> Agent:
@@ -71,8 +71,6 @@ def _infer_provider_type(tool: AgentTool) -> str:
     category = (tool.category or "").strip().lower()
     if category in _KNOWN_PROVIDER_TYPES:
         return category
-    if tool.name.startswith("COMPOSIO_"):
-        return "composio"
     return "internal"
 
 
@@ -83,11 +81,28 @@ def _provider_ref(tool: AgentTool, provider_type: str) -> str:
         ref = provider.get("ref") or provider.get("tool_name")
         if isinstance(ref, str) and ref:
             return ref
-    if provider_type == "composio":
-        return tool.name
     if provider_type == "mcp":
         return tool.name
+    if provider_type == "openclaw":
+        return tool.name
     return tool.name
+
+
+def _protection_flag(tool: AgentTool, key: str, default: bool = True) -> bool:
+    schema = tool.arg_schema or {}
+    provider = schema.get("provider") if isinstance(schema, dict) else None
+    if not isinstance(provider, dict):
+        return default
+
+    protection = provider.get("protection")
+    if isinstance(protection, dict) and isinstance(protection.get(key), bool):
+        return bool(protection[key])
+
+    # Backward-compatible flat provider shape for earlier UI experiments.
+    if isinstance(provider.get(key), bool):
+        return bool(provider[key])
+
+    return default
 
 
 def _sort_roles_by_depth(roles: list[AgentRole]) -> list[AgentRole]:
@@ -170,6 +185,8 @@ async def build_agent_runtime_spec(agent_id: uuid.UUID, db: AsyncSession) -> Age
             arg_schema=tool.arg_schema,
             returns_pii=tool.returns_pii,
             returns_secrets=tool.returns_secrets,
+            pre_gate_enabled=_protection_flag(tool, "pre_gate_enabled"),
+            post_gate_enabled=_protection_flag(tool, "post_gate_enabled"),
             rate_limit=tool.rate_limit,
         )
         for tool in tools
@@ -209,6 +226,9 @@ async def build_agent_runtime_spec(agent_id: uuid.UUID, db: AsyncSession) -> Age
         agent_id=agent.id,
         name=agent.name,
         description=agent.description,
+        agent_kind=agent.agent_kind,
+        created_from=agent.created_from,
+        template_key=agent.template_key,
         framework=agent.framework,
         policy_pack=agent.policy_pack,
         default_role=default_role,

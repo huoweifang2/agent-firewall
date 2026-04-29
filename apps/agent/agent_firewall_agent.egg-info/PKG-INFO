@@ -11,8 +11,6 @@ Requires-Dist: langgraph==1.0.10
 Requires-Dist: litellm==1.82.0
 Requires-Dist: httpx==0.28.1
 Requires-Dist: structlog==25.5.0
-Requires-Dist: composio>=0.11.0
-Requires-Dist: composio-langgraph>=0.11.5
 Requires-Dist: duckduckgo-search>=8.1.1
 Requires-Dist: ddgs>=9.13.1
 Provides-Extra: dev

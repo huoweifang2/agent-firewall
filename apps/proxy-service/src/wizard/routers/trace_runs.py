@@ -84,6 +84,12 @@ def _row_to_detail(row: AgentTraceRun) -> TraceRunDetail:
         iterations=row.iterations or [],
         errors=row.errors or [],
         limits_hit=row.limits_hit,
+        agent_kind=details.get("agent_kind"),
+        parent_agent_id=details.get("parent_agent_id"),
+        delegated_from=details.get("delegated_from"),
+        delegated_to=details.get("delegated_to"),
+        task=details.get("task"),
+        tool_flow=details.get("tool_flow", []),
         user_message=details.get("user_message"),
         final_response=details.get("final_response"),
         policy=details.get("policy"),
@@ -127,6 +133,10 @@ async def ingest_trace_run(
         details["node_timings"] = body.node_timings
     if body.intent_confidence:
         details["intent_confidence"] = body.intent_confidence
+    for key in ("agent_kind", "parent_agent_id", "delegated_from", "delegated_to", "task", "tool_flow"):
+        value = getattr(body, key)
+        if value:
+            details[key] = value
 
     row = AgentTraceRun(
         agent_id=agent_id,

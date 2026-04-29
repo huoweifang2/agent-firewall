@@ -4,8 +4,8 @@
     <div class="compare-page__config">
       <div class="d-flex align-center flex-wrap ga-3 px-4 py-2">
         <v-icon size="20" color="primary">mdi-compare</v-icon>
-        <span class="text-subtitle-2 font-weight-bold">Protection Compare</span>
-        <span class="text-caption text-medium-emphasis ml-1 d-none d-md-inline">See how the same scenario behaves with Agent-Firewall enabled and without protection.</span>
+        <span class="text-subtitle-2 font-weight-bold">Agent Protection Compare</span>
+        <span class="text-caption text-medium-emphasis ml-1 d-none d-md-inline">Same prompt, protected path versus direct path. Agent trace fields are reserved for the OpenClaw compare flow.</span>
 
         <v-divider vertical class="mx-1" />
 
@@ -82,7 +82,7 @@
         prominent
       >
         <strong>No external API keys configured.</strong>
-        Compare requires an external LLM provider (OpenAI, Anthropic, Google, or Mistral).
+        Compare requires an external LLM provider.
         Go to <nuxt-link to="/settings" class="text-decoration-underline">Settings</nuxt-link> to add an API key.
       </v-alert>
 
@@ -183,9 +183,9 @@
     <div v-else class="compare-page__panels compare-page__empty">
       <div class="text-center">
         <v-icon size="56" color="grey-darken-1" class="mb-3">mdi-compare</v-icon>
-        <p class="text-h6 text-grey-lighten-1 mb-1">Compare protected vs direct model behavior</p>
+        <p class="text-h6 text-grey-lighten-1 mb-1">Compare protected vs direct agent behavior</p>
         <p class="text-body-2 text-medium-emphasis mb-5" style="max-width: 480px">
-          Run the same scenario through Agent-Firewall and an unprotected model path to see the difference in blocking, output, and policy enforcement.
+          Run the same scenario through Agent-Firewall and a direct path to compare blocking, output, policy enforcement, and the future OpenClaw agent trace.
         </p>
         <div class="d-flex flex-wrap justify-center ga-2">
           <v-chip

@@ -20,6 +20,12 @@ export interface ToolCall {
 export interface AgentTrace {
   agent_id: string
   agent_name: string
+  agent_kind?: string
+  parent_agent_id?: string | null
+  delegated_from?: string | null
+  delegated_to?: string | null
+  task?: string | null
+  tool_flow?: Record<string, unknown>[]
   intent: string
   user_role: string
   allowed_tools: string[]
