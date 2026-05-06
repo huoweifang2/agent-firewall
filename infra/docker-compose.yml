@@ -78,6 +78,9 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/agent_firewall}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       DEFAULT_POLICY: ${DEFAULT_POLICY:-balanced}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      OPENCLAW_BIN: ${OPENCLAW_BIN:-openclaw}
+      OPENCLAW_TIMEOUT_SECONDS: ${OPENCLAW_TIMEOUT_SECONDS:-30}
       BENCHMARK_SECRET_KEY: ${BENCHMARK_SECRET_KEY:-}
     depends_on:
       db:
@@ -101,6 +104,11 @@ services:
       DEFAULT_MODEL: deepseek-chat
       DEFAULT_MODEL_PREFIX: deepseek
       DEFAULT_POLICY: balanced
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      OPENCLAW_BIN: ${OPENCLAW_BIN:-openclaw}
+      OPENCLAW_AGENT_ID: ${OPENCLAW_AGENT_ID:-coder}
+      OPENCLAW_TIMEOUT_SECONDS: ${OPENCLAW_TIMEOUT_SECONDS:-120}
+      OPENCLAW_AGENT_LOCAL: ${OPENCLAW_AGENT_LOCAL:-false}
       LITELLM_LOG_LEVEL: ERROR
       MODE: ${MODE:-demo}
     depends_on:

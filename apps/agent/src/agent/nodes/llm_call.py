@@ -64,6 +64,16 @@ def _resolve_direct_llm(
     return litellm_model, {"api_key": api_key}
 
 
+def _resolve_api_key(model_name: str, request_api_key: str | None, settings: Settings) -> str | None:
+    """Resolve the provider key, allowing local DeepSeek env fallback."""
+    if request_api_key:
+        return request_api_key
+    model_lower = model_name.lower()
+    if model_lower.startswith(("deepseek", "deepseek/")) and settings.deepseek_api_key:
+        return settings.deepseek_api_key
+    return request_api_key
+
+
 def _track_tokens(response: Any, state: AgentState, model: str) -> dict:
     """Extract token usage from LLM response and track in limits service.
 
@@ -243,8 +253,6 @@ async def llm_call_node(state: AgentState) -> AgentState:
     """
     settings = get_settings()
 
-    api_key = state.get("api_key")
-
     # ── Real provider (API key or real mode) ─────────────────
 
     # Silence LiteLLM logs
@@ -265,6 +273,7 @@ async def llm_call_node(state: AgentState) -> AgentState:
     start = time.perf_counter()
 
     model_name = state.get("model", settings.default_model)
+    api_key = _resolve_api_key(model_name, state.get("api_key"), settings)
 
     # ── Step 1: Firewall scan via /v1/scan (no LLM call) ───────────
     # Send chat history + current user message (without the agent system

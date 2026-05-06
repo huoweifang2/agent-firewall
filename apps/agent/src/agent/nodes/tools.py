@@ -20,8 +20,12 @@ def _select_tools_for_intent(state: AgentState) -> list[dict]:
     """Select which tools to call based on intent and message content.
 
     Returns a list of tool call plans: [{"tool": name, "args": {...}}].
-    This is a deterministic router — no LLM needed.
+    Runtime-configured OpenClaw agents let the model choose tools directly.
+    The deterministic router is kept only for legacy tests/no-runtime demo mode.
     """
+    if state.get("runtime_spec") is not None:
+        return []
+
     intent = state.get("intent", "unknown")
     allowed = state.get("allowed_tools", [])
     message = state.get("message", "").lower()

@@ -11,6 +11,7 @@ src/schemas.py
 src/session.py
 src/agent/__init__.py
 src/agent/graph.py
+src/agent/openclaw_client.py
 src/agent/runtime_access.py
 src/agent/runtime_loader.py
 src/agent/state.py

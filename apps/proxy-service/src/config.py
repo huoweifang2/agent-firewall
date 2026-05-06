@@ -70,6 +70,7 @@ class Settings(BaseSettings):
     default_max_tokens: int = 4096
     litellm_log_level: str = "ERROR"
     request_timeout: int = 120  # seconds — max wait for LLM response
+    deepseek_api_key: str = ""
 
     # OpenClaw integration
     openclaw_bin: str = "openclaw"
@@ -107,7 +108,7 @@ class Settings(BaseSettings):
     # Langfuse tracing
     enable_langfuse: bool = True
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(env_file=(".env", ".env.local"), env_file_encoding="utf-8", extra="ignore")
 
     @classmethod
     def settings_customise_sources(

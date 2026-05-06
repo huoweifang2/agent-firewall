@@ -72,10 +72,11 @@ async def llm_completion(
     provider = detect_provider(model)
     litellm_model = format_litellm_model(model, provider)
 
+    effective_api_key = api_key or (settings.deepseek_api_key if provider == "deepseek" else "")
     kwargs: dict[str, Any] = {}
-    if not api_key:
+    if not effective_api_key:
         raise LLMError(f"API key required for provider '{provider}'. Add your key in Settings → API Keys.")
-    kwargs["api_key"] = api_key
+    kwargs["api_key"] = effective_api_key
 
     logger.debug(
         "llm_request",

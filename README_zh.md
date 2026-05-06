@@ -29,9 +29,9 @@ Agent-Firewall 是一个毕业设计项目，致力于为支持工具调用（To
    ```
 
 3. **配置 API 密钥 (API Keys)：**
-   启动应用前，请在 `apps/agent/.env` 与 `apps/proxy-service/.env`（如果不存在请自行创建）中填入你所使用的模型与 OpenClaw 桥接配置。例如：
+   启动应用前，请在已被忽略的 `apps/agent/.env.local` 与 `apps/proxy-service/.env.local` 中填入你所使用的模型与 OpenClaw 桥接配置。例如：
    ```env
-   # .env 示例
+   # .env.local 示例
    DEEPSEEK_API_KEY="your-deepseek-api-key"
    OPENCLAW_BIN="openclaw"
    OPENCLAW_AGENT_ID="coder"

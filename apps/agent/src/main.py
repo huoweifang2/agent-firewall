@@ -1,4 +1,4 @@
-"""Agent-Firewall Agent — Customer Support Copilot."""
+"""Agent-Firewall Agent — protected external OpenClaw runtime."""
 
 from __future__ import annotations
 
@@ -18,10 +18,10 @@ from src.routers.traces import router as traces_router
 
 logger = structlog.get_logger()
 
-_AGENT_NAME = "Agent"
+_AGENT_NAME = "OpenClaw Gateway"
 _AGENT_PAYLOAD = {
     "name": _AGENT_NAME,
-    "description": "Customer Support Copilot — full LangGraph agent with pre/post tool gates.",
+    "description": "External OpenClaw caller with Agent-Firewall pre/post tool gates.",
     "team": "demo",
     "framework": "langgraph",
     "environment": "production",
@@ -127,7 +127,7 @@ settings = get_settings()
 
 app = FastAPI(
     title="Agent-Firewall — Agent",
-    description="Customer Support Copilot — agent runtime behind the Agent-Firewall firewall",
+    description="Protected external OpenClaw runtime behind the Agent-Firewall firewall",
     version=settings.app_version,
     lifespan=lifespan,
 )

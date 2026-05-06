@@ -67,6 +67,53 @@ async def test_list_openclaw_skills_redacts_paths(client, monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_list_openclaw_agents_redacts_details(client, monkeypatch):
+    async def fake_list_openclaw_agents():
+        return [
+            {
+                "id": "coder",
+                "name": "Coder",
+                "workspace": "/Users/me/.openclaw/workspace",
+                "model": "deepseek/deepseek-chat",
+                "bindings": 0,
+                "is_default": True,
+                "agentDir": "/secret/path",
+            }
+        ]
+
+    monkeypatch.setattr("src.wizard.routers.openclaw.list_openclaw_agents", fake_list_openclaw_agents)
+
+    resp = await client.get("/v1/openclaw/agents")
+
+    assert resp.status_code == 200
+    item = resp.json()["items"][0]
+    assert item["id"] == "coder"
+    assert "agentDir" not in item
+
+
+@pytest.mark.asyncio
+async def test_list_openclaw_hooks(client, monkeypatch):
+    async def fake_list_openclaw_hooks():
+        return [
+            {
+                "name": "command-logger",
+                "description": "Audit commands",
+                "eligible": True,
+                "events": ["command"],
+                "enabled_by_config": True,
+            }
+        ]
+
+    monkeypatch.setattr("src.wizard.routers.openclaw.list_openclaw_hooks", fake_list_openclaw_hooks)
+
+    resp = await client.get("/v1/openclaw/hooks")
+
+    assert resp.status_code == 200
+    assert resp.json()["items"][0]["name"] == "command-logger"
+    assert resp.json()["items"][0]["events"] == ["command"]
+
+
+@pytest.mark.asyncio
 async def test_import_openclaw_tool_and_runtime_spec(client):
     agent = await _create_agent(client)
 

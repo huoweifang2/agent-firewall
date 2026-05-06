@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import uuid
 
 from sqlalchemy import select
@@ -21,6 +22,23 @@ from src.wizard.schemas import (
 from src.wizard.services.permissions import resolve_permissions_for_role
 
 _KNOWN_PROVIDER_TYPES = {"internal", "mcp", "openclaw"}
+
+
+def _openclaw_agent_id(agent: Agent) -> str:
+    generated = agent.generated_config or {}
+    if isinstance(generated.get("openclaw_agent_id"), str) and generated["openclaw_agent_id"].strip():
+        return generated["openclaw_agent_id"].strip()
+    if isinstance(generated.get("openclaw"), dict):
+        value = generated["openclaw"].get("agent_id")
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+
+    name = (agent.name or "").lower()
+    if "research" in name:
+        return "researcher"
+    if "code" in name or "coder" in name:
+        return "coder"
+    return re.sub(r"[^a-z0-9_-]+", "-", name).strip("-") or str(agent.id)
 
 
 async def _load_agent(agent_id: uuid.UUID, db: AsyncSession) -> Agent:
@@ -213,6 +231,7 @@ async def build_agent_runtime_spec(agent_id: uuid.UUID, db: AsyncSession) -> Age
         sub_agents.append(
             RuntimeSubAgentSpec(
                 agent_id=child.id,
+                openclaw_agent_id=_openclaw_agent_id(child),
                 name=child.name,
                 description=child.description,
                 delegation_description=delegation.delegation_description,

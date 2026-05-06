@@ -5,6 +5,7 @@ import types
 import pytest
 
 from src.agent.nodes.llm_call import _build_runtime_tool_schemas
+from src.agent.openclaw_client import OpenClawClient, extract_json_payload
 from src.agent.tools.hub import execute_tool_call
 from src.agent.tools.providers import openclaw
 
@@ -42,6 +43,17 @@ def test_derive_session_id_is_stable_and_namespaced():
     assert first == second
     assert first.startswith("agent-firewall-session-1-")
     assert first != other
+
+
+def test_extract_json_payload_tolerates_banner_text():
+    payload = extract_json_payload('OpenClaw ready\n{"response":"ok"}\n')
+    assert payload == {"response": "ok"}
+
+
+def test_openclaw_client_redacts_secrets():
+    text = OpenClawClient.redact("api_key=sk-abcdefghijklmnopqrstuvwxyz")
+    assert "sk-" not in text
+    assert "<redacted>" in text
 
 
 def test_build_scoped_prompt_mentions_skill_and_args():
@@ -143,7 +155,9 @@ async def test_execute_builds_openclaw_agent_command(monkeypatch):
         return FakeProcess(stdout=b'{"response":"Sunny"}')
 
     monkeypatch.setattr(openclaw, "get_settings", lambda: _settings(openclaw_agent_local=True))
-    monkeypatch.setattr(openclaw.asyncio, "create_subprocess_exec", fake_exec)
+    import src.agent.openclaw_client as client_mod
+
+    monkeypatch.setattr(client_mod.asyncio, "create_subprocess_exec", fake_exec)
 
     result = await openclaw.execute(
         "openclaw_weather",
@@ -172,7 +186,9 @@ async def test_execute_reports_nonzero_exit(monkeypatch):
         return FakeProcess(stderr=b"gateway unavailable", returncode=1)
 
     monkeypatch.setattr(openclaw, "get_settings", lambda: _settings())
-    monkeypatch.setattr(openclaw.asyncio, "create_subprocess_exec", fake_exec)
+    import src.agent.openclaw_client as client_mod
+
+    monkeypatch.setattr(client_mod.asyncio, "create_subprocess_exec", fake_exec)
 
     result = await openclaw.execute("openclaw_weather", {"request": "weather"})
 
@@ -192,8 +208,10 @@ async def test_execute_reports_timeout(monkeypatch):
         raise TimeoutError
 
     monkeypatch.setattr(openclaw, "get_settings", lambda: _settings(openclaw_timeout_seconds=1))
-    monkeypatch.setattr(openclaw.asyncio, "create_subprocess_exec", fake_exec)
-    monkeypatch.setattr(openclaw.asyncio, "wait_for", fake_wait_for)
+    import src.agent.openclaw_client as client_mod
+
+    monkeypatch.setattr(client_mod.asyncio, "create_subprocess_exec", fake_exec)
+    monkeypatch.setattr(client_mod.asyncio, "wait_for", fake_wait_for)
 
     result = await openclaw.execute("openclaw_weather", {"request": "weather"})
 

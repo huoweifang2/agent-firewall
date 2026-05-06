@@ -2,19 +2,21 @@
 
 from __future__ import annotations
 
+import json
 from uuid import uuid4
 
 import httpx
 
-from src.agent.runtime_access import resolve_effective_role
-from src.agent.runtime_loader import clear_runtime_cache, load_runtime_spec
+from src.agent.openclaw_client import OpenClawClient, OpenClawError, derive_session_id
+from src.agent.runtime_loader import clear_runtime_cache
+from src.agent.tools.providers.openclaw import _extract_result
 from src.config import get_settings
 
 
 async def run_sub_agent(
     *,
     parent_state: dict,
-    child_agent_id: str,
+    sub_agent: dict,
     task: str,
 ) -> str:
     settings = get_settings()
@@ -23,29 +25,35 @@ async def run_sub_agent(
     if parent_depth >= max_depth:
         return "Delegation depth limit reached."
 
-    child_spec = await load_runtime_spec(child_agent_id, settings)
-    if child_spec is None:
-        return f"Unable to load sub-agent runtime spec for {child_agent_id}."
+    openclaw_agent_id = str(sub_agent.get("openclaw_agent_id") or sub_agent.get("agent_id") or "").strip()
+    if not openclaw_agent_id:
+        return f"Unable to delegate to {sub_agent.get('name', 'sub-agent')}: no OpenClaw agent id is configured."
 
-    child_role = resolve_effective_role(parent_state.get("user_role"), child_spec)
-    from src.agent.graph import get_agent_graph
+    session_seed = f"{parent_state.get('session_id', 'session')}::sub::{uuid4().hex[:8]}"
+    prompt = (
+        "You are running as an OpenClaw sub-agent delegated by Agent-Firewall.\n"
+        f"Parent agent: {parent_state.get('agent_name') or parent_state.get('agent_id') or 'unknown'}\n"
+        f"Sub-agent: {sub_agent.get('name', openclaw_agent_id)}\n"
+        f"Delegation guidance: {sub_agent.get('delegation_description') or sub_agent.get('when_to_delegate') or ''}\n\n"
+        f"Task:\n{task}\n\n"
+        "Return the concise result needed by the parent agent. Do not include hidden reasoning."
+    )
+    client = OpenClawClient(
+        binary=settings.openclaw_bin,
+        timeout_seconds=settings.openclaw_timeout_seconds,
+        default_agent_id=openclaw_agent_id,
+        local=settings.openclaw_agent_local,
+    )
+    try:
+        payload = await client.agent_message(
+            agent_id=openclaw_agent_id,
+            session_id=derive_session_id(session_seed, f"delegate:{openclaw_agent_id}"),
+            message=prompt,
+        )
+    except OpenClawError as exc:
+        return f"Error delegating to OpenClaw sub-agent {openclaw_agent_id}: {exc}"
 
-    child_state = {
-        "agent_id": child_agent_id,
-        "parent_agent_id": parent_state.get("agent_id"),
-        "delegated_from": parent_state.get("agent_name") or parent_state.get("agent_id"),
-        "delegated_task": task,
-        "session_id": f"{parent_state.get('session_id', 'session')}::sub::{uuid4().hex[:8]}",
-        "user_role": child_role,
-        "message": task,
-        "policy": parent_state.get("policy"),
-        "model": parent_state.get("model"),
-        "api_key": parent_state.get("api_key"),
-        "delegation_depth": parent_depth + 1,
-        "max_delegation_depth": max_depth,
-    }
-    result = await get_agent_graph().ainvoke(child_state)
-    return str(result.get("final_response") or result.get("llm_response") or "")
+    return _extract_result(payload if isinstance(payload, str) else json.dumps(payload, ensure_ascii=False))
 
 
 async def create_sub_agent_from_runtime(

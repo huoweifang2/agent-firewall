@@ -8,7 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Central configuration loaded from environment / .env file."""
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=(".env", ".env.local"), extra="ignore")
 
     # Proxy
     proxy_base_url: str = "http://localhost:8000/v1"
@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     default_temperature: float = 0.3
     default_max_tokens: int = 1024
     litellm_log_level: str = "ERROR"
+    deepseek_api_key: str = ""
 
     # OpenClaw tool provider
     openclaw_bin: str = "openclaw"

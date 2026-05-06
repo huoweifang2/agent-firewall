@@ -29,9 +29,9 @@ The most common way to run the project for testing or development is starting al
    ```
 
 3. **Configure API Keys:**
-   Create or edit the `.env` files in `apps/agent/` and `apps/proxy-service/` to include the required API keys for the LLM providers and OpenClaw bridge. For example:
+   Put real local keys in ignored `.env.local` files under `apps/agent/` and `apps/proxy-service/` so tracked `.env` templates stay secret-free. For example:
    ```env
-   # Example .env configuration
+   # Example .env.local configuration
    DEEPSEEK_API_KEY="your-deepseek-api-key"
    OPENCLAW_BIN="openclaw"
    OPENCLAW_AGENT_ID="coder"

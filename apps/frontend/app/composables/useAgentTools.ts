@@ -2,7 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed } from 'vue'
 import { api } from '~/services/api'
 import type {
+  OpenClawAgentsResponse,
+  OpenClawHooksResponse,
   OpenClawSkillsResponse,
+  OpenClawStatusResponse,
   ToolCreate,
   ToolRead,
   ToolUpdate,
@@ -79,4 +82,22 @@ export const useOpenClawSkills = () => useQuery<OpenClawSkillsResponse>({
     params: { eligible_only: true },
   }).then(r => r.data),
   staleTime: 60_000,
+})
+
+export const useOpenClawAgents = () => useQuery<OpenClawAgentsResponse>({
+  queryKey: ['openclaw-agents'],
+  queryFn: () => api.get<OpenClawAgentsResponse>('/v1/openclaw/agents').then(r => r.data),
+  staleTime: 30_000,
+})
+
+export const useOpenClawHooks = () => useQuery<OpenClawHooksResponse>({
+  queryKey: ['openclaw-hooks'],
+  queryFn: () => api.get<OpenClawHooksResponse>('/v1/openclaw/hooks').then(r => r.data),
+  staleTime: 30_000,
+})
+
+export const useOpenClawStatus = () => useQuery<OpenClawStatusResponse>({
+  queryKey: ['openclaw-status'],
+  queryFn: () => api.get<OpenClawStatusResponse>('/v1/openclaw/status').then(r => r.data),
+  staleTime: 30_000,
 })

@@ -29,7 +29,7 @@ async def execute_tool_call(state: dict[str, Any], tool_name: str, args: dict[st
         task = str(args.get("task", "")).strip()
         if not task:
             return f"Delegation to {sub_agent.get('name', 'sub-agent')} requires a task."
-        return await run_sub_agent(parent_state=state, child_agent_id=str(sub_agent["agent_id"]), task=task)
+        return await run_sub_agent(parent_state=state, sub_agent=sub_agent, task=task)
 
     tool_spec = get_runtime_tool(runtime_spec, tool_name)
     provider_type = tool_spec.get("provider_type") if isinstance(tool_spec, dict) else None

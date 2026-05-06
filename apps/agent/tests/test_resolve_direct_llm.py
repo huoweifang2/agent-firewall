@@ -12,7 +12,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.agent.nodes.llm_call import _PROVIDER_RULES, _resolve_direct_llm
+from src.agent.nodes.llm_call import _PROVIDER_RULES, _resolve_api_key, _resolve_direct_llm
 
 # ── Helpers ──────────────────────────────────────────────────
 
@@ -104,3 +104,20 @@ class TestAPIKeyForwarding:
         """Even with None api_key, external providers get api_key in kwargs."""
         _, kwargs = _resolve_direct_llm("openrouter/auto", None, _settings())
         assert kwargs == {"api_key": None}
+
+
+class TestDeepSeekFallback:
+    def test_deepseek_env_key_used_when_header_absent(self):
+        settings = _settings()
+        settings.deepseek_api_key = "sk-env"
+        assert _resolve_api_key("deepseek-chat", None, settings) == "sk-env"
+
+    def test_header_key_wins_over_env(self):
+        settings = _settings()
+        settings.deepseek_api_key = "sk-env"
+        assert _resolve_api_key("deepseek-chat", "sk-header", settings) == "sk-header"
+
+    def test_openrouter_does_not_use_deepseek_env(self):
+        settings = _settings()
+        settings.deepseek_api_key = "sk-env"
+        assert _resolve_api_key("openrouter/auto", None, settings) is None

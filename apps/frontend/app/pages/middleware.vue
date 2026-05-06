@@ -4,16 +4,16 @@
       <div>
         <h1 class="text-h5 mb-1">
           <v-icon start>mdi-transfer-right</v-icon>
-          OpenClaw Middleware
+          Skills & Hooks
         </h1>
         <p class="text-body-2 text-medium-emphasis mb-0">
-          Bind OpenClaw skills to the selected Agent and configure the runtime gates used by Agent Sandbox.
+          Discover local OpenClaw agents, bind skills as protected tools, and audit available hooks.
         </p>
       </div>
       <v-btn
         icon="mdi-refresh"
         variant="text"
-        :loading="isAgentsLoading || isToolsLoading || isSkillsLoading"
+        :loading="isAgentsLoading || isToolsLoading || isSkillsLoading || isHooksLoading || isOpenClawAgentsLoading"
         @click="refreshAll"
       />
     </div>
@@ -40,6 +40,24 @@
         </v-chip>
       </div>
     </v-sheet>
+
+    <div class="middleware-page__summary">
+      <v-sheet border rounded class="pa-3">
+        <div class="text-caption text-medium-emphasis mb-1">OpenClaw runtime</div>
+        <div class="d-flex align-center ga-2">
+          <v-icon :color="openClawStatusOk ? 'success' : 'warning'" icon="mdi-pulse" />
+          <span class="text-body-2">{{ openClawStatusOk ? 'Reachable' : 'Status unavailable' }}</span>
+        </div>
+      </v-sheet>
+      <v-sheet border rounded class="pa-3">
+        <div class="text-caption text-medium-emphasis mb-1">Local agents</div>
+        <div class="text-h6">{{ openClawAgents.length }}</div>
+      </v-sheet>
+      <v-sheet border rounded class="pa-3">
+        <div class="text-caption text-medium-emphasis mb-1">Loadable hooks</div>
+        <div class="text-h6">{{ loadableHooks.length }}</div>
+      </v-sheet>
+    </div>
 
     <v-alert
       v-if="!selectedAgentId && !isAgentsLoading"
@@ -147,6 +165,66 @@
       </v-table>
     </v-sheet>
 
+    <div class="middleware-page__grid mt-4">
+      <v-sheet border rounded>
+        <v-toolbar density="compact" color="transparent">
+          <v-toolbar-title class="text-subtitle-1">OpenClaw Agents</v-toolbar-title>
+        </v-toolbar>
+        <v-divider />
+        <v-list density="compact" lines="two">
+          <v-list-item v-if="!openClawAgents.length && !isOpenClawAgentsLoading" title="No OpenClaw agents found" />
+          <v-list-item
+            v-for="agent in openClawAgents"
+            :key="agent.id"
+            :title="agent.name || agent.id"
+            :subtitle="`${agent.id} · ${agentModel(agent.model)}`"
+          >
+            <template #prepend>
+              <v-icon :color="agent.is_default ? 'primary' : undefined" icon="mdi-robot-outline" />
+            </template>
+            <template #append>
+              <v-chip v-if="agent.is_default" size="x-small" color="primary" variant="tonal">default</v-chip>
+            </template>
+          </v-list-item>
+        </v-list>
+      </v-sheet>
+
+      <v-sheet border rounded>
+        <v-toolbar density="compact" color="transparent">
+          <v-toolbar-title class="text-subtitle-1">OpenClaw Hooks</v-toolbar-title>
+        </v-toolbar>
+        <v-divider />
+        <v-table density="compact">
+          <thead>
+            <tr>
+              <th class="text-left">Hook</th>
+              <th class="text-left">Events</th>
+              <th class="text-center">Loadable</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="!openClawHooks.length && !isHooksLoading">
+              <td colspan="3" class="text-center text-medium-emphasis py-6">No hooks returned by OpenClaw.</td>
+            </tr>
+            <tr v-for="hook in openClawHooks" :key="hook.name">
+              <td>
+                <div class="text-subtitle-2">{{ hook.name }}</div>
+                <div class="text-caption text-medium-emphasis">{{ hook.description }}</div>
+              </td>
+              <td>
+                <v-chip v-for="event in hook.events" :key="event" size="x-small" class="mr-1" variant="tonal">
+                  {{ event }}
+                </v-chip>
+              </td>
+              <td class="text-center">
+                <v-icon :color="hook.loadable ? 'success' : 'warning'" :icon="hook.loadable ? 'mdi-check-circle' : 'mdi-alert-circle-outline'" />
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
+      </v-sheet>
+    </div>
+
     <v-snackbar v-model="snackbar" :timeout="2600" :color="snackbarColor">
       {{ snackbarText }}
     </v-snackbar>
@@ -156,10 +234,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useAgents } from '~/composables/useAgents'
-import { useAgentTools, useOpenClawSkills } from '~/composables/useAgentTools'
+import { useAgentTools, useOpenClawAgents, useOpenClawHooks, useOpenClawSkills, useOpenClawStatus } from '~/composables/useAgentTools'
 import type { ToolRead } from '~/types/wizard'
 
-definePageMeta({ title: 'OpenClaw Middleware' })
+definePageMeta({ title: 'Skills & Hooks' })
 
 type ProtectionKey = 'pre_gate_enabled' | 'post_gate_enabled'
 
@@ -184,8 +262,15 @@ const {
   refetch: refetchTools,
 } = useAgentTools(() => selectedAgentId.value)
 const { data: skillsResponse, isLoading: isSkillsLoading, refetch: refetchSkills } = useOpenClawSkills()
+const { data: hooksResponse, isLoading: isHooksLoading, refetch: refetchHooks } = useOpenClawHooks()
+const { data: openClawAgentsResponse, isLoading: isOpenClawAgentsLoading, refetch: refetchOpenClawAgents } = useOpenClawAgents()
+const { data: openClawStatus, refetch: refetchOpenClawStatus } = useOpenClawStatus()
 
 const openClawSkills = computed(() => skillsResponse.value?.items ?? [])
+const openClawHooks = computed(() => hooksResponse.value?.items ?? [])
+const openClawAgents = computed(() => openClawAgentsResponse.value?.items ?? [])
+const openClawStatusOk = computed(() => !!openClawStatus.value?.status)
+const loadableHooks = computed(() => openClawHooks.value.filter(hook => hook.loadable && !hook.disabled))
 const enabledOpenClawTools = computed(() => tools.value.filter(t => t.category === 'openclaw' || t.name.startsWith('openclaw_')))
 const selectedAgent = computed(() => agents.value.find(agent => agent.id === selectedAgentId.value) ?? null)
 const agentItems = computed(() =>
@@ -317,7 +402,17 @@ async function refreshAll() {
     refetchAgents(),
     selectedAgentId.value ? refetchTools() : Promise.resolve(),
     refetchSkills(),
+    refetchHooks(),
+    refetchOpenClawAgents(),
+    refetchOpenClawStatus(),
   ])
+}
+
+function agentModel(model: string | Record<string, unknown> | null) {
+  if (!model) return 'model unknown'
+  if (typeof model === 'string') return model
+  const primary = model.primary
+  return typeof primary === 'string' ? primary : 'model configured'
 }
 </script>
 
@@ -347,6 +442,18 @@ async function refreshAll() {
   min-width: 260px;
 }
 
+.middleware-page__summary,
+.middleware-page__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.middleware-page__grid {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+}
+
 .middleware-table__skill {
   max-width: 520px;
 }
@@ -367,6 +474,11 @@ async function refreshAll() {
   .middleware-page__agent-select {
     max-width: none;
     min-width: 100%;
+  }
+
+  .middleware-page__summary,
+  .middleware-page__grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

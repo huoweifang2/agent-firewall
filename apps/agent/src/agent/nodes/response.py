@@ -21,7 +21,7 @@ def response_node(state: AgentState) -> AgentState:
     if llm_response:
         final = llm_response
     elif state.get("intent") == "greeting":
-        final = "Hello! I'm the Customer Support Copilot. How can I help you today?"
+        final = "Hello. I can route tasks through the protected OpenClaw sandbox."
     else:
         final = "I'm sorry, I wasn't able to process your request. Please try again."
 

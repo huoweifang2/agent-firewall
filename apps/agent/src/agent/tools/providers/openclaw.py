@@ -2,21 +2,11 @@
 
 from __future__ import annotations
 
-import asyncio
-import contextlib
-import hashlib
 import json
 from typing import Any
 
+from src.agent.openclaw_client import OpenClawClient, OpenClawError, derive_session_id
 from src.config import get_settings
-
-
-def derive_session_id(base_session_id: str, tool_name: str) -> str:
-    """Derive a stable OpenClaw session id for one Agent-Firewall tool stream."""
-    raw = f"{base_session_id}:{tool_name}".encode()
-    digest = hashlib.sha256(raw).hexdigest()[:16]
-    safe_base = "".join(ch if ch.isalnum() or ch in ("-", "_") else "-" for ch in base_session_id)[:48]
-    return f"agent-firewall-{safe_base}-{digest}"
 
 
 def _get_openclaw_skill(tool_name: str, tool_spec: dict[str, Any] | None) -> str:
@@ -79,6 +69,16 @@ def _extract_result(stdout: str) -> str:
     return json.dumps(data, ensure_ascii=False)
 
 
+def _client_from_settings() -> OpenClawClient:
+    settings = get_settings()
+    return OpenClawClient(
+        binary=settings.openclaw_bin,
+        timeout_seconds=settings.openclaw_timeout_seconds,
+        default_agent_id=settings.openclaw_agent_id,
+        local=settings.openclaw_agent_local,
+    )
+
+
 async def execute(
     tool_name: str,
     args: dict[str, Any],
@@ -88,6 +88,7 @@ async def execute(
     original_request: str = "",
 ) -> str:
     settings = get_settings()
+    client = _client_from_settings()
     skill = _get_openclaw_skill(tool_name, tool_spec)
     description = str(tool_spec.get("description", "")) if isinstance(tool_spec, dict) else ""
     prompt = build_scoped_prompt(
@@ -98,46 +99,16 @@ async def execute(
         args=args,
     )
 
-    timeout = max(1, int(settings.openclaw_timeout_seconds))
-    command = [
-        settings.openclaw_bin,
-        "agent",
-        "--agent",
-        settings.openclaw_agent_id,
-        "--session-id",
-        derive_session_id(session_id, tool_name),
-        "--message",
-        prompt,
-        "--json",
-        "--timeout",
-        str(timeout),
-    ]
-    if settings.openclaw_agent_local:
-        command.append("--local")
-
     try:
-        proc = await asyncio.create_subprocess_exec(
-            *command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
+        payload = await client.agent_message(
+            agent_id=settings.openclaw_agent_id,
+            session_id=derive_session_id(session_id, tool_name),
+            message=prompt,
         )
-        stdout_bytes, stderr_bytes = await asyncio.wait_for(proc.communicate(), timeout=timeout + 5)
-    except TimeoutError:
-        with contextlib.suppress(ProcessLookupError):
-            proc.kill()
-        return f"Error executing OpenClaw tool {tool_name}: timed out after {timeout} seconds."
-    except FileNotFoundError:
-        return f"Error executing OpenClaw tool {tool_name}: OpenClaw binary '{settings.openclaw_bin}' was not found."
-    except Exception as exc:
+    except OpenClawError as exc:
         return f"Error executing OpenClaw tool {tool_name}: {exc}"
 
-    stdout = stdout_bytes.decode("utf-8", errors="replace")
-    stderr = stderr_bytes.decode("utf-8", errors="replace").strip()
-    if proc.returncode != 0:
-        detail = stderr or stdout.strip() or f"exit code {proc.returncode}"
-        return f"Error executing OpenClaw tool {tool_name}: {detail}"
-
-    result = _extract_result(stdout)
+    result = _extract_result(json.dumps(payload, ensure_ascii=False) if not isinstance(payload, str) else payload)
     if result:
         return result
-    return stderr or f"OpenClaw tool {tool_name} completed with no output."
+    return f"OpenClaw tool {tool_name} completed with no output."

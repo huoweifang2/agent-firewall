@@ -240,6 +240,47 @@ class OpenClawSkillsResponse(BaseModel):
     items: list[OpenClawSkillRead] = Field(default_factory=list)
 
 
+class OpenClawAgentRead(BaseModel):
+    """Redacted OpenClaw agent metadata."""
+
+    id: str
+    name: str = ""
+    workspace: str | None = None
+    model: str | dict | None = None
+    bindings: int = 0
+    is_default: bool = False
+
+
+class OpenClawAgentsResponse(BaseModel):
+    """Available OpenClaw agents response."""
+
+    items: list[OpenClawAgentRead] = Field(default_factory=list)
+
+
+class OpenClawHookRead(BaseModel):
+    """Redacted OpenClaw hook metadata."""
+
+    name: str
+    description: str = ""
+    emoji: str | None = None
+    eligible: bool = False
+    disabled: bool = False
+    enabled_by_config: bool = False
+    requirements_satisfied: bool = False
+    loadable: bool = False
+    source: str | None = None
+    events: list[str] = Field(default_factory=list)
+    homepage: str | None = None
+    missing: dict = Field(default_factory=dict)
+    managed_by_plugin: bool = False
+
+
+class OpenClawHooksResponse(BaseModel):
+    """Available OpenClaw hooks response."""
+
+    items: list[OpenClawHookRead] = Field(default_factory=list)
+
+
 class OpenClawImportRequest(BaseModel):
     """Import OpenClaw skills as Agent-Firewall tools."""
 
@@ -480,6 +521,7 @@ class RuntimeSubAgentSpec(BaseModel):
     """Delegatable child agent entry."""
 
     agent_id: uuid.UUID
+    openclaw_agent_id: str | None = None
     name: str
     description: str
     delegation_description: str

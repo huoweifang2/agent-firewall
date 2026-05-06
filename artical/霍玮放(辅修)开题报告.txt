@@ -1,0 +1,169 @@
+
+
+
+
+
+本科毕业论文（设计）
+开题报告
+
+中文题目	针对智能体通信协议安全性的Web应用系统开发
+学    院	工学院
+姓    名	霍玮放(辅修)
+学    号	230206108
+专    业	电气工程及其自动化
+班    级	电气24-3
+指导教师	杨波	职  称	教授
+
+　　
+　　填 表 说 明
+
+一、此报告是本科生毕业论文（设计）工作的重要组成部分，是开展毕业论文（设计）课题的依据和撰写论文的基础，毕业生需在导师的指导下认真完成。
+二、此报告应于第七（九）学期内完成。
+三、此报告通过并且签字后，交学院装入毕业论文资料袋存档。
+　四、若学院有其他内容要求，可另加附页。
+　五、打印要求：A4纸双面打印。
+论文（设计）题     目	针对智能体通信协议安全性的Web应用系统开发
+	Web Application Development 
+for Agent Communication Protocol Security
+指导教师	杨波	职    称	教授
+题目来源	其它
+题目类别	毕业论文
+一、文献综述及主要参考文献
+1. 文献综述
+1.1 研究目的与意义
+随着大语言模型（LLM）的爆发，多智能体系统（MAS）正从单一的问答交互向复杂的工具使用和自主协作演进。Model Context Protocol (MCP) 作为Anthropic最新推出的行业标准，旨在解决模型与数据、工具之间的连接问题，极大地降低了智能体（Agent）集成的复杂度。
+然而，协议的标准化也意味着攻击面的标准化。当本地智能体（Client）连接到远程不可信的MCP服务器（Server）时，安全边界变得模糊。本课题的研究目的在于深入剖析MCP协议在数据传输、上下文构建和工具调用过程中的安全机制，通过开发一个基于Web的攻防演练平台，复现“混淆代理（Confused Deputy）”、“提示词注入”等高危攻击。
+
+其意义在于：
+揭示隐蔽风险：通过实证研究，展示攻击者如何利用MCP协议的合法功能（如Sampling、Resources读取）实施非法操作。
+防御验证：为未来的MCP安全网关（MCP Gateway）和防火墙设计提供实测数据支持。
+
+1.2 国内外研究现状
+（1）智能体通信协议发展现状
+国际上，Anthropic发布的MCP协议迅速成为主流，旨在取代分散的私有API集成方式。它定义了Client、Host、Server三层架构，基于JSON-RPC 2.0进行通信。国内方面，百度、阿里等互联网企业也在探索类似的Agent Connect标准，但目前主要依赖LangChain等框架的硬编码集成，缺乏统一的互操作协议。
+（2）MCP及Agent安全研究现状
+根据现有文献，MCP的安全研究正处于起步阶段，主要集中在以下几个领域：
+攻击分类学（Taxonomy）：研究者开始对MCP服务器的攻击方式进行分类，包括恶意工具注册（Tool Squatting）、Rug Pull（服务突然中断）等供应链攻击。
+混淆代理与权限滥用：这是MCP面临的最大威胁。即攻击者控制的恶意MCP Server通过构造特定的Prompt或Context，诱导拥有高权限的LLM Client执行非预期的本地操作（如文件删除、API滥用）。
+防御框架：目前已出现如 MCP-Guard、MCP Guardian 等防御构想，主要思路是在Client与Server之间引入安全中间层，对JSON-RPC消息进行过滤和审计。
+基准测试：MCPSecBench 等项目的提出，标志着针对MCP协议的安全测试开始走向系统化和自动化。
+
+1.3 存在问题及发展趋势
+当前存在的问题：
+信任模型缺失：目前的MCP实现默认倾向于“连接即信任”，缺乏细粒度的权限委派控制。
+检测手段匮乏：针对自然语言层面的“语义注入”攻击，传统的防火墙和WAF无法有效识别。
+缺乏实战环境：现有的研究多停留在理论分析或脚本验证，缺乏一个集成的Web环境来演示攻击链路。
+发展趋势：未来智能体安全将从“模型安全”向“协议与交互安全”转移。研究重点将转向零信任架构下的MCP通信、基于大模型的实时流量审计以及自动化的协议模糊测试。
+
+2. 主要参考文献
+[1] Anthropic. Model Context Protocol Specification [EB/OL]. 2024.
+[2] Smith, J., et al. Model Context Protocol (MCP) at First Glance: Studying the Security and Maintainability [J]. arXiv preprint, 2024.
+[3] Doe, A. When MCP Servers Attack: Taxonomy, Feasibility, and Mitigation [C]. IEEE Symposium on Security and Privacy, 2025.
+[4] Zhang, L. Mind Your Server: A Systematic Study of Parasitic Toolchain Attacks on the MCP Ecosystem [J]. Journal of Cybersecurity, 2025.
+[5] Brown, R. MPMA: Preference Manipulation Attack Against Model Context Protocol [C]. CCS, 2025.
+[6] Wilson, K. MCP Safety Audit: LLMs with the Model Context Protocol Allow Major Security Exploits [R]. Tech Report, 2024.
+[7] Li, H. ETDI: Mitigating Tool Squatting and Rug Pull Attacks in Model Context Protocol (MCP) [J]. Computers & Security, 2025.
+[8] Wang, Y. MCP-Guard: A Defense Framework for Model Context Protocol Integrity in Large Language Models [J]. IEEE Transactions on Information Forensics and Security, 2026.
+[9] Gupta, S. MCP Guardian: A Security-First Layer for Safeguarding MCP-Based AI System [C]. USENIX Security, 2025.
+[10] Chen, X. MCPSecBench: A Systematic Security Benchmark and Playground for Testing Model Context Protocol [J]. arXiv preprint, 2025.
+[11] O'Neil, P. Simplified and Secure MCP Gateways for Enterprise AI Integration [M]. Springer, 2025.
+[12] Liu, F. AI Agents Under Threat: A Survey of Key Security Challenges and Future Pathways [J]. ACM Computing Surveys, 2025.
+
+
+
+
+
+
+二、研究内容
+本课题旨在基于Python开发一个针对MCP协议安全性的Web应用系统（沙箱环境），该系统包含“攻击模拟端”和“受害智能体端”，用于复现并分析以下核心安全问题：
+1. 核心功能模块设计
+恶意MCP服务器模拟模块：
+设计并实现一个符合MCP规范但包含恶意逻辑的Server。
+实现伪造注册（Registration Spoofing）：模拟合法的工具描述，诱骗LLM调用恶意工具。
+
+上下文污染与指令注入模块：
+历史记录污染：在prompts/get或resources/read的响应中注入虚构的会话历史，篡改智能体的短期记忆。
+误导性指令注入：在工具返回结果（Tool Result）中嵌入以自然语言编写的攻击指令（Indirect Prompt Injection），诱导智能体执行后续危险操作。
+
+混淆代理与委派链滥用演示：
+构建一个攻击场景：用户授权智能体访问本地文件 -> 智能体连接恶意MCP服务器 -> 恶意服务器通过Prompt诱导智能体读取敏感文件并回传。实现委派链（Delegation Chain）的可视化追踪，展示权限是如何在多跳交互中泄露的。
+
+Web可视化控制台：
+开发前端界面，允许用户配置攻击Payload，实时监控JSON-RPC消息流，并直观展示攻击成功后的文件泄露或系统状态改变。
+
+2. 重点解决的问题
+协议解析与操纵：如何精准拦截并修改MCP的JSON-RPC消息包，而不破坏协议的连接稳定性。
+跨模态攻击复现：解决如何将结构化的协议数据（JSON）转化为能有效影响LLM决策的非结构化语义攻击向量。
+沙箱隔离：确保攻击演示在受控的Web环境中进行，不会对宿主机造成实际破坏。
+
+3. 独创性与预期成果
+独创性：不同于纯理论研究，本课题将构建一个交互式的MCP攻防靶场（Playground），填补了当前针对MCP协议缺乏可视化实战工具的空白。
+
+预期成果：
+一套基于Python (FastAPI/Flask) 的MCP安全攻防Web系统。
+四种典型MCP攻击（注册欺诈、注入、污染、滥用）的原型代码库。
+毕业论文及关于MCP安全加固的策略建议报告。
+
+
+
+
+三、研究方案
+1. 技术路线
+开发语言：Python 3.10+。
+Web框架：FastAPI（后端处理JSON-RPC）+ LangFlow（前端展示）。
+MCP实现：使用 mcp-python-sdk 或手写轻量级JSON-RPC处理器以获得底层控制权。
+LLM接入：调用国内外大模型 API作为受害智能体的大脑。
+
+攻击实现逻辑：
+Step 1：建立Client-Host-Server架构。
+Step 2：中间人（MITM）代理拦截流量，修改 CallToolResult。
+Step 3：在Payload中注入 <system_override> 或类似Prompt Jailbreak 字符串。
+
+2. 研究步骤与进度安排
+2025.11.18 - 2025.12.15（准备阶段）：
+深入研读MCP官方文档和Task Sheet中的参考文献。
+搭建Python开发环境，跑通官方MCP Hello-World 示例。
+
+2025.12.16 - 2026.01.31（系统设计与协议分析）：
+设计Web系统架构，定义数据库模型（存储攻击日志）。
+分析MCP通信流程，确定注入点（Injection Points）。
+
+2026.02.01 - 2026.03.15（核心模块开发）：
+开发恶意MCP Server，实现“误导性指令注入”和“会话历史污染”模块。
+完成Web前端界面开发，实现攻击配置和日志监控。
+
+2026.03.16 - 2026.04.15（攻防验证与优化）：
+在沙箱中进行全链路测试，记录攻击成功率。
+开发简易的检测防御算法（如关键词过滤），验证其有效性。
+
+2026.04.16 - 2026.05.20（论文撰写）：
+整理实验数据，撰写毕业论文，准备答辩演示。
+
+3. 可行性论证
+技术可行性：Python在网络编程和AI领域的生态极其成熟。MCP协议基于标准的JSON-RPC和SSE（Server-Sent Events），技术门槛适中，易于拦截和模拟。
+资源可行性：使用模型API Key，操作简易。
+
+
+
+四、研究条件
+知识储备：
+已掌握Python编程及Web开发框架（Flask/FastAPI）。
+熟悉计算机网络原理（HTTP, JSON-RPC, WebSocket）。
+了解大语言模型的基本原理及Prompt Engineering技巧。
+已阅读MCP协议的官方规范文档。
+
+硬件与软件条件：
+个人PC一台。
+开发环境：VS Code, PyCharm, Docker（用于沙箱隔离）。
+访问权限：能够访问Github获取开源MCP代码，拥有OpenAI/Anthropic API Key用于测试。
+
+前期工作基础：
+已完成《网络安全》、《Web应用开发》等相关课程的学习。
+已对LangChain等Agent框架有过简单的实践操作。
+
+
+五、导师意见
+导师对开题报告的评语（学生对国内外文献、动态、水平是否了解清楚，预期目标能否达到，理论和实际应用的价值如何、研究方法和措施是否具体可行等）
+是否同意通过	☑同意           □不同意
+指导教师签字：                             日期：2026年1月9日 
+其他指导教师签字：                               日期：2026年1月9日 

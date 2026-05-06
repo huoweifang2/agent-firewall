@@ -103,12 +103,25 @@
           <template v-if="inspectedRuntimeSpec">
             <v-divider class="my-3" />
           <div class="text-caption text-medium-emphasis mb-2">Tools</div>
-          <v-chip v-for="tool in inspectedRuntimeSpec.tools" :key="tool.name" size="small" class="mr-1 mb-1" variant="tonal">
+            <v-chip v-for="tool in inspectedRuntimeSpec.tools" :key="tool.name" size="small" class="mr-1 mb-1" variant="tonal">
               {{ tool.name }}
               <span v-if="tool.provider_type === 'openclaw'" class="ml-1 text-caption">
                 · OC · pre {{ tool.pre_gate_enabled === false ? 'off' : 'on' }} · post {{ tool.post_gate_enabled === false ? 'off' : 'on' }}
               </span>
           </v-chip>
+
+            <template v-if="inspectedRuntimeSpec.sub_agents.length">
+              <div class="text-caption text-medium-emphasis mt-3 mb-2">Delegation Targets</div>
+              <v-chip
+                v-for="subAgent in inspectedRuntimeSpec.sub_agents"
+                :key="subAgent.agent_id"
+                size="small"
+                class="mr-1 mb-1"
+                variant="outlined"
+              >
+                {{ subAgent.name }} -> {{ subAgent.openclaw_agent_id || 'unmapped' }}
+              </v-chip>
+            </template>
 
             <div class="text-caption text-medium-emphasis mt-3 mb-2">Skills</div>
             <v-chip v-for="skill in inspectedRuntimeSpec.skills" :key="skill.name" size="small" class="mr-1 mb-1" variant="outlined">

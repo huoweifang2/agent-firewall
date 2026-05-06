@@ -23,4 +23,5 @@ async def openclaw_config() -> dict:
         "openclaw_agent_id": settings.openclaw_agent_id,
         "openclaw_agent_local": settings.openclaw_agent_local,
         "openclaw_timeout_seconds": settings.openclaw_timeout_seconds,
+        "deepseek_configured": bool(settings.deepseek_api_key),
     }

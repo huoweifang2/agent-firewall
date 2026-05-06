@@ -194,6 +194,44 @@ export interface OpenClawSkillsResponse {
   items: OpenClawSkillRead[]
 }
 
+export interface OpenClawAgentRead {
+  id: string
+  name: string
+  workspace: string | null
+  model: string | Record<string, unknown> | null
+  bindings: number
+  is_default: boolean
+}
+
+export interface OpenClawAgentsResponse {
+  items: OpenClawAgentRead[]
+}
+
+export interface OpenClawHookRead {
+  name: string
+  description: string
+  emoji: string | null
+  eligible: boolean
+  disabled: boolean
+  enabled_by_config: boolean
+  requirements_satisfied: boolean
+  loadable: boolean
+  source: string | null
+  events: string[]
+  homepage: string | null
+  missing: Record<string, unknown>
+  managed_by_plugin: boolean
+}
+
+export interface OpenClawHooksResponse {
+  items: OpenClawHookRead[]
+}
+
+export interface OpenClawStatusResponse {
+  status: Record<string, unknown>
+  models: Record<string, unknown>
+}
+
 // ─── Role ───
 
 export interface RoleCreate {
@@ -328,6 +366,7 @@ export interface RuntimeSkillSpec {
 
 export interface RuntimeSubAgentSpec {
   agent_id: string
+  openclaw_agent_id: string | null
   name: string
   description: string
   delegation_description: string
