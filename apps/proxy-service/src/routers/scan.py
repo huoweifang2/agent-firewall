@@ -71,7 +71,7 @@ async def scan(
     decision = result.get("decision", "ALLOW")
     status_code = 403 if decision == "BLOCK" else 200
 
-    # Log to Postgres (the pre-LLM pipeline has no logging node)
+    # Log to DB (the pre-LLM pipeline has no logging node)
     result["latency_ms"] = latency_ms
     try:
         await log_request_from_state(dict(result))

@@ -6,12 +6,18 @@ import enum
 import uuid as _uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Index, Integer, String, Text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
-from src.models.base import Base, TimestampMixin, UUIDMixin
+from src.models.base import JSON_VARIANT, Base, TimestampMixin, UUIDMixin
+
+
+def db_enum(enum_cls: type[enum.Enum], name: str, **kwargs) -> SAEnum:
+    """Persist Python enum values so SQLite stores stable string values."""
+    return SAEnum(enum_cls, name=name, values_callable=lambda values: [item.value for item in values], **kwargs)
+
 
 # ═══════════════════════════════════════════════════════════════════════
 # Enums
@@ -101,12 +107,12 @@ class Agent(UUIDMixin, TimestampMixin, Base):
 
     # ── Framework & environment ──────────────────────────────────────
     framework: Mapped[AgentFramework] = mapped_column(
-        Enum(AgentFramework, name="agent_framework"),
+        db_enum(AgentFramework, name="agent_framework"),
         nullable=False,
         default=AgentFramework.OPENCLAW,
     )
     environment: Mapped[AgentEnvironment] = mapped_column(
-        Enum(AgentEnvironment, name="agent_environment"),
+        db_enum(AgentEnvironment, name="agent_environment"),
         nullable=False,
         default=AgentEnvironment.DEV,
     )
@@ -121,23 +127,23 @@ class Agent(UUIDMixin, TimestampMixin, Base):
 
     # ── Computed / chosen fields ─────────────────────────────────────
     risk_level: Mapped[RiskLevel | None] = mapped_column(
-        Enum(RiskLevel, name="risk_level"),
+        db_enum(RiskLevel, name="risk_level"),
         nullable=True,
     )
     protection_level: Mapped[ProtectionLevel | None] = mapped_column(
-        Enum(ProtectionLevel, name="protection_level"),
+        db_enum(ProtectionLevel, name="protection_level"),
         nullable=True,
     )
     policy_pack: Mapped[str | None] = mapped_column(String(64), nullable=True)
     rollout_mode: Mapped[RolloutMode] = mapped_column(
-        Enum(RolloutMode, name="rollout_mode"),
+        db_enum(RolloutMode, name="rollout_mode"),
         nullable=False,
         default=RolloutMode.OBSERVE,
     )
 
     # ── Lifecycle ────────────────────────────────────────────────────
     status: Mapped[AgentStatus] = mapped_column(
-        Enum(AgentStatus, name="agent_status"),
+        db_enum(AgentStatus, name="agent_status"),
         nullable=False,
         default=AgentStatus.DRAFT,
     )
@@ -145,22 +151,22 @@ class Agent(UUIDMixin, TimestampMixin, Base):
 
     # ── Hierarchy ───────────────────────────────────────────────────
     agent_kind: Mapped[AgentKind] = mapped_column(
-        Enum(AgentKind, name="agent_kind"),
+        db_enum(AgentKind, name="agent_kind"),
         nullable=False,
         default=AgentKind.MAIN_AGENT,
     )
     created_from: Mapped[AgentCreatedFrom] = mapped_column(
-        Enum(AgentCreatedFrom, name="agent_created_from"),
+        db_enum(AgentCreatedFrom, name="agent_created_from"),
         nullable=False,
         default=AgentCreatedFrom.MANUAL,
     )
     template_key: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     # ── Generated config cache (spec 28e) ────────────────────────────
-    generated_config: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    generated_config: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
 
     # ── Generated integration kit cache (spec 29k) ──────────────────
-    generated_kit: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    generated_kit: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
 
     def __repr__(self) -> str:
         return f"<Agent name={self.name!r} risk={self.risk_level} status={self.status}>"
@@ -217,18 +223,18 @@ class AgentTool(UUIDMixin, TimestampMixin, Base):
     category: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     access_type: Mapped[AccessType] = mapped_column(
-        Enum(AccessType, name="access_type"),
+        db_enum(AccessType, name="access_type"),
         nullable=False,
         default=AccessType.READ,
     )
     sensitivity: Mapped[Sensitivity] = mapped_column(
-        Enum(Sensitivity, name="sensitivity"),
+        db_enum(Sensitivity, name="sensitivity"),
         nullable=False,
         default=Sensitivity.LOW,
     )
     requires_confirmation: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
-    arg_schema: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    arg_schema: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
     returns_pii: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     returns_secrets: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     rate_limit: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -305,9 +311,9 @@ class RoleToolPermission(UUIDMixin, Base):
         nullable=False,
         index=True,
     )
-    scopes: Mapped[list] = mapped_column(JSONB, nullable=False, default=lambda: ["read"])
+    scopes: Mapped[list] = mapped_column(JSON_VARIANT, nullable=False, default=lambda: ["read"])
     requires_confirmation_override: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
-    conditions: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    conditions: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
 
     # Relationships
     role: Mapped[AgentRole] = relationship("AgentRole", back_populates="permissions")
@@ -335,13 +341,13 @@ class AgentSkill(UUIDMixin, TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(128), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     scope: Mapped[SkillScope] = mapped_column(
-        Enum(SkillScope, name="skill_scope"),
+        db_enum(SkillScope, name="skill_scope"),
         nullable=False,
         default=SkillScope.SHARED,
     )
     prompt_fragment: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    constraints: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    output_contract: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    constraints: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
+    output_contract: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     agent: Mapped[Agent] = relationship("Agent", backref="skills", lazy="selectin")
@@ -378,9 +384,7 @@ class AgentDelegation(UUIDMixin, TimestampMixin, Base):
     parent_agent: Mapped[Agent] = relationship("Agent", foreign_keys=[parent_agent_id], backref="sub_agents")
     child_agent: Mapped[Agent] = relationship("Agent", foreign_keys=[child_agent_id], lazy="selectin")
 
-    __table_args__ = (
-        Index("ix_agent_delegations_parent_child", "parent_agent_id", "child_agent_id", unique=True),
-    )
+    __table_args__ = (Index("ix_agent_delegations_parent_child", "parent_agent_id", "child_agent_id", unique=True),)
 
     def __repr__(self) -> str:
         return f"<AgentDelegation parent={self.parent_agent_id} child={self.child_agent_id}>"
@@ -408,7 +412,7 @@ class ValidationRun(UUIDMixin, TimestampMixin, Base):
     passed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     failed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     duration_ms: Mapped[float] = mapped_column(nullable=False, default=0.0)
-    results: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    results: Mapped[dict] = mapped_column(JSON_VARIANT, nullable=False, default=dict)
 
     # Relationships
     agent: Mapped[Agent] = relationship("Agent", backref="validation_runs", lazy="selectin")
@@ -433,11 +437,11 @@ class PromotionEvent(UUIDMixin, TimestampMixin, Base):
         index=True,
     )
     from_mode: Mapped[RolloutMode] = mapped_column(
-        Enum(RolloutMode, name="rollout_mode", create_type=False),
+        db_enum(RolloutMode, name="rollout_mode", create_type=False),
         nullable=False,
     )
     to_mode: Mapped[RolloutMode] = mapped_column(
-        Enum(RolloutMode, name="rollout_mode", create_type=False),
+        db_enum(RolloutMode, name="rollout_mode", create_type=False),
         nullable=False,
     )
     user: Mapped[str] = mapped_column(String(128), nullable=False, default="system")
@@ -483,24 +487,24 @@ class GateDecision(UUIDMixin, TimestampMixin, Base):
         index=True,
     )
     gate_type: Mapped[GateDecisionType] = mapped_column(
-        Enum(GateDecisionType, name="gate_decision_type"),
+        db_enum(GateDecisionType, name="gate_decision_type"),
         nullable=False,
     )
     decision: Mapped[GateAction] = mapped_column(
-        Enum(GateAction, name="gate_action"),
+        db_enum(GateAction, name="gate_action"),
         nullable=False,
     )
     effective_action: Mapped[GateAction] = mapped_column(
-        Enum(GateAction, name="gate_action", create_type=False),
+        db_enum(GateAction, name="gate_action", create_type=False),
         nullable=False,
     )
     rollout_mode: Mapped[RolloutMode] = mapped_column(
-        Enum(RolloutMode, name="rollout_mode", create_type=False),
+        db_enum(RolloutMode, name="rollout_mode", create_type=False),
         nullable=False,
     )
     enforced: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     warning: Mapped[str | None] = mapped_column(Text, nullable=True)
-    context: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    context: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
 
     agent: Mapped[Agent] = relationship("Agent", backref="gate_decisions", lazy="selectin")
 
@@ -577,16 +581,16 @@ class AgentIncident(UUIDMixin, Base):
         index=True,
     )
     severity: Mapped[IncidentSeverity] = mapped_column(
-        Enum(IncidentSeverity, name="incident_severity"),
+        db_enum(IncidentSeverity, name="incident_severity"),
         nullable=False,
     )
     category: Mapped[IncidentCategory] = mapped_column(
-        Enum(IncidentCategory, name="incident_category"),
+        db_enum(IncidentCategory, name="incident_category"),
         nullable=False,
     )
     title: Mapped[str] = mapped_column(String(256), nullable=False)
     status: Mapped[IncidentStatus] = mapped_column(
-        Enum(IncidentStatus, name="incident_status"),
+        db_enum(IncidentStatus, name="incident_status"),
         nullable=False,
         default=IncidentStatus.OPEN,
     )
@@ -601,7 +605,7 @@ class AgentIncident(UUIDMixin, Base):
         server_default=func.now(),
     )
     trace_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    details: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    details: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
 
     agent: Mapped[Agent] = relationship("Agent", backref="incidents", lazy="selectin")
     traces: Mapped[list[AgentTrace]] = relationship(
@@ -635,24 +639,24 @@ class AgentTrace(UUIDMixin, Base):
         server_default=func.now(),
     )
     gate: Mapped[TraceGate] = mapped_column(
-        Enum(TraceGate, name="trace_gate"),
+        db_enum(TraceGate, name="trace_gate"),
         nullable=False,
     )
     tool_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
     role: Mapped[str | None] = mapped_column(String(128), nullable=True)
     decision: Mapped[TraceDecision] = mapped_column(
-        Enum(TraceDecision, name="trace_decision"),
+        db_enum(TraceDecision, name="trace_decision"),
         nullable=False,
     )
     reason: Mapped[str] = mapped_column(Text, nullable=False, default="")
     category: Mapped[str] = mapped_column(String(64), nullable=False, default="policy")
     rollout_mode: Mapped[RolloutMode] = mapped_column(
-        Enum(RolloutMode, name="rollout_mode", create_type=False),
+        db_enum(RolloutMode, name="rollout_mode", create_type=False),
         nullable=False,
     )
     enforced: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     latency_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    details: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    details: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
     incident_id: Mapped[_uuid.UUID | None] = mapped_column(
         ForeignKey("agent_incidents.id", ondelete="SET NULL"),
         nullable=True,
@@ -685,7 +689,7 @@ class AgentTraceRun(UUIDMixin, Base):
     """Full structured trace for a single agent request.
 
     Stores the complete trace dict (iterations, gate decisions, tool
-    executions, LLM calls) as JSONB — one row per agent /chat call.
+    executions, LLM calls) as JSON — one row per agent /chat call.
     """
 
     __tablename__ = "agent_trace_runs"
@@ -715,11 +719,11 @@ class AgentTraceRun(UUIDMixin, Base):
     model: Mapped[str] = mapped_column(String(128), nullable=False, default="")
     intent: Mapped[str | None] = mapped_column(String(128), nullable=True)
     total_duration_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    counters: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    iterations: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
-    errors: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    counters: Mapped[dict] = mapped_column(JSON_VARIANT, nullable=False, default=dict)
+    iterations: Mapped[list] = mapped_column(JSON_VARIANT, nullable=False, default=list)
+    errors: Mapped[list] = mapped_column(JSON_VARIANT, nullable=False, default=list)
     limits_hit: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    details: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    details: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
 
     # Relationships
     agent: Mapped[Agent] = relationship("Agent", backref="trace_runs", lazy="selectin")

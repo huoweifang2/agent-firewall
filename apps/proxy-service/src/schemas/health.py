@@ -8,7 +8,7 @@ from pydantic import BaseModel
 class ServiceHealth(BaseModel):
     """Health status of a single service."""
 
-    status: str  # "ok" | "error"
+    status: str  # "ok" | "error" | "skipped"
     detail: str | None = None
 
 
@@ -46,3 +46,14 @@ class HealthResponse(BaseModel):
     services: dict[str, ServiceHealth]
     version: str
     metrics: SystemMetrics | None = None
+
+
+class RuntimeConfigResponse(BaseModel):
+    """Redacted runtime configuration exposed to the local console."""
+
+    database_kind: str
+    database_url_safe: str
+    sqlite_path: str | None = None
+    cache_mode: str
+    redis_configured: bool = False
+    langfuse_enabled: bool = False

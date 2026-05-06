@@ -1,4 +1,4 @@
-"""Pydantic validation schema for the JSONB ``config`` field in Policy."""
+"""Pydantic validation schema for the JSON ``config`` field in Policy."""
 
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ class ThresholdsSchema(BaseModel):
 
 
 class PolicyConfigSchema(BaseModel):
-    """Validates the JSONB ``config`` column of a policy.
+    """Validates the JSON ``config`` column of a policy.
 
     ``nodes`` — list of optional scanner / extension node names.
     ``thresholds`` — risk thresholds and behaviour toggles.

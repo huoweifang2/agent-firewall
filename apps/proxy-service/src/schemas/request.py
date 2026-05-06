@@ -12,7 +12,7 @@ T = TypeVar("T")
 
 
 class RequestRead(BaseModel):
-    """Lightweight schema for list view (excludes large JSONB fields)."""
+    """Lightweight schema for list view (excludes large JSON fields)."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -35,7 +35,7 @@ class RequestRead(BaseModel):
 
 
 class RequestDetail(RequestRead):
-    """Full detail schema — includes heavy JSONB columns."""
+    """Full detail schema — includes heavy JSON columns."""
 
     prompt_hash: str | None = None
     scanner_results: dict | None = None

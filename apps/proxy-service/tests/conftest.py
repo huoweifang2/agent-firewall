@@ -2,7 +2,23 @@
 
 from __future__ import annotations
 
+# ruff: noqa: E402,I001
+
+import os
+import tempfile
+from pathlib import Path
+
 import pytest
+
+_TEST_DB_PATH = Path(tempfile.gettempdir()) / "agent-firewall-proxy-test.sqlite"
+_TEST_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+for suffix in ("", "-wal", "-shm"):
+    Path(f"{_TEST_DB_PATH}{suffix}").unlink(missing_ok=True)
+
+os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{_TEST_DB_PATH}"
+os.environ["CACHE_BACKEND"] = "memory"
+os.environ["REDIS_URL"] = ""
+os.environ["ENABLE_LANGFUSE"] = "false"
 
 from src.db.seed import seed_denylist, seed_policies
 from src.db.session import engine

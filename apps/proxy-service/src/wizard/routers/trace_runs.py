@@ -29,7 +29,7 @@ logger = structlog.get_logger()
 
 router = APIRouter(prefix="/agents/{agent_id}", tags=["trace-runs"])
 
-MAX_PAYLOAD_BYTES = 512 * 1024  # 512 KB cap on iterations JSONB
+MAX_PAYLOAD_BYTES = 512 * 1024  # 512 KB cap on iterations JSON
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
@@ -121,7 +121,7 @@ async def ingest_trace_run(
             detail=f"iterations payload too large ({payload_size} bytes, max {MAX_PAYLOAD_BYTES})",
         )
 
-    # Pack overflow fields into details JSONB
+    # Pack overflow fields into details JSON
     details: dict = {}
     if body.user_message is not None:
         details["user_message"] = body.user_message
@@ -203,7 +203,7 @@ async def list_trace_runs(
         stmt = stmt.where(AgentTraceRun.timestamp <= date_to)
         count_stmt = count_stmt.where(AgentTraceRun.timestamp <= date_to)
 
-    # has_blocks filter requires checking counters JSONB
+    # has_blocks filter requires checking counters JSON
     if has_blocks is not None:
         if has_blocks:
             stmt = stmt.where(AgentTraceRun.counters["tool_calls_blocked"].as_integer() > 0)

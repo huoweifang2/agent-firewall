@@ -17,7 +17,7 @@ class PipelineState(TypedDict, total=False):
     request_id: str  # UUID, same as x-correlation-id
     client_id: str | None
     policy_name: str  # "fast" | "balanced" | "strict" | "paranoid"
-    policy_config: dict  # Full policy config JSONB from DB
+    policy_config: dict  # Full policy config JSON from DB
     model: str
     messages: list[dict]  # Full conversation
     user_message: str  # Extracted last user message

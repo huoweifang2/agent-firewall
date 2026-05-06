@@ -53,10 +53,11 @@ class Settings(BaseSettings):
     """Central configuration loaded from environment / .env file."""
 
     # Database
-    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/agent_firewall"
+    database_url: str = f"sqlite+aiosqlite:///{Path.home() / '.openclaw' / 'agent-firewall.sqlite'}"
 
-    # Redis
-    redis_url: str = "redis://localhost:6379/0"
+    # Cache
+    cache_backend: str = "memory"
+    redis_url: str = ""
 
     # Default model
     default_model: str = "deepseek/deepseek-chat"
@@ -108,7 +109,7 @@ class Settings(BaseSettings):
     enable_direct_endpoint: bool = True  # Set False in production
 
     # Langfuse tracing
-    enable_langfuse: bool = True
+    enable_langfuse: bool = False
 
     model_config = SettingsConfigDict(env_file=(".env", ".env.local"), env_file_encoding="utf-8", extra="ignore")
 

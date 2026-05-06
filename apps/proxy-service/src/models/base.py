@@ -3,12 +3,16 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, func
+from sqlalchemy import JSON, DateTime, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class Base(DeclarativeBase):
     """Base class for all ORM models."""
+
+
+JSON_VARIANT = JSON().with_variant(JSONB, "postgresql")
 
 
 class UUIDMixin:

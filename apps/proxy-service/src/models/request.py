@@ -6,10 +6,9 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import DateTime, Float, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.models.base import Base, UUIDMixin
+from src.models.base import JSON_VARIANT, Base, UUIDMixin
 
 
 class Request(UUIDMixin, Base):
@@ -27,7 +26,7 @@ class Request(UUIDMixin, Base):
     prompt_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     prompt_preview: Mapped[str | None] = mapped_column(Text, nullable=True)
     decision: Mapped[str] = mapped_column(String(16), nullable=False, default="allow")
-    risk_flags: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    risk_flags: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
     risk_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     model_used: Mapped[str | None] = mapped_column(String(64), nullable=True)
@@ -35,9 +34,9 @@ class Request(UUIDMixin, Base):
     tokens_out: Mapped[int | None] = mapped_column(Integer, nullable=True)
     blocked_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     response_masked: Mapped[bool | None] = mapped_column(nullable=True, default=False)
-    scanner_results: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    output_filter_results: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    node_timings: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    scanner_results: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
+    output_filter_results: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
+    node_timings: Mapped[dict | None] = mapped_column(JSON_VARIANT, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

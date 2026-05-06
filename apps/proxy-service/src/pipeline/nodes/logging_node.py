@@ -1,4 +1,4 @@
-"""LoggingNode — audit log to Postgres + Langfuse trace.
+"""LoggingNode — audit log to DB + optional Langfuse trace.
 
 Runs as the **last** node in all pipeline paths (ALLOW, MODIFY, BLOCK).
 Errors are swallowed so logging never blocks the response.
@@ -36,15 +36,15 @@ def _redact(text: str) -> str:
 
 @timed_node("logging")
 async def logging_node(state: PipelineState) -> PipelineState:
-    """Write audit record to Postgres and send Langfuse trace.
+    """Write audit record to DB and send an optional Langfuse trace.
 
     Errors are swallowed — logging must never block the response.
     """
-    # 1. Postgres audit log
+    # 1. DB audit log
     try:
         await log_request_from_state(dict(state))
     except Exception as exc:
-        logger.error("logging_node_postgres_failed", error_type=type(exc).__name__)
+        logger.error("logging_node_db_failed", error_type=type(exc).__name__)
 
     # 2. Langfuse trace
     try:

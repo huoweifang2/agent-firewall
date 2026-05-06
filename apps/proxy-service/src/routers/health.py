@@ -3,17 +3,19 @@
 import os
 import re
 import time
+from pathlib import Path
 
 import httpx
 import psutil
 import structlog
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, select, text
+from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import Settings, get_settings
-from src.db.session import get_db, get_redis
-from src.schemas.health import HealthResponse, ServiceHealth, SystemMetrics
+from src.db.session import cache_mode, get_db, get_redis
+from src.schemas.health import HealthResponse, RuntimeConfigResponse, ServiceHealth, SystemMetrics
 
 _PROCESS_START = time.monotonic()
 
@@ -31,6 +33,16 @@ def _safe_detail(exc: Exception) -> str:
     return type(exc).__name__
 
 
+def _database_runtime_info(database_url: str) -> tuple[str, str, str | None]:
+    """Return a redacted database summary safe for UI display."""
+    url = make_url(database_url)
+    database_kind = url.drivername.split("+", maxsplit=1)[0]
+    sqlite_path = None
+    if database_kind == "sqlite" and url.database:
+        sqlite_path = url.database if url.database == ":memory:" else str(Path(url.database).expanduser())
+    return database_kind, url.render_as_string(hide_password=True), sqlite_path
+
+
 async def _check_db(db: AsyncSession) -> ServiceHealth:
     try:
         await db.execute(text("SELECT 1"))
@@ -41,6 +53,8 @@ async def _check_db(db: AsyncSession) -> ServiceHealth:
 
 
 async def _check_redis() -> ServiceHealth:
+    if cache_mode() == "memory":
+        return ServiceHealth(status="skipped", detail="memory cache")
     try:
         redis = await get_redis()
         pong = await redis.ping()
@@ -110,7 +124,7 @@ async def health(
         "redis": await _check_redis(),
     }
 
-    if settings.mode == "demo":
+    if not settings.enable_langfuse or settings.mode == "demo":
         services["langfuse"] = ServiceHealth(status="skipped")
     else:
         services["langfuse"] = await _check_langfuse(settings.langfuse_host)
@@ -129,4 +143,18 @@ async def health(
         services=services,
         version=settings.app_version,
         metrics=metrics,
+    )
+
+
+@router.get("/v1/runtime/config", response_model=RuntimeConfigResponse)
+async def runtime_config(settings: Settings = Depends(get_settings)) -> RuntimeConfigResponse:  # noqa: B008
+    """Return redacted local runtime configuration for the Settings page."""
+    database_kind, database_url_safe, sqlite_path = _database_runtime_info(settings.database_url)
+    return RuntimeConfigResponse(
+        database_kind=database_kind,
+        database_url_safe=database_url_safe,
+        sqlite_path=sqlite_path,
+        cache_mode=cache_mode(),
+        redis_configured=bool(settings.redis_url.strip()),
+        langfuse_enabled=settings.enable_langfuse,
     )

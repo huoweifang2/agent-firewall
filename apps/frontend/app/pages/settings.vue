@@ -13,7 +13,7 @@
       <v-btn
         icon="mdi-refresh"
         variant="text"
-        :loading="openClawLoading"
+        :loading="runtimeLoading"
         @click="loadOpenClawConfig"
       />
     </div>
@@ -92,6 +92,28 @@
         </div>
         <div class="text-caption text-medium-emphasis mt-2">
           token {{ config?.gateway_token_present ? 'present' : 'missing' }}
+        </div>
+      </v-sheet>
+
+      <v-sheet border rounded class="pa-4">
+        <div class="text-caption text-medium-emphasis mb-2">Storage</div>
+        <div class="d-flex align-center ga-2">
+          <v-icon :color="runtimeConfig?.database_kind === 'sqlite' ? 'success' : 'warning'" icon="mdi-database-outline" />
+          <span class="text-subtitle-2">{{ runtimeConfig?.database_kind || 'loading' }}</span>
+        </div>
+        <div class="text-caption text-medium-emphasis mt-2 text-truncate">
+          {{ runtimeConfig?.sqlite_path || runtimeConfig?.database_url_safe || 'runtime pending' }}
+        </div>
+      </v-sheet>
+
+      <v-sheet border rounded class="pa-4">
+        <div class="text-caption text-medium-emphasis mb-2">Local Services</div>
+        <div class="d-flex align-center ga-2">
+          <v-icon :color="runtimeConfig?.cache_mode === 'memory' ? 'success' : 'info'" icon="mdi-memory" />
+          <span class="text-subtitle-2">{{ runtimeConfig?.cache_mode || 'loading' }} cache</span>
+        </div>
+        <div class="text-caption text-medium-emphasis mt-2">
+          Langfuse {{ runtimeConfig?.langfuse_enabled ? 'enabled' : 'disabled' }}
         </div>
       </v-sheet>
     </div>
@@ -207,13 +229,22 @@
 import { computed, onMounted, ref } from 'vue'
 import { useApiKeys } from '~/composables/useApiKeys'
 import { agentService } from '~/services/agentService'
+import { api } from '~/services/api'
 
 definePageMeta({ title: 'Runtime Settings' })
 
 const { keys, removeKey } = useApiKeys()
-const openClawLoading = ref(false)
+const runtimeLoading = ref(false)
 const openClawError = ref('')
 const config = ref<Awaited<ReturnType<typeof agentService.getOpenClawConfig>> | null>(null)
+const runtimeConfig = ref<{
+  database_kind: string
+  database_url_safe: string
+  sqlite_path?: string | null
+  cache_mode: string
+  redis_configured: boolean
+  langfuse_enabled: boolean
+} | null>(null)
 
 const openClawHealthy = computed(() =>
   !!config.value?.status_ok && !!config.value?.models_ok && !!config.value?.agents_ok,
@@ -248,17 +279,24 @@ function providerLabel(provider: string) {
 }
 
 async function loadOpenClawConfig() {
-  openClawLoading.value = true
+  runtimeLoading.value = true
   openClawError.value = ''
   try {
-    config.value = await agentService.getOpenClawConfig()
+    const [openClawConfig, runtimeResponse] = await Promise.all([
+      agentService.getOpenClawConfig(),
+      api.get('/v1/runtime/config'),
+    ])
+    config.value = openClawConfig
+    runtimeConfig.value = runtimeResponse.data
     if (config.value.error) {
       openClawError.value = config.value.error
     }
   } catch (err) {
-    openClawError.value = err instanceof Error ? err.message : 'Agent runtime is not reachable'
+    openClawError.value = err instanceof Error
+      ? err.message
+      : (err as { message?: string })?.message || 'Agent runtime is not reachable'
   } finally {
-    openClawLoading.value = false
+    runtimeLoading.value = false
   }
 }
 </script>
@@ -266,7 +304,7 @@ async function loadOpenClawConfig() {
 <style scoped>
 .settings-page__status-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 12px;
 }
 

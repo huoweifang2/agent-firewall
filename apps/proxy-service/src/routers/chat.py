@@ -141,7 +141,7 @@ async def chat_completions(
         )
 
         if pre_result["decision"] == "BLOCK":
-            # Log BLOCK to Postgres (streaming pre-LLM pipeline has no logging node)
+            # Log BLOCK to DB (streaming pre-LLM pipeline has no logging node)
             latency_ms = int((time.perf_counter() - start) * 1000)
             pre_result["latency_ms"] = latency_ms
             try:

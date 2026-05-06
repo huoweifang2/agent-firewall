@@ -38,7 +38,7 @@ async def sse_stream(
     """Convert LiteLLM streaming response to SSE-formatted chunks.
 
     Yields ``data: {json}\\n\\n`` per token, ending with ``data: [DONE]\\n\\n``.
-    After the stream completes, writes audit log to Postgres.
+    After the stream completes, writes an audit log to the configured DB.
     """
     created = int(time.time())
     token_count = 0
@@ -103,7 +103,7 @@ async def sse_stream(
 
         yield "data: [DONE]\n\n"
 
-        # ── Audit log to Postgres (normal completion) ─────────────
+        # ── Audit log to DB (normal completion) ───────────────────
         await _audit_log()
     except GeneratorExit:
         # Client disconnected — still guarantee audit log
