@@ -137,6 +137,35 @@ class PolicyPack:
 # ═══════════════════════════════════════════════════════════════════════
 
 _PACKS: dict[str, PolicyPack] = {
+    "telegram_gateway": PolicyPack(
+        name="telegram_gateway",
+        description="Telegram-first OpenClaw gateway with balanced input, tool, approval, and audit controls",
+        scanners=ScannerConfig(
+            injection_detection=True,
+            injection_threshold=0.3,
+            pii_redaction=True,
+            pii_mode="mask",
+            secrets_scanning=True,
+            toxicity_detection=True,
+            toxicity_threshold=0.6,
+            nemo_guardrails=True,
+        ),
+        output_filtering=OutputFilteringConfig(
+            pii_redaction=True,
+            secrets_scanning=True,
+            injection_detection=True,
+            max_output_size=4000,
+        ),
+        confirmation=ConfirmationConfig(
+            required_for_sensitivity=("high", "critical"),
+            timeout_seconds=300,
+        ),
+        limit_tiers={
+            "low": LOW_TIER,
+            "medium": MEDIUM_TIER,
+            "high": HIGH_TIER,
+        },
+    ),
     "customer_support": PolicyPack(
         name="customer_support",
         description="Customer-facing support agent with strict injection and moderate toxicity controls",

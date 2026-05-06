@@ -392,19 +392,28 @@ def _evaluate_tool(
         )
 
     # ── Check 5: Confirmation ─────────────────────────────
-    confirm = _check_confirmation(tool_name, user_role, runtime_spec)
-    checks.append(confirm)
-    if not confirm["passed"]:
-        risk_score = 0.3
-        return GateDecision(
-            tool=tool_name,
-            args=args,
-            decision="REQUIRE_CONFIRMATION",
-            reason=confirm["detail"],
-            checks=checks,
-            modified_args=None,
-            risk_score=risk_score,
+    if state.get("approved_intervention_valid"):
+        checks.append(
+            CheckResult(
+                check="confirmation",
+                passed=True,
+                detail=f"Approved intervention {state['approved_intervention_id']} permits this confirmation-gated tool.",
+            )
         )
+    else:
+        confirm = _check_confirmation(tool_name, user_role, runtime_spec)
+        checks.append(confirm)
+        if not confirm["passed"]:
+            risk_score = 0.3
+            return GateDecision(
+                tool=tool_name,
+                args=args,
+                decision="REQUIRE_CONFIRMATION",
+                reason=confirm["detail"],
+                checks=checks,
+                modified_args=None,
+                risk_score=risk_score,
+            )
 
     # ── All checks passed ─────────────────────────
     decision = "MODIFY" if modified_args is not None else "ALLOW"

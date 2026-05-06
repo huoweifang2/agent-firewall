@@ -43,7 +43,7 @@ class AgentCreate(BaseModel):
     touches_pii: bool = False
     handles_secrets: bool = False
     calls_external_apis: bool = False
-    policy_pack: str | None = None
+    policy_pack: str | None = "telegram_gateway"
     agent_kind: AgentKind = AgentKind.MAIN_AGENT
     created_from: AgentCreatedFrom = AgentCreatedFrom.MANUAL
     template_key: str | None = Field(default=None, max_length=64)

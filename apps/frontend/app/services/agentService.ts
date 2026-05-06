@@ -5,6 +5,11 @@ import { detectProviderClient, getKey } from '~/composables/useApiKeys'
 
 const baseURL = import.meta.env.NUXT_PUBLIC_AGENT_API_BASE ?? 'http://localhost:8002'
 
+export interface AgentStreamEvent {
+  event: string
+  data: Record<string, unknown>
+}
+
 const agentApi: AxiosInstance = axios.create({
   baseURL,
   timeout: 60_000,
@@ -74,7 +79,7 @@ export const agentService = {
     return data
   },
 
-  async *streamChat(request: AgentChatRequest): AsyncGenerator<{ event: string; data: any }> {
+  async *streamChat(request: AgentChatRequest): AsyncGenerator<AgentStreamEvent> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       Accept: 'text/event-stream',
@@ -100,7 +105,10 @@ export const agentService = {
       try {
         const errData = await response.json()
         errText = errData.detail || errText
-      } catch {}
+      }
+      catch {
+        errText = response.statusText
+      }
       throw new Error(`Chat API failed: ${response.status} ${errText}`)
     }
 
@@ -130,7 +138,8 @@ export const agentService = {
           try {
             const data = JSON.parse(dataMatch[1].trim())
             yield { event, data }
-          } catch (e) {
+          }
+          catch {
             console.error('Failed to parse SSE data:', dataMatch[1])
           }
         }

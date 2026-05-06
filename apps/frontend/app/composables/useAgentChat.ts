@@ -45,6 +45,14 @@ export function useAgentChat() {
     })
   }
 
+  function asText(value: unknown): string {
+    return typeof value === 'string' ? value : ''
+  }
+
+  function asRecord(value: unknown): Record<string, unknown> {
+    return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}
+  }
+
   async function sendMessage(text: string) {
     error.value = null
 
@@ -84,26 +92,28 @@ export function useAgentChat() {
         const msg = messages.value[assistantMsgIndex]
         
         switch (event) {
-          case 'chunk':
-            if (data.content) {
-              msg.content += data.content
+          case 'chunk': {
+            const content = asText(data.content)
+            if (content) {
+              msg.content += content
               if (!msg.blocks) msg.blocks = []
               
               if (msg.blocks.length > 0 && msg.blocks[msg.blocks.length - 1].type === 'text') {
-                msg.blocks[msg.blocks.length - 1].content += data.content
+                msg.blocks[msg.blocks.length - 1].content += content
               } else {
-                msg.blocks.push({ type: 'text', content: data.content })
+                msg.blocks.push({ type: 'text', content })
               }
             }
             break
+          }
             
-          case 'tool_start':
+          case 'tool_start': {
             if (!msg.tools_called) msg.tools_called = []
             if (!msg.blocks) msg.blocks = []
             
             const newTool = {
-              tool: data.name,
-              args: data.kwargs || {},
+              tool: asText(data.name),
+              args: asRecord(data.kwargs),
               result_preview: '',
               allowed: true,
             }
@@ -111,23 +121,26 @@ export function useAgentChat() {
             msg.tools_called.push(newTool)
             msg.blocks.push({ type: 'tool', tool: newTool })
             break
+          }
             
-          case 'tool_end':
+          case 'tool_end': {
             if (msg.tools_called && msg.tools_called.length > 0) {
               const currentTool = msg.tools_called[msg.tools_called.length - 1]
-              currentTool.result_preview = data.result
-              currentTool.allowed = data.allowed
+              currentTool.result_preview = asText(data.result)
+              currentTool.allowed = typeof data.allowed === 'boolean' ? data.allowed : currentTool.allowed
             }
             break
+          }
             
-          case 'final':
-            msg.agent_trace = data.agent_trace || data.trace
-            msg.firewall_decision = data.firewall_decision
-            msg.content = data.response || msg.content
-            if (data.tools_called) {
-              msg.tools_called = data.tools_called
+          case 'final': {
+            msg.agent_trace = (data.agent_trace || data.trace) as AgentTrace | undefined
+            msg.firewall_decision = data.firewall_decision as FirewallDecision | undefined
+            msg.content = asText(data.response) || msg.content
+            if (Array.isArray(data.tools_called)) {
+              msg.tools_called = data.tools_called as typeof msg.tools_called
             }
             break
+          }
         }
         
         // Trigger Vue reactivity

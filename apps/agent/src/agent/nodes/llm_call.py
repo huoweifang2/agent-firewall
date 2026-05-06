@@ -15,6 +15,7 @@ import structlog
 from litellm import acompletion
 from litellm.exceptions import APIError
 
+from src.agent.interventions import get_intervention
 from src.agent.limits.config import get_limits_for_role
 from src.agent.limits.service import get_limits_service
 from src.agent.runtime_access import delegation_tool_name, get_runtime_sub_agents, get_runtime_tool
@@ -284,16 +285,35 @@ async def llm_call_node(state: AgentState) -> AgentState:
     scan_messages = [*chat_history, {"role": "user", "content": user_msg}]
 
     try:
-        scan_data = await _scan_via_proxy(
-            proxy_base_url=settings.proxy_base_url,
-            session_id=session_id,
-            policy=policy,
-            api_key=api_key,
-            scan_messages=scan_messages,
-            model_name=model_name,
-            temperature=settings.default_temperature,
-            max_tokens=settings.default_max_tokens,
+        approved_intervention_id = state.get("approved_intervention_id")
+        approved_intervention = (
+            await get_intervention(str(approved_intervention_id), settings) if approved_intervention_id else None
         )
+        approved_intervention_valid = bool(
+            approved_intervention
+            and approved_intervention.get("status") == "approved"
+            and approved_intervention.get("session_id") == session_id
+        )
+        if approved_intervention_valid:
+            scan_data = {
+                "status_code": 200,
+                "decision": "ALLOW",
+                "risk_score": 0.0,
+                "intent": state.get("intent", ""),
+                "risk_flags": {"approved_intervention": str(approved_intervention_id)},
+                "blocked_reason": None,
+            }
+        else:
+            scan_data = await _scan_via_proxy(
+                proxy_base_url=settings.proxy_base_url,
+                session_id=session_id,
+                policy=policy,
+                api_key=api_key,
+                scan_messages=scan_messages,
+                model_name=model_name,
+                temperature=settings.default_temperature,
+                max_tokens=settings.default_max_tokens,
+            )
 
         if scan_data.get("status_code") == 403:
             # Firewall BLOCK
@@ -366,15 +386,22 @@ async def llm_call_node(state: AgentState) -> AgentState:
         llm_text = message.content or ""
 
         tool_plan = []
-        if getattr(message, "tool_calls", None):
-            for tc in message.tool_calls:
+        raw_tool_calls = getattr(message, "tool_calls", None)
+        if raw_tool_calls:
+            for tc in list(raw_tool_calls):
                 import json
 
                 try:
-                    args = json.loads(tc.function.arguments)
+                    function = getattr(tc, "function", None)
+                    arguments = getattr(function, "arguments", "{}")
+                    args = json.loads(arguments)
                 except Exception:
                     args = {}
-                tool_plan.append({"id": tc.id, "tool": tc.function.name, "args": args})
+                function = getattr(tc, "function", None)
+                tool_name = getattr(function, "name", "")
+                call_id = getattr(tc, "id", "call_unknown")
+                if tool_name:
+                    tool_plan.append({"id": call_id, "tool": tool_name, "args": args})
 
         elapsed_ms = int((time.perf_counter() - start) * 1000)
         logger.info("llm_call_ok", elapsed_ms=elapsed_ms, response_len=len(llm_text))
@@ -395,6 +422,7 @@ async def llm_call_node(state: AgentState) -> AgentState:
         return {
             **state,
             **token_state,
+            "approved_intervention_valid": approved_intervention_valid,
             "llm_messages": messages,
             "llm_response": llm_text,
             "firewall_decision": firewall_decision,

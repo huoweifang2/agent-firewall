@@ -76,6 +76,13 @@ async def llm_completion(
     litellm_model = format_litellm_model(model, provider)
 
     effective_api_key = api_key or (settings.deepseek_api_key if provider == "deepseek" else "")
+    if settings.mode == "demo" and not api_key and not effective_api_key:
+        from src.llm.mock_provider import mock_completion, mock_completion_stream
+
+        if stream:
+            return mock_completion_stream(messages, intent=intent)
+        return mock_completion(messages, intent=intent)
+
     kwargs: dict[str, Any] = {}
     if not effective_api_key:
         raise LLMError(f"API key required for provider '{provider}'. Add your key in Settings → API Keys.")

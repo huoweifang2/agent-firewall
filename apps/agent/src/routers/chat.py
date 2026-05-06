@@ -12,6 +12,7 @@ import structlog
 from fastapi import APIRouter, Header, HTTPException
 from fastapi.responses import StreamingResponse
 
+from src.agent.graph import get_agent_graph
 from src.agent.openclaw_client import OpenClawClient, OpenClawError
 from src.agent.rbac.service import get_rbac_service
 from src.config import get_settings
@@ -133,6 +134,65 @@ def _build_openclaw_response(
         ),
         firewall_decision=_firewall_decision(scan),
         trace=trace,
+    )
+
+
+def _preview(value: object, max_len: int = 500) -> str:
+    text = str(value or "")
+    return text[:max_len]
+
+
+def _state_to_chat_response(body: AgentChatRequest, state: dict) -> AgentChatResponse:
+    trace = state.get("trace") if isinstance(state.get("trace"), dict) else {}
+    tool_calls = []
+    for call in state.get("tool_calls", []) or []:
+        if not isinstance(call, dict):
+            continue
+        result = call.get("sanitized_result") or call.get("result") or ""
+        blocked_reason = None
+        if not call.get("allowed", True):
+            blocked_reason = str(call.get("result") or "")
+        post_gate = call.get("post_gate")
+        if isinstance(post_gate, dict) and post_gate.get("decision") == "BLOCK":
+            blocked_reason = str(post_gate.get("reason") or "Blocked by post-tool gate.")
+        tool_calls.append(
+            {
+                "tool": str(call.get("tool", "")),
+                "args": call.get("args") if isinstance(call.get("args"), dict) else {},
+                "result_preview": _preview(result),
+                "allowed": bool(call.get("allowed", True)) and blocked_reason is None,
+                "blocked_reason": blocked_reason,
+            }
+        )
+
+    firewall = state.get("firewall_decision") if isinstance(state.get("firewall_decision"), dict) else {}
+    return AgentChatResponse(
+        session_id=body.session_id,
+        response=str(state.get("final_response") or state.get("llm_response") or ""),
+        tools_called=tool_calls,
+        agent_trace=AgentTrace(
+            agent_id=str(state.get("agent_id") or ""),
+            agent_name=str(state.get("agent_name") or trace.get("agent_name") or "OpenClaw Gateway"),
+            agent_kind=str(trace.get("agent_kind") or "openclaw"),
+            parent_agent_id=state.get("parent_agent_id"),
+            delegated_from=state.get("delegated_from"),
+            delegated_to=trace.get("delegated_to"),
+            task=state.get("delegated_task"),
+            tool_flow=trace.get("tool_flow", []) if isinstance(trace.get("tool_flow"), list) else [],
+            intent=str(state.get("intent") or firewall.get("intent") or "unknown"),
+            user_role=str(state.get("user_role") or body.user_role),
+            allowed_tools=list(state.get("allowed_tools", [])),
+            available_sub_agents=[
+                str(item.get("name", ""))
+                for item in state.get("available_sub_agents", [])
+                if isinstance(item, dict) and item.get("name")
+            ],
+            iterations=int(state.get("iterations", 0) or 0),
+            latency_ms=int(trace.get("total_duration_ms", 0) or 0),
+        ),
+        firewall_decision=_firewall_decision(firewall),
+        trace=trace,
+        pending_confirmation=state.get("pending_confirmation") if isinstance(state.get("pending_confirmation"), dict) else None,
     )
 
 
@@ -262,15 +322,32 @@ async def agent_chat(
     x_middlewares: str | None = Header(default=None),
     accept: str | None = Header(default=None),
 ):
-    """Run Agent-Firewall scan, then call OpenClaw as the only agent runtime."""
+    """Run the protected Agent-Firewall runtime graph."""
     _validate_legacy_role(body)
     wants_sse = bool(accept and "text/event-stream" in accept.lower())
+    graph = get_agent_graph()
+
+    async def run_graph() -> AgentChatResponse:
+        state = await graph.ainvoke(
+            {
+                "message": body.message,
+                "user_role": body.user_role,
+                "session_id": body.session_id,
+                "agent_id": body.agent_id,
+                "policy": body.policy,
+                "model": body.model,
+                "api_key": x_api_key,
+                "x_middlewares": x_middlewares,
+                "approved_intervention_id": body.approved_intervention_id,
+            }
+        )
+        return _state_to_chat_response(body, state)
 
     if not wants_sse:
-        return await _run_openclaw_protected(body=body, x_api_key=x_api_key, x_middlewares=x_middlewares)
+        return await run_graph()
 
     async def event_generator():
-        response_obj = await _run_openclaw_protected(body=body, x_api_key=x_api_key, x_middlewares=x_middlewares)
+        response_obj = await run_graph()
         if response_obj.response:
             yield f"event: chunk\ndata: {json.dumps({'content': response_obj.response})}\n\n"
         yield f"event: final\ndata: {response_obj.model_dump_json()}\n\n"

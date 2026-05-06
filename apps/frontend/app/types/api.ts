@@ -32,7 +32,7 @@ export interface ChatMessage {
   content: string
   name?: string
   decision?: PipelineDecision
-  tools_called?: any[]
+  tools_called?: unknown[]
   tool_calls?: Array<{
     id: string
     type: 'function'
@@ -194,6 +194,38 @@ export interface RequestFilters {
   search: string | null
   from: string | null
   to: string | null
+}
+
+// ─── Operator interventions ───
+export type InterventionStatus = 'pending' | 'approved' | 'rejected' | 'completed' | 'failed'
+
+export interface InterventionRead {
+  id: string
+  source: string
+  account: string | null
+  chat_id: string | null
+  session_id: string
+  kind: 'input_block' | 'tool_confirmation' | 'tool_block'
+  status: InterventionStatus
+  message: string
+  policy: string | null
+  model: string | null
+  reason: string | null
+  risk_score: number | null
+  tool_payload: Record<string, unknown> | null
+  trace_id: string | null
+  result_payload: Record<string, unknown> | null
+  decided_by: string | null
+  decision_note: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface InterventionListResponse {
+  items: InterventionRead[]
+  total: number
+  limit: number
+  offset: number
 }
 
 // ─── Policy mutations ───

@@ -210,11 +210,11 @@ interface RolePresetDef {
 
 const rolePresets: RolePresetDef[] = [
   {
-    name: 'E-commerce (user + admin)',
-    description: 'user — read-only; admin — full access (inherits user)',
+    name: 'Telegram Gateway',
+    description: 'customer for Telegram users; operator inherits customer',
     roles: [
-      { name: 'user', description: 'Standard user — read-only access to orders and products', tool_names: ['getOrders', 'searchProducts'] },
-      { name: 'admin', description: 'Administrator — full access including PII and write operations', inherits_from_name: 'user', tool_names: ['getUsers', 'updateOrder', 'updateUser'] },
+      { name: 'customer', description: 'Default Telegram user routed through Agent-Firewall gates', tool_names: [] },
+      { name: 'operator', description: 'Local owner role for approved tool execution', inherits_from_name: 'customer', tool_names: [] },
     ],
   },
 ]

@@ -86,14 +86,14 @@ async def build_kit_context(agent_id: uuid.UUID, db: AsyncSession) -> dict:
 
     sorted_roles = sorted(roles, key=lambda r: (_depth(r), r.name))
 
-    pack_name = agent.policy_pack or "customer_support"
+    pack_name = agent.policy_pack or "telegram_gateway"
     try:
         pack = get_policy_pack(pack_name)
         pack_config = pack.to_dict()
     except KeyError:
-        pack = get_policy_pack("customer_support")
+        pack = get_policy_pack("telegram_gateway")
         pack_config = pack.to_dict()
-        pack_name = "customer_support"
+        pack_name = "telegram_gateway"
 
     tools_list = [
         {

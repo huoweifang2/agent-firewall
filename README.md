@@ -1,88 +1,86 @@
 # Agent-Firewall
 
-Agent-Firewall is a single-person graduation project focused on providing guardrails and security scanning for tool-calling AI agents. It aims to find prompt injection and unauthorized tool use with deterministic enforcement, keeping the LLM out of the decision loop.
+Agent-Firewall is now a Telegram-first security gateway for a personal OpenClaw bot. Telegram is the user entry point; the local web app at `http://localhost:3000` is the operator console for attack testing, approvals, traces, and OpenClaw skill/MCP binding.
 
-*👉 [中文说明 (Chinese Version)](README_zh.md)*
+## Runtime Path
 
----
+```text
+Telegram Bot
+  -> apps/agent Telegram Bridge
+  -> apps/proxy-service /v1/scan
+  -> apps/agent runtime graph
+  -> pre-tool gate
+  -> OpenClaw skill / MCP provider
+  -> post-tool gate
+  -> trace + audit log
+  -> Telegram reply
+```
 
-## Quickstart & Local Development
+If Agent-Firewall blocks an input or a sensitive tool needs approval, Telegram receives a pause message and the item appears in `localhost:3000` under **Approvals / Audit**. Approving it lets the agent continue and send the final reply back to Telegram.
 
-### Prerequisites
-- **Docker & Docker Compose** 
-- **uv** (for Python dependency management): `curl -LsSf https://astral.sh/uv/install.sh | sh` (or `brew install uv`)
-- **Node.js & npm** (for frontend)
+## Local Setup
 
-### Start the Stack
+Requirements:
 
-The most common way to run the project for testing or development is starting all local application services concurrently:
+- `uv`
+- Node.js and npm
+- OpenClaw CLI configured on this machine
+- Telegram bot tokens already present in `~/.openclaw/openclaw.json`
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Szesnasty/agent-firewall.git
-   cd agent-firewall
-   ```
+Install dependencies:
 
-2. **Install dependencies:**
-   ```bash
-   make setup
-   ```
+```bash
+make setup
+```
 
-3. **Configure API Keys:**
-   Put real local keys in ignored `.env.local` files under `apps/agent/` and `apps/proxy-service/` so tracked `.env` templates stay secret-free. For example:
-   ```env
-   # Example .env.local configuration
-   DEEPSEEK_API_KEY="your-deepseek-api-key"
-   OPENCLAW_BIN="openclaw"
-   OPENCLAW_AGENT_ID="coder"
-   ```
+Configure local secrets in ignored files:
 
-4. **Start the full development environment:**
-   ```bash
-   ./start-local.sh
-   ```
-   *(This starts the backend proxy, agent service, frontend portal, as well as the required Docker infrastructure (DB, Redis, Langfuse) concurrently.)*
+```bash
+cp apps/proxy-service/.env.example apps/proxy-service/.env.local
+cp apps/agent/.env.example apps/agent/.env.local
+```
 
-5. **Access the portal:**
-   Open **http://localhost:3000** in your browser.
+Start the local stack:
 
-> Note: To cleanly shut down the services and infrastructure, use `Ctrl+C` first to stop the terminal apps, and run `make down` to stop the Docker backend.
+```bash
+./start-local.sh
+```
 
----
+Open:
 
-## Core Features
+- Frontend: `http://localhost:3000`
+- Proxy API: `http://localhost:8000`
+- Agent API: `http://localhost:8002`
 
-### 🛡️ Proxy Firewall
-5 detection layers run locally on every LLM call (~50 ms overhead, no external APIs):
-- **Rules:** Denylist phrases, length limits, encoding checks
-- **Intent classifier:** Regex patterns for attack type classification
-- **LLM Guard:** DeBERTa injection detection, DistilBERT toxicity
-- **Presidio PII:** Entity scrubbing (names, emails, cards, phone numbers)
-- **NeMo Guardrails:** Semantic similarity via FastEmbed embeddings
+The default local database is SQLite at `~/.openclaw/agent-firewall.sqlite`; Redis, Docker, and Langfuse are not required for the default path.
 
-### 🔍 Agent-Level Enforcement
-Intercepts and enforces policy at two gates during tool execution:
-- **Tool Integrations:** Powered by OpenClaw skills exposed through the Agent-Firewall tool bridge.
-- **Pre-tool gate:** RBAC, argument injection scan, budget, confirmation
-- **Post-tool gate:** PII redaction, secrets scan, indirect injection
+## Main Surfaces
 
-### 📊 Security Scan
-Run curated attack scenarios against an target endpoint to test vulnerabilities and measure the effectiveness of your guardrails deterministically.
+- **Attack Playground**: first page and first nav item; manual prompt attack testing.
+- **Approvals / Audit**: pending Telegram interventions for blocked input and tool confirmations.
+- **Skills & Hooks**: discovers local OpenClaw skills/hooks and binds eligible skills as protected Agent-Firewall tools.
+- **Trace / Audit**: full agent runtime traces, including tool plans, pre-tool gates, tool execution, post-tool gates, and final responses.
+- **Runtime Settings**: redacted OpenClaw, DeepSeek, Telegram Bridge, and gateway diagnostics.
 
----
+## Useful Commands
 
-## Performance
+```bash
+make lint
+make test
+make frontend-build
+```
 
-| Metric | Value |
-|---|---|
-| Attacks blocked | **97.9%** (331 / 338) |
-| False positive rate | **0 / 20** safe prompts blocked |
-| Pipeline overhead | ~50 ms per request (balanced policy) |
-| Memory | ~1.1 GB RAM (all scanners loaded) |
+OpenClaw diagnostics:
 
-→ [Full internal benchmark](BENCHMARK.md) · [JailbreakBench results](BENCHMARK_JAILBREAKBENCH.md)
+```bash
+openclaw status --json --no-usage
+openclaw agents list --json
+openclaw skills list --json
+openclaw hooks list --json
+```
 
----
+## Security Notes
 
-## Known Limitations
-Agent-Firewall serves as an experimental proof of concept for tool security. It reduces practical risk but does not eliminate it entirely (e.g., semantic attacks bypassing regex).
+- Do not commit real API keys, Telegram bot tokens, gateway tokens, or local `.env` files.
+- `/agent/openclaw/direct` exists only for Compare. It intentionally bypasses Agent-Firewall and must not be used as the Telegram path.
+- All normal Telegram tool use, OpenClaw skill execution, and MCP calls should flow through the runtime graph and gates.

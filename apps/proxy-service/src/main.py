@@ -19,6 +19,7 @@ from src.routers.analytics import router as analytics_router
 from src.routers.chat import router as chat_router
 from src.routers.direct import router as chat_direct_router
 from src.routers.health import router as health_router
+from src.routers.interventions import router as interventions_router
 from src.routers.models import router as models_router
 from src.routers.policies import router as policies_router
 from src.routers.requests import router as requests_router
@@ -51,7 +52,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await seed_policies()
     await seed_denylist()
 
-    # Seed wizard data (reference agent, demo tools/roles)
+    # Seed Telegram-first OpenClaw gateway data and protected local skills.
     from src.wizard import seed_wizard
 
     await seed_wizard()
@@ -183,13 +184,14 @@ from src.wizard import wizard_router  # noqa: E402
 app.include_router(wizard_router, prefix="/v1")
 
 app.include_router(analytics_router, prefix="/v1")
+app.include_router(interventions_router, prefix="/v1")
 app.include_router(policies_router, prefix="/v1")
 app.include_router(requests_router, prefix="/v1")
 app.include_router(rules_router, prefix="/v1")
 app.include_router(scan_router)
 app.include_router(scenarios_router, prefix="/v1")
 
-# Red Team Benchmark
+# Attack Playground / red-team routes
 from src.red_team.api.routes import router as benchmark_router  # noqa: E402
 
 app.include_router(benchmark_router, prefix="/v1")

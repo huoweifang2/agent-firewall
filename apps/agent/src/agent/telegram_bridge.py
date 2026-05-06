@@ -11,6 +11,7 @@ from typing import Any
 import httpx
 import structlog
 
+from src.agent.interventions import create_intervention, list_interventions, update_intervention
 from src.config import Settings, get_settings
 
 logger = structlog.get_logger()
@@ -155,6 +156,7 @@ class TelegramBridge:
         self.settings = settings
         self.config = config
         self._tasks: list[asyncio.Task[None]] = []
+        self._approval_task: asyncio.Task[None] | None = None
         self._offset_lock = asyncio.Lock()
         self._last_error: str | None = None
         self._running = False
@@ -173,14 +175,20 @@ class TelegramBridge:
         self._running = True
         for account in self.config.accounts:
             self._tasks.append(asyncio.create_task(self._poll_account(account)))
+        self._approval_task = asyncio.create_task(self._poll_approved_interventions())
         logger.info("telegram_bridge_started", accounts=len(self.config.accounts))
 
     async def stop(self) -> None:
         self._running = False
         for task in self._tasks:
             task.cancel()
+        if self._approval_task is not None:
+            self._approval_task.cancel()
         if self._tasks:
             await asyncio.gather(*self._tasks, return_exceptions=True)
+        if self._approval_task is not None:
+            await asyncio.gather(self._approval_task, return_exceptions=True)
+            self._approval_task = None
         self._tasks = []
         logger.info("telegram_bridge_stopped")
 
@@ -266,12 +274,15 @@ class TelegramBridge:
             if update_id:
                 await self._write_offset(account.name, update_id + 1)
 
-    async def _run_guarded_agent(self, account: TelegramAccount, chat_id: str, text: str) -> str:
-        scan = await self._scan(account, chat_id, text)
-        if scan.get("decision") == "BLOCK":
-            reason = scan.get("blocked_reason") or "Request blocked by security policy."
-            return f"Request blocked by Agent-Firewall: {reason}"
-
+    async def _run_guarded_agent(
+        self,
+        account: TelegramAccount,
+        chat_id: str,
+        text: str,
+        *,
+        approved_intervention_id: str | None = None,
+        create_pause_intervention: bool = True,
+    ) -> str:
         async with httpx.AsyncClient(timeout=self.settings.openclaw_timeout_seconds + 30) as client:
             resp = await client.post(
                 f"{self.settings.telegram_bridge_agent_base_url.rstrip('/')}/agent/chat",
@@ -282,14 +293,121 @@ class TelegramBridge:
                     "agent_id": account.agent_id,
                     "policy": account.policy,
                     "model": account.model,
+                    "approved_intervention_id": approved_intervention_id,
                 },
             )
             resp.raise_for_status()
             data = resp.json()
+            if isinstance(data, dict) and create_pause_intervention:
+                pause = await self._maybe_create_pause_intervention(account, chat_id, text, data)
+                if pause:
+                    return pause
             response = data.get("response") if isinstance(data, dict) else None
             if isinstance(response, str) and response.strip():
                 return response.strip()
             return "Agent-Firewall completed the request, but no response text was returned."
+
+    async def _maybe_create_pause_intervention(
+        self,
+        account: TelegramAccount,
+        chat_id: str,
+        text: str,
+        data: dict[str, Any],
+    ) -> str | None:
+        firewall = data.get("firewall_decision") if isinstance(data.get("firewall_decision"), dict) else {}
+        pending_confirmation = data.get("pending_confirmation") if isinstance(data.get("pending_confirmation"), dict) else None
+        tools_called = data.get("tools_called") if isinstance(data.get("tools_called"), list) else []
+
+        kind = ""
+        reason = ""
+        risk_score: float | None = None
+        tool_payload: dict[str, Any] | None = None
+        if firewall.get("decision") == "BLOCK":
+            kind = "input_block"
+            reason = str(firewall.get("blocked_reason") or "Request blocked by Agent-Firewall.")
+            risk_score = float(firewall.get("risk_score") or 0.0)
+        elif pending_confirmation:
+            kind = "tool_confirmation"
+            reason = str(pending_confirmation.get("reason") or "Tool requires operator approval.")
+            tool_payload = pending_confirmation
+        else:
+            blocked_tools = [item for item in tools_called if isinstance(item, dict) and not item.get("allowed", True)]
+            if blocked_tools:
+                kind = "tool_block"
+                reason = str(blocked_tools[0].get("blocked_reason") or "Tool call blocked by Agent-Firewall.")
+                tool_payload = blocked_tools[0]
+
+        if not kind:
+            return None
+
+        trace = data.get("trace") if isinstance(data.get("trace"), dict) else {}
+        intervention = await create_intervention(
+            {
+                "source": "telegram",
+                "account": account.name,
+                "chat_id": chat_id,
+                "session_id": f"telegram-{account.name}-{chat_id}",
+                "kind": kind,
+                "message": text,
+                "policy": account.policy,
+                "model": account.model,
+                "reason": reason,
+                "risk_score": risk_score,
+                "tool_payload": tool_payload,
+                "trace_id": trace.get("trace_id"),
+            },
+            self.settings,
+        )
+        intervention_id = intervention.get("id") if isinstance(intervention, dict) else None
+        suffix = f"\nIntervention: {intervention_id}" if intervention_id else ""
+        return f"Agent-Firewall 已暂停这条请求，等待 localhost:3000 控制台审批。\n原因: {reason}{suffix}"
+
+    async def _poll_approved_interventions(self) -> None:
+        while self._running:
+            try:
+                await self._process_approved_interventions()
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                self._last_error = str(exc)[:500]
+                logger.warning("telegram_bridge_approval_poll_failed", error=self._last_error)
+            await asyncio.sleep(3.0)
+
+    async def _process_approved_interventions(self) -> None:
+        accounts = {account.name: account for account in self.config.accounts}
+        approved = await list_interventions(status="approved", source="telegram", settings=self.settings)
+        if not approved:
+            return
+
+        async with httpx.AsyncClient(timeout=self.settings.openclaw_timeout_seconds + 30) as client:
+            for item in approved:
+                intervention_id = str(item.get("id") or "")
+                account = accounts.get(str(item.get("account") or ""))
+                chat_id = str(item.get("chat_id") or "")
+                message = str(item.get("message") or "")
+                if not intervention_id or account is None or not chat_id or not message:
+                    continue
+                try:
+                    response = await self._run_guarded_agent(
+                        account,
+                        chat_id,
+                        message,
+                        approved_intervention_id=intervention_id,
+                        create_pause_intervention=False,
+                    )
+                    await self._send_message(client, account, chat_id, response)
+                    await update_intervention(
+                        intervention_id,
+                        {"status": "completed", "result_payload": {"telegram_reply": response[:1000]}},
+                        self.settings,
+                    )
+                except Exception as exc:
+                    error = self._redact_error(account, exc)
+                    await update_intervention(
+                        intervention_id,
+                        {"status": "failed", "result_payload": {"error": error}},
+                        self.settings,
+                    )
 
     async def _scan(self, account: TelegramAccount, chat_id: str, text: str) -> dict[str, Any]:
         scan_url = f"{self.settings.proxy_base_url.rstrip('/')}/scan"

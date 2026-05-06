@@ -89,7 +89,7 @@ const { getAgent } = useAgents()
 const { config, policyPacks, generate, isGenerating } = useAgentConfig(() => props.agentId)
 const { updateAgent } = useAgents()
 
-const selectedPack = ref<string>('customer_support')
+const selectedPack = ref<string>('telegram_gateway')
 const previewTab = ref('rbac')
 
 const previewContent = computed(() => {
@@ -105,6 +105,7 @@ const previewContent = computed(() => {
 
 const packIcon = (name: string): string => {
   const icons: Record<string, string> = {
+    telegram_gateway: 'mdi-telegram',
     customer_support: 'mdi-headset',
     internal_copilot: 'mdi-shield-check',
     finance: 'mdi-shield-lock',

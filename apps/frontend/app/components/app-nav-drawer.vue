@@ -27,10 +27,11 @@ interface NavItem {
 }
 
 const coreItems: NavItem[] = [
+  { title: 'Attack Playground', icon: 'mdi-shield-search', to: '/red-team' },
+  { title: 'Approvals / Audit', icon: 'mdi-shield-check-outline', to: '/approvals' },
   { title: 'OpenClaw Sandbox', icon: 'mdi-flask-outline', to: '/test-agents' },
   { title: 'OpenClaw Agents', icon: 'mdi-robot-outline', to: '/agents' },
   { title: 'Skills & Hooks', icon: 'mdi-transfer-right', to: '/middleware' },
-  { title: 'Attack Playground', icon: 'mdi-shield-search', to: '/red-team' },
   { title: 'Trace / Audit', icon: 'mdi-timeline-clock-outline', to: '/agent-traces' },
 ]
 </script>

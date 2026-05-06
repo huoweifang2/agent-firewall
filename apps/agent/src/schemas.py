@@ -14,6 +14,11 @@ class AgentChatRequest(BaseModel):
     agent_id: str | None = Field(default=None, max_length=128)
     policy: str | None = Field(default=None, max_length=64, description="Policy name override (default: from config)")
     model: str | None = Field(default=None, max_length=128, description="Model override (default: from config)")
+    approved_intervention_id: str | None = Field(
+        default=None,
+        max_length=128,
+        description="Approved intervention id used to continue a previously blocked Telegram request.",
+    )
 
 
 class OpenClawDirectRequest(BaseModel):
@@ -107,3 +112,7 @@ class AgentChatResponse(BaseModel):
     agent_trace: AgentTrace = Field(default_factory=AgentTrace)
     firewall_decision: FirewallDecision = Field(default_factory=FirewallDecision)
     trace: dict = Field(default_factory=dict, description="Structured agent trace (spec 07)")
+    pending_confirmation: dict | None = Field(
+        default=None,
+        description="Tool confirmation request that must be approved before execution.",
+    )

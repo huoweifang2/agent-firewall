@@ -114,6 +114,7 @@ const form = reactive<AgentCreate>({
   touches_pii: props.initialData?.touches_pii ?? false,
   handles_secrets: props.initialData?.handles_secrets ?? false,
   calls_external_apis: props.initialData?.calls_external_apis ?? false,
+  policy_pack: props.initialData?.policy_pack ?? 'telegram_gateway',
 })
 
 watch(formValid, (v) => emit('valid', v))

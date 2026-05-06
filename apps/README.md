@@ -1,9 +1,9 @@
 # Apps
 
-Monorepo with three applications:
+| App | Tech | Port | Purpose |
+|-----|------|------|---------|
+| `proxy-service` | Python / FastAPI / uv | 8000 | Firewall scan pipeline, audit logs, intervention approvals, OpenClaw discovery, runtime specs |
+| `agent` | Python / FastAPI / uv | 8002 | Telegram Bridge, protected runtime graph, OpenClaw/MCP tool execution, trace forwarding |
+| `frontend` | Nuxt 4 / Vuetify | 3000 | Operator console: Attack Playground, approvals, traces, skills/hooks, runtime settings |
 
-| App | Tech | Port | Description |
-|-----|------|------|-------------|
-| **proxy-service** | Python / FastAPI | 8000 | Blue Team LLM Firewall — agentic security pipeline |
-| **agent** | Python / FastAPI | 8002 | Customer Support Copilot — agent runtime behind the firewall |
-| **frontend** | Nuxt 4 / Vuetify 3 | 3000 | Dashboard — playground, policies, logs, analytics |
+The removed legacy target app and Docker stack are no longer part of the default product path.

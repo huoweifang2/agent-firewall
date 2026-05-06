@@ -1,125 +1,45 @@
-.PHONY: up dev setup init down seed lint format test verify pre-commit-install pre-commit benchmark benchmark-quick benchmark-e2e benchmark-jailbreakbench
-
-# ── Quick start ─────────────────────────────────────────
-# Full stack (real LLM):  make up
-# Contributor (infra only):        make dev
-
-# Generate BENCHMARK_SECRET_KEY if empty in infra/.env
-define ensure-benchmark-key
-	@if grep -q '^BENCHMARK_SECRET_KEY=$$' infra/.env 2>/dev/null; then \
-		KEY=$$(openssl rand -hex 32) && \
-		perl -i -pe "s/^BENCHMARK_SECRET_KEY=$$/BENCHMARK_SECRET_KEY=$$KEY/" infra/.env && \
-		echo "🔑  Generated BENCHMARK_SECRET_KEY"; \
-	fi
-endef
-
-up:
-	@test -f infra/.env || (cp infra/.env.example infra/.env && echo "📋  Created infra/.env from .env.example")
-	$(ensure-benchmark-key)
-	cd infra && MODE=real docker compose --profile full up --build -d
-	@echo ""
-	@echo "🚀  Agent-Firewall is starting (full stack)..."
-	@echo "    Frontend:       http://localhost:3000"
-	@echo "    Proxy API:      http://localhost:8000"
-	@echo "    Agent API:      http://localhost:8002"
-	@echo "    Langfuse:       http://localhost:3001"
-	@echo ""
-
-init: up
-	@echo ""
-	@echo "✅  Agent-Firewall is ready! Open http://localhost:3000"
-
-dev:
-	@echo ""
-	@echo "🔧  Run the local stack with:"
-	@echo "    ./start-local.sh"
-
-dev-all:
-	./start-local.sh
+.PHONY: setup dev dev-all lint lint-fix format test test-agent test-proxy frontend-build verify clean
 
 setup:
-	@echo "📦 Syncing dependencies with uv..."
 	cd apps/proxy-service && uv sync
 	cd apps/agent && uv sync
 	cd apps/frontend && npm install
-	@echo "✅ Dependencies synced"
 
-seed:
-	@echo "🌱 Seeding demo data (20 requests)..."
-	@python3 scripts/seed_demo.py
+dev:
+	./start-local.sh
 
-# ── Docker ──────────────────────────────────────────────
-down:
-	cd infra && docker compose --profile demo --profile full down
+dev-all: dev
 
-reset:
-	cd infra && docker compose --profile demo --profile full down -v
-	@echo "🗑️  All data wiped (volumes removed)"
-
-logs:
-	cd infra && docker compose logs -f
-
-ps:
-	cd infra && docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
-
-# ── Lint ────────────────────────────────────────────────
 lint:
-	cd apps/proxy-service && ruff check src/ tests/ && ruff format --check src/ tests/
-	cd apps/agent && ruff check src/ tests/ && ruff format --check src/ tests/
+	cd apps/proxy-service && uv run ruff check src/ tests/ && uv run ruff format --check src/ tests/
+	cd apps/agent && uv run ruff check src/ tests/ && uv run ruff format --check src/ tests/
 	cd apps/frontend && npx eslint .
 
 lint-fix:
-	cd apps/proxy-service && ruff check --fix src/ tests/ && ruff format src/ tests/
-	cd apps/agent && ruff check --fix src/ tests/ && ruff format src/ tests/
+	cd apps/proxy-service && uv run ruff check --fix src/ tests/ && uv run ruff format src/ tests/
+	cd apps/agent && uv run ruff check --fix src/ tests/ && uv run ruff format src/ tests/
 	cd apps/frontend && npx eslint . --fix
 
 format:
-	cd apps/proxy-service && ruff format src/ tests/
-	cd apps/agent && ruff format src/ tests/
+	cd apps/proxy-service && uv run ruff format src/ tests/
+	cd apps/agent && uv run ruff format src/ tests/
 	cd apps/frontend && npx eslint . --fix
 
-# ── Pre-commit ──────────────────────────────────────────
-pre-commit-install:
-	uv tool install pre-commit && pre-commit install && pre-commit install --hook-type pre-push
-	@echo "✅  pre-commit hooks installed"
+test: test-proxy test-agent
 
-pre-commit:
-	pre-commit run --all-files
-
-# ── Test ────────────────────────────────────────────────
-test:
+test-proxy:
 	cd apps/proxy-service && uv run pytest tests/ -v
+
+test-agent:
 	cd apps/agent && uv run pytest tests/ -v
 
-test-cov:
-	cd apps/proxy-service && uv run pytest tests/ -v --cov=src --cov-report=html
+frontend-build:
+	cd apps/frontend && npm run build
 
-test-scenarios:  ## Run 358 attack scenario deterministic tests (all scanners)
-	cd apps/proxy-service && uv run pytest tests/test_scenario_deterministic.py -v --tb=short -x
-
-# ── Benchmark ───────────────────────────────────────────
-benchmark:  ## Run full benchmark suite (latency + security + memory)
-	cd apps/proxy-service && uv run python -m benchmarks.bench_security --all-policies
-	cd apps/proxy-service && uv run python -m benchmarks.bench_latency --all-policies --iterations 50
-	cd apps/proxy-service && uv run python -m benchmarks.bench_memory
-	cd apps/proxy-service && uv run python -m benchmarks.generate_report
-	@echo ""
-	@echo "📊  Benchmark complete — see BENCHMARK.md"
-
-benchmark-quick:  ## Quick benchmark (balanced policy, 20 iterations)
-	cd apps/proxy-service && uv run python -m benchmarks.bench_security
-	cd apps/proxy-service && uv run python -m benchmarks.bench_latency --iterations 20
-	cd apps/proxy-service && uv run python -m benchmarks.generate_report
-
-benchmark-e2e:  ## End-to-end benchmark with real LLM (requires TARGET_API_KEY + running proxy)
-	cd apps/proxy-service && uv run python -m benchmarks.bench_e2e --iterations 10
-	cd apps/proxy-service && uv run python -m benchmarks.generate_report
-
-benchmark-jailbreakbench:  ## JailbreakBench (NeurIPS 2024) detection benchmark
-	cd apps/proxy-service && uv run python -m benchmarks.bench_jailbreakbench
-	@echo ""
-	@echo "📊  JailbreakBench results — see BENCHMARK_JAILBREAKBENCH.md"
-
-# ── Verify ──────────────────────────────────────────────
 verify:
-	cd infra && bash scripts/verify-stack.sh
+	curl -fsS http://127.0.0.1:8000/health >/dev/null
+	curl -fsS http://127.0.0.1:8002/health >/dev/null
+	curl -fsS http://127.0.0.1:3000 >/dev/null
+
+clean:
+	find . -type d \( -name __pycache__ -o -name .pytest_cache -o -name .ruff_cache \) -prune -exec rm -rf {} +

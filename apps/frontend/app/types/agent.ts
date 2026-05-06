@@ -7,6 +7,7 @@ export interface AgentChatRequest {
   agent_id?: string | null
   policy?: string
   model?: string
+  approved_intervention_id?: string | null
 }
 
 export interface ToolCall {
@@ -48,6 +49,7 @@ export interface AgentChatResponse {
   tools_called: ToolCall[]
   agent_trace: AgentTrace
   firewall_decision: FirewallDecision
+  pending_confirmation?: Record<string, unknown> | null
 }
 
 export interface AgentMessageBlock {

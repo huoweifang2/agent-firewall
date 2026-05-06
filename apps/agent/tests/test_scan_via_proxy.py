@@ -98,8 +98,8 @@ class TestScanURLConstruction:
         assert str(request.url) == expected_url
 
     @pytest.mark.asyncio
-    async def test_url_docker_compose_base(self, httpx_mock):
-        """Docker Compose uses http://proxy-service:8000/v1 — must work."""
+    async def test_url_service_dns_base(self, httpx_mock):
+        """Service-DNS base URLs such as http://proxy-service:8000/v1 must work."""
         httpx_mock.add_response(
             url="http://proxy-service:8000/v1/scan",
             json=_allow_response(),

@@ -69,6 +69,8 @@ class AgentState(TypedDict, total=False):
     model: str  # LLM model to use
     api_key: str | None  # External provider API key (from browser)
     x_middlewares: str | None  # Active external tool middleware config
+    approved_intervention_id: str | None
+    approved_intervention_valid: bool
     runtime_spec: dict[str, Any] | None
     available_sub_agents: list[dict[str, Any]]
     skills: list[dict[str, Any]]

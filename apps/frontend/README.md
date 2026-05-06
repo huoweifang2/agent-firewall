@@ -1,75 +1,23 @@
-# Nuxt Minimal Starter
+# Agent-Firewall Frontend
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Nuxt/Vuetify console for the Telegram-first Agent-Firewall workflow.
 
-## Setup
+`http://localhost:3000` opens Attack Playground. The main navigation then
+exposes Approvals / Audit, OpenClaw Sandbox, OpenClaw Agents, Skills & Hooks,
+and Trace / Audit.
 
-Make sure to install dependencies:
+## Local Commands
 
 ```bash
-# npm
 npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
 npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
-```
-
-## Production
-
-Build the application for production:
-
-```bash
-# npm
 npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
 ```
 
-Locally preview production build:
+The frontend expects:
 
-```bash
-# npm
-npm run preview
+- Proxy service at `http://localhost:8000`
+- Agent runtime at `http://localhost:8002`
+- Approval queue at `GET/PATCH http://localhost:8000/v1/interventions`
 
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+For the full local stack, run `./start-local.sh` from the repository root.

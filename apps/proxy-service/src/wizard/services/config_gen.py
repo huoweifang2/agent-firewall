@@ -176,11 +176,11 @@ async def generate_limits_yaml(
     sorted_roles = _sort_roles_by_depth(roles)
     overrides = overrides or {}
 
-    pack_name = agent.policy_pack or "customer_support"
+    pack_name = agent.policy_pack or "telegram_gateway"
     try:
         pack = get_policy_pack(pack_name)
     except KeyError:
-        pack = get_policy_pack("customer_support")
+        pack = get_policy_pack("telegram_gateway")
 
     header = _metadata_header(agent, f"Policy pack: {pack_name}")
 
@@ -256,11 +256,11 @@ async def generate_policy_yaml(
     agent = await _load_agent(agent_id, db)
     overrides = overrides or {}
 
-    pack_name = agent.policy_pack or "customer_support"
+    pack_name = agent.policy_pack or "telegram_gateway"
     try:
         pack = get_policy_pack(pack_name)
     except KeyError:
-        pack = get_policy_pack("customer_support")
+        pack = get_policy_pack("telegram_gateway")
 
     header = _metadata_header(agent, f"Policy pack: {pack_name}")
 
