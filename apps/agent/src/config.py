@@ -1,6 +1,7 @@
 """Agent-Firewall Agent — application configuration."""
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -31,6 +32,13 @@ class Settings(BaseSettings):
     openclaw_agent_id: str = "coder"
     openclaw_agent_local: bool = False
     openclaw_timeout_seconds: int = 120
+    openclaw_plugin_stage_dir: str = str(Path.home() / ".openclaw" / "agent-firewall-plugin-runtime-deps")
+
+    # Telegram bridge (Agent-Firewall takeover of OpenClaw Telegram bots)
+    telegram_bridge_enabled: bool = False
+    telegram_bridge_poll_timeout_seconds: int = 25
+    telegram_bridge_poll_interval_seconds: float = 1.0
+    telegram_bridge_agent_base_url: str = "http://127.0.0.1:8002"
 
     # Agent
     max_iterations: int = 3

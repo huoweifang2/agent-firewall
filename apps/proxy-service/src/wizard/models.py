@@ -21,8 +21,7 @@ from src.models.base import Base, TimestampMixin, UUIDMixin
 class AgentFramework(str, enum.Enum):
     """Supported agent frameworks."""
 
-    LANGGRAPH = "langgraph"
-    RAW_PYTHON = "raw_python"
+    OPENCLAW = "openclaw"
     PROXY_ONLY = "proxy_only"
 
 
@@ -104,7 +103,7 @@ class Agent(UUIDMixin, TimestampMixin, Base):
     framework: Mapped[AgentFramework] = mapped_column(
         Enum(AgentFramework, name="agent_framework"),
         nullable=False,
-        default=AgentFramework.LANGGRAPH,
+        default=AgentFramework.OPENCLAW,
     )
     environment: Mapped[AgentEnvironment] = mapped_column(
         Enum(AgentEnvironment, name="agent_environment"),

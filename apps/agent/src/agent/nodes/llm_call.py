@@ -31,9 +31,9 @@ logger = structlog.get_logger()
 
 # ── Provider detection rules (mirrors proxy-service/src/llm/providers.py) ──
 _PROVIDER_RULES: list[tuple[str, str]] = [
-    ("openrouter/", "openrouter"),
     ("deepseek/", "deepseek"),
     ("deepseek-", "deepseek"),
+    ("deepseek", "deepseek"),
 ]
 
 
@@ -44,19 +44,19 @@ def _resolve_direct_llm(
 ) -> tuple[str, dict[str, Any]]:
     """Resolve model name and kwargs for a direct LLM call (bypassing proxy).
 
-    Returns ``(litellm_model, extra_kwargs)``.  For external providers they carry ``api_key``.
+    Returns ``(litellm_model, extra_kwargs)`` for the DeepSeek LiteLLM call.
     """
     model_lower = model_name.lower()
-    provider = "openrouter"
+    provider = "unsupported"
     for pattern, prov in _PROVIDER_RULES:
         if model_lower.startswith(pattern):
             provider = prov
             break
 
     # Format model for LiteLLM (add provider prefix where required)
-    if provider == "openrouter" and not model_name.startswith("openrouter/"):
-        litellm_model = f"openrouter/{model_name}"
-    elif provider == "deepseek" and not model_name.startswith("deepseek/"):
+    if provider != "deepseek":
+        raise ValueError("Only DeepSeek official API models are supported by this Agent-Firewall runtime.")
+    if provider == "deepseek" and not model_name.startswith("deepseek/"):
         litellm_model = f"deepseek/{model_name}"
     else:
         litellm_model = model_name  # fallback: no prefix
@@ -71,7 +71,7 @@ def _resolve_api_key(model_name: str, request_api_key: str | None, settings: Set
     model_lower = model_name.lower()
     if model_lower.startswith(("deepseek", "deepseek/")) and settings.deepseek_api_key:
         return settings.deepseek_api_key
-    return request_api_key
+    return None
 
 
 def _track_tokens(response: Any, state: AgentState, model: str) -> dict:

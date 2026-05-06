@@ -11,9 +11,7 @@
       "extra-files": [
         "apps/frontend/package.json",
         "apps/proxy-service/pyproject.toml",
-        "apps/agent/pyproject.toml",
-        "apps/test-agents/langgraph-agent/pyproject.toml",
-        "apps/test-agents/pure-python-agent/pyproject.toml"
+        "apps/agent/pyproject.toml"
       ]
     }
   }

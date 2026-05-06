@@ -5,14 +5,16 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
+import os
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from src.config import get_settings
 
 _SECRET_PATTERNS: tuple[re.Pattern[str], ...] = (
-    re.compile(r"\bsk-[A-Za-z0-9_-]{16,}\b"),
+    re.compile(r"\bsk-[^\s'\",}\]]+"),
     re.compile(r"(?i)(api[_-]?key|token|secret|password)\s*[:=]\s*['\"]?[^'\"\s]+"),
     re.compile(r"(?i)bearer\s+[A-Za-z0-9._-]{16,}"),
 )
@@ -25,6 +27,36 @@ def redact_openclaw_text(text: str) -> str:
             lambda match: f"{match.group(1)}=<redacted>" if match.lastindex else "<redacted>", redacted
         )
     return redacted
+
+
+def redact_openclaw_payload(value: Any) -> Any:
+    """Recursively remove auth/profile details before returning CLI data to the UI."""
+    if isinstance(value, dict):
+        redacted: dict[str, Any] = {}
+        for key, item in value.items():
+            key_lower = str(key).lower()
+            if key_lower in {"labels", "appliedkeys"}:
+                redacted[key] = []
+            elif any(marker in key_lower for marker in ("apikey", "api_key", "token", "secret", "password")):
+                redacted[key] = _redact_secret_value(item)
+            else:
+                redacted[key] = redact_openclaw_payload(item)
+        return redacted
+    if isinstance(value, list):
+        return [redact_openclaw_payload(item) for item in value]
+    if isinstance(value, str):
+        return redact_openclaw_text(value)
+    return value
+
+
+def _redact_secret_value(value: Any) -> Any:
+    if isinstance(value, bool | int | float | type(None)):
+        return value
+    if isinstance(value, list):
+        return []
+    if isinstance(value, dict):
+        return {key: _redact_secret_value(item) for key, item in value.items()}
+    return "<redacted>"
 
 
 def _extract_json_payload(stdout: str) -> Any:
@@ -55,16 +87,19 @@ class OpenClawClient:
 
     binary: str
     timeout_seconds: int
+    plugin_stage_dir: str | None = None
 
     async def run(self, *args: str, timeout_seconds: int | None = None) -> str:
         timeout = max(1, int(timeout_seconds or self.timeout_seconds))
         command = [self.binary, *args]
+        env = self._subprocess_env()
         proc = None
         try:
             proc = await asyncio.create_subprocess_exec(
                 *command,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                env=env,
             )
             stdout_bytes, stderr_bytes = await asyncio.wait_for(proc.communicate(), timeout=timeout + 5)
         except TimeoutError as exc:
@@ -81,6 +116,15 @@ class OpenClawClient:
             detail = stderr or stdout.strip() or f"OpenClaw exited with code {proc.returncode}"
             raise RuntimeError(redact_openclaw_text(detail))
         return stdout
+
+    def _subprocess_env(self) -> dict[str, str]:
+        env = os.environ.copy()
+        stage_dir = (self.plugin_stage_dir or "").strip()
+        if stage_dir:
+            resolved = Path(stage_dir).expanduser()
+            resolved.mkdir(parents=True, exist_ok=True)
+            env.setdefault("OPENCLAW_PLUGIN_STAGE_DIR", str(resolved))
+        return env
 
     async def run_json(self, *args: str, timeout_seconds: int | None = None) -> Any:
         return _extract_json_payload(await self.run(*args, timeout_seconds=timeout_seconds))
@@ -116,7 +160,11 @@ class OpenClawClient:
 
 def get_openclaw_client() -> OpenClawClient:
     settings = get_settings()
-    return OpenClawClient(binary=settings.openclaw_bin, timeout_seconds=settings.openclaw_timeout_seconds)
+    return OpenClawClient(
+        binary=settings.openclaw_bin,
+        timeout_seconds=settings.openclaw_timeout_seconds,
+        plugin_stage_dir=settings.openclaw_plugin_stage_dir,
+    )
 
 
 async def get_openclaw_status() -> dict[str, Any]:
@@ -132,7 +180,7 @@ async def list_openclaw_hooks() -> list[dict[str, Any]]:
 
 
 async def get_openclaw_models_status() -> dict[str, Any]:
-    return await get_openclaw_client().models_status()
+    return redact_openclaw_payload(await get_openclaw_client().models_status())
 
 
 async def list_openclaw_skills(*, eligible_only: bool = True) -> list[dict[str, Any]]:

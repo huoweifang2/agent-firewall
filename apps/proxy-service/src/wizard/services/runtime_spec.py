@@ -38,7 +38,7 @@ def _openclaw_agent_id(agent: Agent) -> str:
         return "researcher"
     if "code" in name or "coder" in name or "openclaw" in name:
         return "coder"
-    if agent.framework.value == "langgraph":
+    if agent.framework.value == "openclaw":
         return "coder"
     return re.sub(r"[^a-z0-9_-]+", "-", name).strip("-") or str(agent.id)
 

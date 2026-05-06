@@ -11,6 +11,7 @@ import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.agent.telegram_bridge import start_telegram_bridge, stop_telegram_bridge
 from src.config import get_settings
 from src.routers.chat import router as chat_router
 from src.routers.health import router as health_router
@@ -21,9 +22,9 @@ logger = structlog.get_logger()
 _AGENT_NAME = "OpenClaw Gateway"
 _AGENT_PAYLOAD = {
     "name": _AGENT_NAME,
-    "description": "External OpenClaw caller with Agent-Firewall pre/post tool gates.",
+    "description": "OpenClaw agent shell protected by Agent-Firewall gateway scans.",
     "team": "demo",
-    "framework": "langgraph",
+    "framework": "openclaw",
     "environment": "production",
     "is_public_facing": True,
     "has_tools": True,
@@ -61,6 +62,8 @@ async def _ensure_agent_registered(settings) -> None:
                 for item in resp.json().get("items", []):
                     if item.get("name") == _AGENT_NAME:
                         settings.agent_id = item["id"]
+                        if item.get("framework") != "openclaw":
+                            await client.patch(f"{wizard_base}/agents/{settings.agent_id}", json={"framework": "openclaw"})
                         logger.info(
                             "agent_found_in_wizard",
                             agent_id=settings.agent_id,
@@ -112,6 +115,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Auto-register with proxy-service wizard so traces are forwarded
     await _ensure_agent_registered(settings)
+    await start_telegram_bridge(settings)
 
     logger.info(
         "agent_ready",
@@ -120,6 +124,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         agent_id=settings.agent_id or "unregistered",
     )
     yield
+    await stop_telegram_bridge()
     logger.info("agent_stopped")
 
 

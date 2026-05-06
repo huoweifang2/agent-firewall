@@ -27,8 +27,8 @@ interface NavItem {
 }
 
 const coreItems: NavItem[] = [
-  { title: 'Agent Sandbox', icon: 'mdi-flask-outline', to: '/test-agents' },
-  { title: 'Agents / Subagents', icon: 'mdi-robot-outline', to: '/agents' },
+  { title: 'OpenClaw Sandbox', icon: 'mdi-flask-outline', to: '/test-agents' },
+  { title: 'OpenClaw Agents', icon: 'mdi-robot-outline', to: '/agents' },
   { title: 'Skills & Hooks', icon: 'mdi-transfer-right', to: '/middleware' },
   { title: 'Attack Playground', icon: 'mdi-shield-search', to: '/red-team' },
   { title: 'Trace / Audit', icon: 'mdi-timeline-clock-outline', to: '/agent-traces' },

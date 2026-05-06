@@ -90,16 +90,11 @@ const { groupedModels, isLoading: modelsLoading } = useModels()
 const policyItems = computed(() => sortedPolicyItems(policies.value ?? []))
 
 const PROVIDER_LABELS: Record<string, string> = {
-  openai: 'OpenAI',
-  anthropic: 'Anthropic',
-  google: 'Google AI',
-  mistral: 'Mistral',  
   deepseek: 'DeepSeek',
-  openrouter: 'OpenRouter',
   mock: 'Demo',
 }
 
-/** Only show models that are available (providers with key). */
+/** Only show models enabled by the local runtime. */
 const modelItems = computed(() =>
   (groupedModels.value ?? [])
     .filter((m) => m.available)

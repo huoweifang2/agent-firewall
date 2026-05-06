@@ -27,13 +27,10 @@ export const chatService = {
  */
 /**
  * Build provider → base URL map from runtime env vars.
- * Override via NUXT_PUBLIC_OPENAI_API_BASE / NUXT_PUBLIC_MISTRAL_API_BASE.
+ * Override via NUXT_PUBLIC_DEEPSEEK_API_BASE.
  */
 export function getProviderApiBases(): Record<string, string> {
   return {
-    openai: (import.meta.env.NUXT_PUBLIC_OPENAI_API_BASE as string) ?? 'https://api.openai.com',
-    mistral: (import.meta.env.NUXT_PUBLIC_MISTRAL_API_BASE as string) ?? 'https://api.mistral.ai',
-    openrouter: (import.meta.env.NUXT_PUBLIC_OPENROUTER_API_BASE as string) ?? 'https://openrouter.ai/api',
     deepseek: (import.meta.env.NUXT_PUBLIC_DEEPSEEK_API_BASE as string) ?? 'https://api.deepseek.com',
   }
 }
@@ -145,12 +142,11 @@ export async function streamChat(
 }
 
 /**
- * Stream a chat completion DIRECTLY to the LLM provider's API.
- * Browser → api.openai.com / api.mistral.ai — completely bypassing the proxy.
+ * Stream a chat completion DIRECTLY to the DeepSeek API.
  *
  * This proves the raw model accepts prompts our proxy would block.
- * Supported: OpenAI, Mistral (CORS + OpenAI-compatible format).
- * Unsupported providers should use streamChat('/v1/chat/direct') as fallback.
+ * This remains a legacy/dev override; the main runtime resolves DeepSeek
+ * server-side from local env/OpenClaw config.
  */
 export async function streamChatDirect(
   options: {

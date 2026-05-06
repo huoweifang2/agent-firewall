@@ -1,8 +1,9 @@
 /**
- * Composable for managing LLM provider API keys in browser storage.
+ * Composable for managing legacy DeepSeek API key overrides in browser storage.
  *
  * Keys are stored in SessionStorage (default) or localStorage ("Remember" opt-in).
- * The server NEVER stores, logs, or caches these keys.
+ * The primary runtime uses server-side local config; browser keys are only a
+ * development override for direct Compare calls.
  */
 import { ref, onMounted } from 'vue'
 
@@ -23,7 +24,6 @@ export interface StoredKey {
 }
 
 export const PROVIDERS: ProviderDef[] = [
-  { id: 'openrouter', name: 'OpenRouter', icon: 'mdi-router-network', placeholder: 'sk-or-v1-...' },
   { id: 'deepseek', name: 'DeepSeek', icon: 'mdi-brain', placeholder: 'sk-...' },
 ]
 
@@ -39,8 +39,7 @@ export function detectProviderClient(model: string): string {
   const m = model.toLowerCase()
   if (m === 'demo') return 'mock'
   if (m.startsWith('deepseek')) return 'deepseek'
-  // Everything else is openrouter
-  return 'openrouter'
+  return 'unsupported'
 }
 
 /**
@@ -81,7 +80,7 @@ export function useApiKeys() {
 
   function getKeyForModel(model: string): string | null {
     const provider = detectProviderClient(model)
-      return getKey(provider)
+    return getKey(provider)
   }
 
   function hasKeyForProvider(provider: string): boolean {

@@ -144,7 +144,7 @@ async def _create_agent(
         name=name,
         description=description,
         team=team,
-        framework=AgentFramework.LANGGRAPH,
+        framework=AgentFramework.OPENCLAW,
         environment=AgentEnvironment.DEV,
         is_public_facing=False,
         has_tools=True,

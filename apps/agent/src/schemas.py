@@ -41,6 +41,7 @@ class OpenClawRuntimeDiagnostics(BaseModel):
     openclaw_agent_id: str
     openclaw_agent_local: bool
     openclaw_timeout_seconds: int
+    openclaw_plugin_stage_dir: str
     deepseek_configured: bool
     default_model: str
     default_model_prefix: str
@@ -49,6 +50,10 @@ class OpenClawRuntimeDiagnostics(BaseModel):
     agents_ok: bool = False
     telegram_enabled: bool = False
     telegram_accounts: int = 0
+    telegram_bridge_enabled: bool = False
+    telegram_bridge_running: bool = False
+    telegram_bridge_accounts: int = 0
+    telegram_bridge_last_error: str | None = None
     gateway_mode: str = "unknown"
     gateway_token_present: bool = False
     error: str | None = None

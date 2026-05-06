@@ -1,4 +1,4 @@
-"""Firewall pipeline — LangGraph-based request analysis & decision engine."""
+"""Firewall pipeline — local request analysis and decision engine."""
 
 from src.pipeline.runner import run_pipeline
 from src.pipeline.state import PipelineState

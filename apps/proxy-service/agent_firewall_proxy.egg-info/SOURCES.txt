@@ -107,13 +107,17 @@ src/services/request_logger.py
 src/wizard/__init__.py
 src/wizard/models.py
 src/wizard/router.py
+src/wizard/schema_compat.py
 src/wizard/schemas.py
 src/wizard/seed.py
 src/wizard/routers/__init__.py
 src/wizard/routers/agents.py
 src/wizard/routers/config.py
 src/wizard/routers/integration.py
+src/wizard/routers/openclaw.py
 src/wizard/routers/rollout.py
+src/wizard/routers/runtime.py
+src/wizard/routers/teams.py
 src/wizard/routers/tools_roles.py
 src/wizard/routers/trace_runs.py
 src/wizard/routers/traces.py
@@ -122,9 +126,11 @@ src/wizard/services/__init__.py
 src/wizard/services/config_gen.py
 src/wizard/services/gate.py
 src/wizard/services/integration_kit.py
+src/wizard/services/openclaw.py
 src/wizard/services/permissions.py
 src/wizard/services/policy_packs.py
 src/wizard/services/risk.py
+src/wizard/services/runtime_spec.py
 src/wizard/services/tools.py
 src/wizard/services/trace_recorder.py
 src/wizard/services/validation_runner.py
@@ -134,6 +140,7 @@ tests/test_chat_schemas.py
 tests/test_config.py
 tests/test_decision_transform.py
 tests/test_decision_with_scanners.py
+tests/test_deepseek_env_fallback.py
 tests/test_denylist_service.py
 tests/test_direct.py
 tests/test_graph.py

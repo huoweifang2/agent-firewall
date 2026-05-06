@@ -1,10 +1,4 @@
-"""Tests for _resolve_direct_llm — provider detection and model formatting.
-
-The agent mirrors proxy-service/src/llm/providers.py detection rules.
-These tests ensure the agent's copy stays in sync: wrong prefixes or
-missing providers would silently send requests to the wrong provider,
-resulting in 401/404 errors from the LLM API.
-"""
+"""Tests for _resolve_direct_llm — DeepSeek-only model routing."""
 
 from __future__ import annotations
 
@@ -30,9 +24,9 @@ class TestProviderRules:
 
     # The authoritative list from proxy-service
     PROXY_RULES = [
-        ("openrouter/", "openrouter"),
         ("deepseek/", "deepseek"),
         ("deepseek-", "deepseek"),
+        ("deepseek", "deepseek"),
     ]
 
     def test_rules_match_proxy_service(self):
@@ -45,25 +39,6 @@ class TestProviderRules:
             "Agent _PROVIDER_RULES diverged from proxy-service PROVIDER_RULES! "
             "Update apps/agent/src/agent/nodes/llm_call.py to match."
         )
-
-
-# ── OpenRouter models ───────────────────────────────────────
-
-
-class TestOpenRouterModels:
-    """OpenRouter models → prefix with 'openrouter/'."""
-
-    @pytest.mark.parametrize(
-        "model_name,expected",
-        [
-            ("openrouter/auto", "openrouter/auto"),
-            ("anthropic/claude-3.5-sonnet", "openrouter/anthropic/claude-3.5-sonnet"),
-        ],
-    )
-    def test_openrouter_models(self, model_name, expected):
-        model, kwargs = _resolve_direct_llm(model_name, "sk-or-test", _settings())
-        assert model == expected
-        assert kwargs == {"api_key": "sk-or-test"}
 
 
 # ── DeepSeek models ─────────────────────────────────────────
@@ -90,20 +65,19 @@ class TestDeepSeekModels:
 
 
 class TestAPIKeyForwarding:
-    """Verify api_key is correctly forwarded for external providers."""
-
-    def test_api_key_forwarded_to_openrouter(self):
-        _, kwargs = _resolve_direct_llm("openrouter/auto", "sk-or-key-123", _settings())
-        assert kwargs["api_key"] == "sk-or-key-123"
+    """Verify api_key is correctly forwarded for DeepSeek."""
 
     def test_api_key_forwarded_to_deepseek(self):
         _, kwargs = _resolve_direct_llm("deepseek-chat", "sk-ds-key", _settings())
         assert kwargs["api_key"] == "sk-ds-key"
 
-    def test_none_api_key_for_external_provider(self):
-        """Even with None api_key, external providers get api_key in kwargs."""
-        _, kwargs = _resolve_direct_llm("openrouter/auto", None, _settings())
+    def test_none_api_key_for_deepseek(self):
+        _, kwargs = _resolve_direct_llm("deepseek-chat", None, _settings())
         assert kwargs == {"api_key": None}
+
+    def test_non_deepseek_model_rejected(self):
+        with pytest.raises(ValueError, match="Only DeepSeek official API models"):
+            _resolve_direct_llm("gpt-4o", "sk-test", _settings())
 
 
 class TestDeepSeekFallback:
@@ -117,7 +91,7 @@ class TestDeepSeekFallback:
         settings.deepseek_api_key = "sk-env"
         assert _resolve_api_key("deepseek-chat", "sk-header", settings) == "sk-header"
 
-    def test_openrouter_does_not_use_deepseek_env(self):
+    def test_unsupported_model_does_not_use_deepseek_env(self):
         settings = _settings()
         settings.deepseek_api_key = "sk-env"
-        assert _resolve_api_key("openrouter/auto", None, settings) is None
+        assert _resolve_api_key("gpt-4o", None, settings) is None

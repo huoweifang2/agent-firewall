@@ -7,6 +7,7 @@ import pytest
 from src.db.seed import seed_denylist, seed_policies
 from src.db.session import engine
 from src.models import Base  # noqa: F401 — triggers model registration
+from src.wizard.schema_compat import ensure_agent_hierarchy_columns
 
 _db_seeded = False
 
@@ -32,6 +33,7 @@ async def _setup_db():
     if not _db_seeded:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+        await ensure_agent_hierarchy_columns(engine)
         await seed_policies()
         await seed_denylist()
         _db_seeded = True

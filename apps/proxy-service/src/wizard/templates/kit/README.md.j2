@@ -18,7 +18,7 @@
 | `rbac.yaml` | Role-based access control configuration — defines which roles can use which tools |
 | `limits.yaml` | Rate limits and budget constraints per role and per tool |
 | `policy.yaml` | Security policy — scanner thresholds, PII handling, output filtering |
-| `protected_agent.py` | {{ framework }} integration module — adds security gates to your agent |
+| `protected_agent.py` | OpenClaw/proxy integration module — routes requests through Agent-Firewall |
 | `.env.protector` | Environment variables for Agent-Firewall configuration |
 | `test_security.py` | Security smoke tests — validates your config is correct |
 | `README.md` | This file |
@@ -38,34 +38,19 @@ cp -r ./* /path/to/your/agent/
 ### Step 2: Configure environment
 
 Copy `.env.protector` values to your environment or `.env` file.
-Add your LLM provider API key (uncomment the relevant line).
+Add your DeepSeek API key locally when the runtime is not already configured.
 
 {% if framework == "proxy_only" %}
 ### Step 3: Point your client at the proxy
 
 Change your OpenAI client's `base_url` to `{{ proxy_url }}/v1`.
 That's it — all requests now flow through Agent-Firewall.
-{% elif framework == "langgraph" %}
-### Step 3: Wire security gates into your graph
-
-```python
-from protected_agent import add_protection, PreToolGate, PostToolGate
-
-# In your LangGraph setup:
-add_protection(graph)
-```
 {% else %}
-### Step 3: Wrap your tool calls
+### Step 3: Route OpenClaw through Agent-Firewall
 
 ```python
-from protected_agent import protected_tool_call
-
-result = protected_tool_call(
-    role="user",
-    tool="getOrders",
-    args={},
-    execute_fn=my_tool_executor,
-)
+AGENT_FIREWALL_URL = "{{ proxy_url }}"
+# Telegram, Playground, Compare, and Agent Sandbox should call Agent-Firewall first.
 ```
 {% endif %}
 

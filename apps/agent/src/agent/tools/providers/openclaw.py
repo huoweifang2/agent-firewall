@@ -76,6 +76,7 @@ def _client_from_settings() -> OpenClawClient:
         timeout_seconds=settings.openclaw_timeout_seconds,
         default_agent_id=settings.openclaw_agent_id,
         local=settings.openclaw_agent_local,
+        plugin_stage_dir=settings.openclaw_plugin_stage_dir,
     )
 
 

@@ -1,6 +1,6 @@
 // ─── Enums ───
 
-export type AgentFramework = 'langgraph' | 'raw_python' | 'proxy_only'
+export type AgentFramework = 'openclaw' | 'proxy_only'
 export type AgentEnvironment = 'dev' | 'staging' | 'production'
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical'
 export type ProtectionLevel = 'proxy_only' | 'agent_runtime' | 'full'

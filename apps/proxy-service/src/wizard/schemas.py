@@ -35,7 +35,7 @@ class AgentCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=128)
     description: str = ""
     team: str | None = None
-    framework: AgentFramework = AgentFramework.LANGGRAPH
+    framework: AgentFramework = AgentFramework.OPENCLAW
     environment: AgentEnvironment = AgentEnvironment.DEV
     is_public_facing: bool = False
     has_tools: bool = True
@@ -146,7 +146,7 @@ class SubAgentCreateRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=128)
     description: str = ""
     team: str | None = None
-    framework: AgentFramework = AgentFramework.LANGGRAPH
+    framework: AgentFramework = AgentFramework.OPENCLAW
     environment: AgentEnvironment = AgentEnvironment.DEV
     policy_pack: str | None = None
     template_key: str | None = Field(default=None, max_length=64)

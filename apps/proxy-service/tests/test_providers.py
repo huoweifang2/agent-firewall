@@ -13,84 +13,38 @@ class TestDetectProvider:
     @pytest.mark.parametrize(
         "model, expected",
         [
-            ("deepseek/deepseek-chat", "openai"),
-            ("deepseek/deepseek-chat", "openai"),
-            ("gpt-4-turbo", "openai"),
-            ("GPT-4o", "openai"),  # case-insensitive
-            ("o1", "openai"),
-            ("o3-mini", "openai"),
+            ("deepseek-chat", "deepseek"),
+            ("deepseek-reasoner", "deepseek"),
+            ("deepseek/deepseek-chat", "deepseek"),
+            ("DEEPSEEK-CHAT", "deepseek"),
         ],
     )
     @pytest.mark.asyncio
-    async def test_openai(self, model: str, expected: str) -> None:
+    async def test_deepseek(self, model: str, expected: str) -> None:
         assert detect_provider(model) == expected
 
     @pytest.mark.parametrize(
-        "model, expected",
+        "model",
         [
-            ("claude-sonnet-4-6", "anthropic"),
-            ("claude-haiku-4-5", "anthropic"),
-            ("anthropic/claude-sonnet-4-6", "anthropic"),
+            "gpt-4o",
+            "claude-sonnet-4-6",
+            "gemini-2.5-flash",
+            "mistral-large",
+            "openrouter/auto",
         ],
     )
     @pytest.mark.asyncio
-    async def test_anthropic(self, model: str, expected: str) -> None:
-        assert detect_provider(model) == expected
-
-    @pytest.mark.parametrize(
-        "model, expected",
-        [
-            ("gemini/gemini-2.5-flash", "google"),
-            ("gemini/gemini-pro", "google"),
-            ("gemini-2.0-flash", "google"),
-            ("gemini-2.5-flash", "google"),
-            ("gemini-pro", "google"),
-        ],
-    )
-    @pytest.mark.asyncio
-    async def test_google(self, model: str, expected: str) -> None:
-        assert detect_provider(model) == expected
-
-    @pytest.mark.parametrize(
-        "model, expected",
-        [
-            ("mistral-large", "mistral"),
-            ("codestral", "mistral"),
-            ("mistral/mistral-large", "mistral"),
-        ],
-    )
-    @pytest.mark.asyncio
-    async def test_mistral(self, model: str, expected: str) -> None:
-        assert detect_provider(model) == expected
-
-    @pytest.mark.parametrize(
-        "model, expected",
-        [],
-    )
-    @pytest.mark.asyncio
-    async def test_openai_no_prefix(self) -> None:
-        assert format_litellm_model("deepseek/deepseek-chat", "openai") == "deepseek/deepseek-chat"
+    async def test_unsupported(self, model: str) -> None:
+        assert detect_provider(model) == "unsupported"
 
     @pytest.mark.asyncio
-    async def test_anthropic_adds_prefix(self) -> None:
-        assert format_litellm_model("claude-sonnet-4-6", "anthropic") == "anthropic/claude-sonnet-4-6"
+    async def test_deepseek_adds_prefix(self) -> None:
+        assert format_litellm_model("deepseek-chat", "deepseek") == "deepseek/deepseek-chat"
 
     @pytest.mark.asyncio
-    async def test_anthropic_already_prefixed(self) -> None:
-        assert format_litellm_model("anthropic/claude-sonnet-4-6", "anthropic") == "anthropic/claude-sonnet-4-6"
+    async def test_deepseek_already_prefixed(self) -> None:
+        assert format_litellm_model("deepseek/deepseek-chat", "deepseek") == "deepseek/deepseek-chat"
 
     @pytest.mark.asyncio
-    async def test_google_adds_prefix(self) -> None:
-        assert format_litellm_model("gemini-2.5-flash", "google") == "gemini/gemini-2.5-flash"
-
-    @pytest.mark.asyncio
-    async def test_google_already_prefixed(self) -> None:
-        assert format_litellm_model("gemini/gemini-2.5-flash", "google") == "gemini/gemini-2.5-flash"
-
-    @pytest.mark.asyncio
-    async def test_mistral_adds_prefix(self) -> None:
-        assert format_litellm_model("mistral-large", "mistral") == "mistral/mistral-large"
-
-    @pytest.mark.asyncio
-    async def test_mistral_already_prefixed(self) -> None:
-        assert format_litellm_model("mistral/mistral-large", "mistral") == "mistral/mistral-large"
+    async def test_unsupported_provider_is_passthrough(self) -> None:
+        assert format_litellm_model("gpt-4o", "unsupported") == "gpt-4o"

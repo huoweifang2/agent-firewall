@@ -19,6 +19,25 @@ async def ensure_agent_hierarchy_columns(engine: AsyncEngine) -> None:
                 sa.text(
                     """
                     DO $$ BEGIN
+                        ALTER TYPE agent_framework ADD VALUE IF NOT EXISTS 'OPENCLAW';
+                    EXCEPTION WHEN undefined_object THEN null;
+                    END $$;
+                    """
+                )
+            )
+            await conn.execute(
+                sa.text(
+                    """
+                    UPDATE agents
+                    SET framework = 'OPENCLAW'
+                    WHERE framework::text IN ('LANGGRAPH', 'RAW_PYTHON')
+                    """
+                )
+            )
+            await conn.execute(
+                sa.text(
+                    """
+                    DO $$ BEGIN
                         CREATE TYPE agent_kind AS ENUM ('MAIN_AGENT', 'SUB_AGENT');
                     EXCEPTION WHEN duplicate_object THEN null;
                     END $$;
@@ -59,3 +78,4 @@ async def ensure_agent_hierarchy_columns(engine: AsyncEngine) -> None:
                 )
             if "template_key" not in existing:
                 await conn.execute(sa.text("ALTER TABLE agents ADD COLUMN template_key VARCHAR(64)"))
+            await conn.execute(sa.text("UPDATE agents SET framework = 'openclaw' WHERE framework NOT IN ('openclaw', 'proxy_only')"))

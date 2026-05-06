@@ -6,8 +6,10 @@ import asyncio
 import contextlib
 import hashlib
 import json
+import os
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 _SECRET_PATTERNS: tuple[re.Pattern[str], ...] = (
@@ -31,17 +33,20 @@ class OpenClawClient:
     timeout_seconds: int = 120
     default_agent_id: str = "coder"
     local: bool = False
+    plugin_stage_dir: str | None = None
 
     async def run(self, *args: str, timeout_seconds: int | None = None) -> str:
         """Run an OpenClaw command and return stdout."""
         timeout = max(1, int(timeout_seconds or self.timeout_seconds))
         command = [self.binary, *args]
+        env = self._subprocess_env()
         proc = None
         try:
             proc = await asyncio.create_subprocess_exec(
                 *command,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                env=env,
             )
             stdout_bytes, stderr_bytes = await asyncio.wait_for(proc.communicate(), timeout=timeout + 5)
         except TimeoutError as exc:
@@ -60,6 +65,15 @@ class OpenClawClient:
             detail = stderr or stdout.strip() or f"exit code {proc.returncode}"
             raise OpenClawError(self.redact(detail))
         return stdout
+
+    def _subprocess_env(self) -> dict[str, str]:
+        env = os.environ.copy()
+        stage_dir = (self.plugin_stage_dir or "").strip()
+        if stage_dir:
+            resolved = Path(stage_dir).expanduser()
+            resolved.mkdir(parents=True, exist_ok=True)
+            env.setdefault("OPENCLAW_PLUGIN_STAGE_DIR", str(resolved))
+        return env
 
     async def run_json(self, *args: str, timeout_seconds: int | None = None) -> Any:
         """Run an OpenClaw command and parse the JSON payload from stdout."""
@@ -96,8 +110,8 @@ class OpenClawClient:
         if not text:
             return ""
         try:
-            return json.loads(text)
-        except json.JSONDecodeError:
+            return extract_json_payload(text)
+        except OpenClawError:
             return text
 
     async def status(self) -> dict[str, Any]:

@@ -1,9 +1,8 @@
 """Tests for POST /agent/chat endpoint."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
-_SCAN_PATCH = "src.agent.nodes.llm_call._scan_via_proxy"
-_LLM_PATCH = "src.agent.nodes.llm_call.acompletion"
+_SCAN_PATCH = "src.routers.chat._scan_via_proxy"
 _OPENCLAW_CLIENT_PATCH = "src.routers.chat.OpenClawClient"
 
 
@@ -18,15 +17,37 @@ def _scan_allow(risk_score: float = 0.1, intent: str = "qa") -> dict:
     }
 
 
-def _llm_resp(content: str = "Test response") -> AsyncMock:
-    resp = AsyncMock()
-    resp.choices = [AsyncMock()]
-    resp.choices[0].message.content = content
-    resp.usage = AsyncMock()
-    resp.usage.prompt_tokens = 50
-    resp.usage.completion_tokens = 20
-    resp.usage.total_tokens = 70
-    return resp
+def _scan_block() -> dict:
+    return {
+        "status_code": 403,
+        "decision": "BLOCK",
+        "risk_score": 0.9,
+        "intent": "jailbreak",
+        "risk_flags": {"prompt_injection": 0.9},
+        "blocked_reason": "Prompt injection detected.",
+    }
+
+
+class FakeOpenClawClient:
+    calls: list[dict] = []
+
+    def __init__(self, *, binary, timeout_seconds, default_agent_id, local, plugin_stage_dir):
+        assert binary == "openclaw"
+        assert timeout_seconds > 0
+        assert default_agent_id == "coder"
+        assert local is False
+        assert plugin_stage_dir
+
+    async def agent_message(self, *, message, session_id, agent_id, timeout_seconds):
+        self.calls.append(
+            {
+                "message": message,
+                "session_id": session_id,
+                "agent_id": agent_id,
+                "timeout_seconds": timeout_seconds,
+            }
+        )
+        return {"response": f"OpenClaw: {message}"}
 
 
 class TestAgentChatEndpoint:
@@ -60,11 +81,11 @@ class TestAgentChatEndpoint:
         assert response.status_code == 422
 
     def test_valid_request_shape(self, client):
-        """Should return proper response structure with mocked LLM."""
+        """Should return proper response structure with mocked OpenClaw."""
         scan = _scan_allow(risk_score=0.05, intent="chitchat")
-        llm = _llm_resp("Hello! How can I help?")
+        FakeOpenClawClient.calls = []
 
-        with patch(_SCAN_PATCH, return_value=scan), patch(_LLM_PATCH, return_value=llm):
+        with patch(_SCAN_PATCH, return_value=scan), patch(_OPENCLAW_CLIENT_PATCH, FakeOpenClawClient):
             response = client.post(
                 "/agent/chat",
                 json={
@@ -82,6 +103,8 @@ class TestAgentChatEndpoint:
         assert "tools_called" in data
         assert "agent_trace" in data
         assert "firewall_decision" in data
+        assert data["response"] == "OpenClaw: Hello"
+        assert FakeOpenClawClient.calls[0]["agent_id"] == "coder"
 
         # Check agent_trace structure
         trace = data["agent_trace"]
@@ -89,6 +112,7 @@ class TestAgentChatEndpoint:
         assert "user_role" in trace
         assert trace["user_role"] == "customer"
         assert "allowed_tools" in trace
+        assert trace["agent_kind"] == "openclaw"
         assert "latency_ms" in trace
 
         # Check firewall_decision structure
@@ -96,12 +120,12 @@ class TestAgentChatEndpoint:
         assert "decision" in fw
         assert "risk_score" in fw
 
-    def test_kb_search_response(self, client):
-        """KB search should return tool call info."""
+    def test_openclaw_response(self, client):
+        """Allowed requests should call OpenClaw."""
         scan = _scan_allow(risk_score=0.1, intent="qa")
-        llm = _llm_resp("Our return policy allows returns within 30 days.")
+        FakeOpenClawClient.calls = []
 
-        with patch(_SCAN_PATCH, return_value=scan), patch(_LLM_PATCH, return_value=llm):
+        with patch(_SCAN_PATCH, return_value=scan), patch(_OPENCLAW_CLIENT_PATCH, FakeOpenClawClient):
             response = client.post(
                 "/agent/chat",
                 json={
@@ -113,17 +137,16 @@ class TestAgentChatEndpoint:
 
         assert response.status_code == 200
         data = response.json()
-        assert len(data["tools_called"]) >= 1
-        assert data["tools_called"][0]["tool"] == "searchKnowledgeBase"
-        assert data["tools_called"][0]["allowed"] is True
-        assert data["agent_trace"]["intent"] == "knowledge_search"
+        assert data["response"] == "OpenClaw: What is your return policy?"
+        assert data["tools_called"] == []
+        assert data["agent_trace"]["intent"] == "qa"
+        assert FakeOpenClawClient.calls[0]["message"] == "What is your return policy?"
 
-    def test_customer_secrets_denied(self, client):
-        """Customer should not be able to call getInternalSecrets."""
-        scan = _scan_allow(risk_score=0.3, intent="qa")
-        llm = _llm_resp("I don't have access to that.")
+    def test_blocked_scan_skips_openclaw(self, client):
+        """Blocked requests should not call OpenClaw."""
+        FakeOpenClawClient.calls = []
 
-        with patch(_SCAN_PATCH, return_value=scan), patch(_LLM_PATCH, return_value=llm):
+        with patch(_SCAN_PATCH, return_value=_scan_block()), patch(_OPENCLAW_CLIENT_PATCH, FakeOpenClawClient):
             response = client.post(
                 "/agent/chat",
                 json={
@@ -135,19 +158,13 @@ class TestAgentChatEndpoint:
 
         assert response.status_code == 200
         data = response.json()
-        # getInternalSecrets should not be in allowed_tools
-        assert "getInternalSecrets" not in data["agent_trace"]["allowed_tools"]
+        assert data["firewall_decision"]["decision"] == "BLOCK"
+        assert "Prompt injection detected" in data["response"]
+        assert FakeOpenClawClient.calls == []
 
     def test_openclaw_direct_endpoint_parses_direct_response(self, client):
         """Direct Compare path should call OpenClaw and return the raw response."""
-
-        class FakeOpenClawClient:
-            def __init__(self, *, binary, timeout_seconds, default_agent_id, local):
-                assert binary == "openclaw"
-                assert timeout_seconds > 0
-                assert default_agent_id == "coder"
-                assert local is False
-
+        class FakeDirectOpenClawClient(FakeOpenClawClient):
             async def agent_message(self, *, message, session_id, agent_id, timeout_seconds):
                 assert message == "hello"
                 assert session_id == "direct-session"
@@ -155,7 +172,7 @@ class TestAgentChatEndpoint:
                 assert timeout_seconds == 12
                 return {"response": "direct hello"}
 
-        with patch(_OPENCLAW_CLIENT_PATCH, FakeOpenClawClient):
+        with patch(_OPENCLAW_CLIENT_PATCH, FakeDirectOpenClawClient):
             response = client.post(
                 "/agent/openclaw/direct",
                 json={

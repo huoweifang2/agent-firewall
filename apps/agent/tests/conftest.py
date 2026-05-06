@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 # Force "real" mode in tests — agent tests mock _scan_via_proxy + acompletion
 # directly and must not go through demo's mock_agent_llm path.
 os.environ["MODE"] = "real"
+os.environ["TELEGRAM_BRIDGE_ENABLED"] = "false"
 
 from src.config import get_settings  # noqa: E402
 

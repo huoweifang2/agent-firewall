@@ -51,7 +51,7 @@
           </tr>
           <tr>
             <td><code>protected_agent.py</code></td>
-            <td>LangGraph integration wrapper — pre/post-tool gate nodes and RBAC/Limits services</td>
+            <td>OpenClaw/proxy wrapper — routes requests through Agent-Firewall checks</td>
           </tr>
           <tr>
             <td><code>.env.protector</code></td>
@@ -81,7 +81,7 @@
       <v-sheet rounded class="pa-4 code-block mb-3">
         <pre class="text-body-2"><code>your-agent/
 ├─ app/
-├─ graph.py
+├─ openclaw-runtime/
 ├─ tools.py
 ├─ protector/
 │  ├─ rbac.yaml
@@ -119,51 +119,31 @@ AGENT_FIREWALL_MODE=observe</code></pre>
     <section class="mb-8">
       <h2 class="text-h6 mb-3 d-flex align-center ga-2">
         <v-icon icon="mdi-code-braces" size="22" />
-        4. Integrate with your LangGraph agent
+        4. Route OpenClaw through Agent-Firewall
       </h2>
       <p class="text-body-2 mb-3">
-        Import the generated protection module and wire it into your graph:
+        Telegram, Agent Sandbox, and Compare should call Agent-Firewall first, then OpenClaw:
       </p>
       <v-sheet rounded class="pa-4 code-block mb-3">
-        <pre class="text-body-2"><code>from langgraph.graph import StateGraph
-from protector.protected_agent import (
-    add_protection,
-    PreToolGate,
-    PostToolGate,
-)
-
-# Build your graph as usual
-graph = StateGraph(AgentState)
-graph.add_node("agent", agent_node)
-graph.add_node("tools", tool_node)
-
-# Add Agent-Firewall security nodes
-add_protection(graph)
-
-# Wire the gates into your graph flow:
-#   agent → pre_tool_gate → tools → post_tool_gate → agent
-graph.add_edge("agent", "pre_tool_gate")
-graph.add_edge("pre_tool_gate", "tools")
-graph.add_edge("tools", "post_tool_gate")
-graph.add_edge("post_tool_gate", "agent")
-
-app = graph.compile()</code></pre>
+        <pre class="text-body-2"><code>POST http://localhost:8002/agent/chat
+{
+  "message": "user request",
+  "session_id": "demo-session",
+  "user_role": "customer",
+  "policy": "balanced",
+  "model": "deepseek-chat"
+}</code></pre>
       </v-sheet>
       <p class="text-body-2 mb-3">
-        Or use the gate classes directly for finer control:
+        For direct comparison only, call the unprotected OpenClaw endpoint:
       </p>
       <v-sheet rounded class="pa-4 code-block">
-        <pre class="text-body-2"><code># Manual pre-tool check
-gate = PreToolGate()
-result = gate.check(role="customer", tool="issueRefund")
-
-if result["allowed"]:
-    output = issueRefund(order_id="123")
-    # Scan the output
-    post = PostToolGate()
-    scan = post.scan(str(output))
-    if not scan["clean"]:
-        print("Findings:", scan["findings"])</code></pre>
+        <pre class="text-body-2"><code>POST http://localhost:8002/agent/openclaw/direct
+{
+  "message": "same request",
+  "session_id": "compare-session",
+  "agent_id": "coder"
+}</code></pre>
       </v-sheet>
     </section>
 

@@ -74,6 +74,17 @@
       </v-sheet>
 
       <v-sheet border rounded class="pa-4">
+        <div class="text-caption text-medium-emphasis mb-2">Telegram Bridge</div>
+        <div class="d-flex align-center ga-2">
+          <v-icon :color="config?.telegram_bridge_running ? 'success' : 'warning'" icon="mdi-shield-link-variant" />
+          <span class="text-subtitle-2">{{ config?.telegram_bridge_running ? 'Running' : bridgeStatusLabel }}</span>
+        </div>
+        <div class="text-caption text-medium-emphasis mt-2">
+          {{ config?.telegram_bridge_accounts ?? 0 }} protected account{{ (config?.telegram_bridge_accounts ?? 0) === 1 ? '' : 's' }}
+        </div>
+      </v-sheet>
+
+      <v-sheet border rounded class="pa-4">
         <div class="text-caption text-medium-emphasis mb-2">Gateway</div>
         <div class="d-flex align-center ga-2">
           <v-icon :color="config?.gateway_token_present ? 'success' : 'warning'" icon="mdi-lan-connect" />
@@ -123,6 +134,16 @@
           />
         </v-col>
         <v-col cols="12" sm="6">
+          <v-text-field
+            :model-value="config?.openclaw_plugin_stage_dir || ''"
+            label="OPENCLAW_PLUGIN_STAGE_DIR"
+            variant="outlined"
+            density="compact"
+            hide-details
+            readonly
+          />
+        </v-col>
+        <v-col cols="12" sm="6">
           <v-switch
             :model-value="config?.openclaw_agent_local ?? false"
             label="OPENCLAW_AGENT_LOCAL"
@@ -134,6 +155,16 @@
         </v-col>
       </v-row>
     </v-sheet>
+
+    <v-alert
+      v-if="config?.telegram_bridge_last_error"
+      type="warning"
+      variant="tonal"
+      density="compact"
+      class="mb-5"
+    >
+      Telegram Bridge: {{ config.telegram_bridge_last_error }}
+    </v-alert>
 
     <v-sheet border rounded class="pa-4">
       <div class="d-flex align-center mb-3">
@@ -196,6 +227,11 @@ const effectiveModelLabel = computed(() => {
   return model
 })
 
+const bridgeStatusLabel = computed(() => {
+  if (!config.value?.telegram_bridge_enabled) return 'Disabled'
+  return 'Stopped'
+})
+
 onMounted(() => {
   loadOpenClawConfig()
 })
@@ -207,7 +243,6 @@ function yesNo(value?: boolean) {
 function providerLabel(provider: string) {
   const labels: Record<string, string> = {
     deepseek: 'DeepSeek',
-    openrouter: 'OpenRouter',
   }
   return labels[provider] ?? provider
 }
@@ -231,7 +266,7 @@ async function loadOpenClawConfig() {
 <style scoped>
 .settings-page__status-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
 }
 

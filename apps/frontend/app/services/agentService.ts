@@ -22,6 +22,7 @@ export const agentService = {
     openclaw_agent_id: string
     openclaw_agent_local: boolean
     openclaw_timeout_seconds: number
+    openclaw_plugin_stage_dir: string
     deepseek_configured: boolean
     default_model: string
     default_model_prefix: string
@@ -30,6 +31,10 @@ export const agentService = {
     agents_ok: boolean
     telegram_enabled: boolean
     telegram_accounts: number
+    telegram_bridge_enabled: boolean
+    telegram_bridge_running: boolean
+    telegram_bridge_accounts: number
+    telegram_bridge_last_error?: string | null
     gateway_mode: string
     gateway_token_present: boolean
     error?: string | null

@@ -1,8 +1,14 @@
-"""LangGraph pipeline — builds and compiles the firewall StateGraph."""
+"""Firewall pipeline built on a local sequential runner.
+
+The project no longer depends on an external graph framework here. This module
+keeps the historical ``build_pipeline().ainvoke(...)`` interface used by routers
+and tests while executing the same nodes directly.
+"""
 
 from __future__ import annotations
 
-from langgraph.graph import END, StateGraph
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 
 from src.pipeline.nodes.decision import decision_node
 from src.pipeline.nodes.intent import intent_node
@@ -15,9 +21,11 @@ from src.pipeline.nodes.scanners import parallel_scanners_node
 from src.pipeline.nodes.transform import transform_node
 from src.pipeline.state import PipelineState
 
+PipelineNode = Callable[[PipelineState], Awaitable[PipelineState]]
+
 
 def route_after_decision(state: PipelineState) -> str:
-    """Conditional routing after DecisionNode."""
+    """Return the post-decision branch name."""
     decision = state.get("decision")
     if decision == "BLOCK":
         return "block"
@@ -26,61 +34,53 @@ def route_after_decision(state: PipelineState) -> str:
     return "allow"
 
 
-def build_pipeline() -> StateGraph:
-    """Build and compile the firewall pipeline.
+@dataclass(slots=True)
+class SequentialPipeline:
+    """Small async pipeline object compatible with the previous graph API."""
 
-    .. code-block:: text
+    pre_nodes: tuple[PipelineNode, ...]
+    include_llm: bool = True
 
-        parse → intent → rules → scanners → decision
-                                               ├─ BLOCK  → logging → END
-                                               ├─ MODIFY → transform → llm_call → output_filter → logging → END
-                                               └─ ALLOW  → llm_call → output_filter → logging → END
-    """
-    graph = StateGraph(PipelineState)
+    async def ainvoke(self, state: PipelineState) -> PipelineState:
+        result = state
+        for node in self.pre_nodes:
+            result = await node(result)
 
-    # Input pipeline
-    graph.add_node("parse", parse_node)
-    graph.add_node("intent", intent_node)
-    graph.add_node("rules", rules_node)
-    graph.add_node("scanners", parallel_scanners_node)
-    graph.add_node("decision", decision_node)
-    graph.add_node("transform", transform_node)
-    graph.add_node("llm_call", llm_call_node)
+        if not self.include_llm:
+            return result
 
-    # Output pipeline
-    graph.add_node("output_filter", output_filter_node)
-    graph.add_node("logging", logging_node)
+        branch = route_after_decision(result)
+        if branch == "block":
+            return await logging_node(result)
+        if branch == "modify":
+            result = await transform_node(result)
 
-    # Input edges
-    graph.add_edge("parse", "intent")
-    graph.add_edge("intent", "rules")
-    graph.add_edge("rules", "scanners")
-    graph.add_edge("scanners", "decision")
+        result = await llm_call_node(result)
+        result = await output_filter_node(result)
+        return await logging_node(result)
 
-    # Decision routing
-    graph.add_conditional_edges(
-        "decision",
-        route_after_decision,
-        {
-            "block": "logging",  # BLOCK → logging → END
-            "modify": "transform",  # MODIFY → transform → ...
-            "allow": "llm_call",  # ALLOW → llm_call → ...
-        },
+
+def build_pre_llm_pipeline() -> SequentialPipeline:
+    """Build parse → intent → rules → scanners → decision."""
+    return SequentialPipeline(
+        pre_nodes=(parse_node, intent_node, rules_node, parallel_scanners_node, decision_node),
+        include_llm=False,
     )
 
-    # MODIFY path
-    graph.add_edge("transform", "llm_call")
 
-    # After LLM call → output filter → logging
-    graph.add_edge("llm_call", "output_filter")
-    graph.add_edge("output_filter", "logging")
+def build_pipeline() -> SequentialPipeline:
+    """Build the full firewall pipeline.
 
-    # Logging → END (terminal node for all paths)
-    graph.add_edge("logging", END)
+    Flow:
+    parse → intent → rules → scanners → decision
+      BLOCK  → logging
+      MODIFY → transform → llm_call → output_filter → logging
+      ALLOW  → llm_call → output_filter → logging
+    """
+    return SequentialPipeline(
+        pre_nodes=(parse_node, intent_node, rules_node, parallel_scanners_node, decision_node),
+        include_llm=True,
+    )
 
-    graph.set_entry_point("parse")
-    return graph.compile()
 
-
-# Compile once at module level
 pipeline = build_pipeline()

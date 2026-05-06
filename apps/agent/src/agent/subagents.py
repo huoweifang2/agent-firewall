@@ -43,6 +43,7 @@ async def run_sub_agent(
         timeout_seconds=settings.openclaw_timeout_seconds,
         default_agent_id=openclaw_agent_id,
         local=settings.openclaw_agent_local,
+        plugin_stage_dir=settings.openclaw_plugin_stage_dir,
     )
     try:
         payload = await client.agent_message(

@@ -60,10 +60,7 @@ export default defineNuxtConfig({
     public: {
       apiBase: 'http://localhost:8000',
       agentApiBase: 'http://localhost:8002',
-      testAgentPythonUrl: 'http://localhost:8003',
-      testAgentGraphUrl: 'http://localhost:8004',
-      openaiApiBase: 'https://api.openai.com',
-      mistralApiBase: 'https://api.mistral.ai',
+      deepseekApiBase: 'https://api.deepseek.com',
     },
   },
 

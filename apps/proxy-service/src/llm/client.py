@@ -1,4 +1,4 @@
-"""Async LiteLLM client wrapper with multi-provider routing."""
+"""Async LiteLLM client wrapper with DeepSeek-only routing."""
 
 from __future__ import annotations
 
@@ -39,19 +39,19 @@ async def llm_completion(
     api_key: str | None = None,
     intent: str = "",
 ) -> Any | AsyncGenerator[Any, None]:
-    """Call any LLM provider via LiteLLM with automatic routing.
+    """Call DeepSeek via LiteLLM.
 
-    Provider is detected from the model name (e.g. ``"gpt-4o"`` → OpenAI).
-    For external providers the ``api_key`` parameter is required and comes
-    from the ``x-api-key`` request header.
+    The runtime intentionally rejects non-DeepSeek models. The ``api_key``
+    parameter may come from the request header as a legacy/dev override;
+    otherwise the local DeepSeek key from settings is used.
 
     Args:
         messages: OpenAI-format message list.
-        model: Model name (e.g. ``"gpt-4o"``, ``"claude-sonnet-4-6"``, ``"llama3.1:8b"``).
+        model: DeepSeek model name (e.g. ``"deepseek-chat"`` or ``"deepseek-reasoner"``).
         stream: Whether to return an async streaming generator.
         temperature: Sampling temperature (0.0–2.0).
         max_tokens: Maximum tokens to generate.
-        api_key: API key from browser (``x-api-key`` header). Required for external providers.
+        api_key: Optional API key from browser (``x-api-key`` header).
         intent: Pipeline intent classification (e.g. ``"qa"``, ``"code_gen"``). Used by MockProvider.
 
     Returns:
@@ -70,6 +70,9 @@ async def llm_completion(
 
     # ── Real provider routing ─────────────────────────────────────
     provider = detect_provider(model)
+    if provider != "deepseek":
+        raise LLMError("Only DeepSeek official API models are supported by this Agent-Firewall runtime.")
+
     litellm_model = format_litellm_model(model, provider)
 
     effective_api_key = api_key or (settings.deepseek_api_key if provider == "deepseek" else "")

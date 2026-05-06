@@ -105,7 +105,7 @@ const rules = {
 const form = reactive<AgentCreate>({
   name: props.initialData?.name ?? '',
   description: props.initialData?.description ?? '',
-  framework: 'langgraph',
+  framework: 'openclaw',
   environment: props.initialData?.environment ?? 'dev',
   team: props.initialData?.team ?? null,
   is_public_facing: props.initialData?.is_public_facing ?? false,

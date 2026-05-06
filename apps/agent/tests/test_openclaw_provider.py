@@ -30,6 +30,7 @@ def _settings(**overrides):
         "openclaw_agent_id": "coder",
         "openclaw_agent_local": False,
         "openclaw_timeout_seconds": 30,
+        "openclaw_plugin_stage_dir": "",
     }
     data.update(overrides)
     return types.SimpleNamespace(**data)
@@ -48,6 +49,26 @@ def test_derive_session_id_is_stable_and_namespaced():
 def test_extract_json_payload_tolerates_banner_text():
     payload = extract_json_payload('OpenClaw ready\n{"response":"ok"}\n')
     assert payload == {"response": "ok"}
+
+
+@pytest.mark.asyncio
+async def test_agent_message_tolerates_plugin_logs_and_sets_stage_dir(monkeypatch, tmp_path):
+    seen_env: dict[str, str] = {}
+
+    async def fake_exec(*command, stdout=None, stderr=None, env=None):
+        seen_env.update(env or {})
+        return FakeProcess(stdout=b'[plugins] installed deps\n{"response":"ok"}')
+
+    import src.agent.openclaw_client as client_mod
+
+    monkeypatch.delenv("OPENCLAW_PLUGIN_STAGE_DIR", raising=False)
+    monkeypatch.setattr(client_mod.asyncio, "create_subprocess_exec", fake_exec)
+    client = OpenClawClient(plugin_stage_dir=str(tmp_path / "plugin-runtime"))
+
+    payload = await client.agent_message(message="hello", session_id="s1", agent_id="coder")
+
+    assert payload == {"response": "ok"}
+    assert seen_env["OPENCLAW_PLUGIN_STAGE_DIR"] == str(tmp_path / "plugin-runtime")
 
 
 def test_openclaw_client_redacts_secrets():
@@ -162,7 +183,7 @@ async def test_hub_routes_openclaw_provider(monkeypatch):
 async def test_execute_builds_openclaw_agent_command(monkeypatch):
     calls: list[list[str]] = []
 
-    async def fake_exec(*command, stdout=None, stderr=None):
+    async def fake_exec(*command, stdout=None, stderr=None, env=None):
         calls.append(list(command))
         return FakeProcess(stdout=b'{"response":"Sunny"}')
 
@@ -194,7 +215,7 @@ async def test_execute_builds_openclaw_agent_command(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_execute_reports_nonzero_exit(monkeypatch):
-    async def fake_exec(*command, stdout=None, stderr=None):
+    async def fake_exec(*command, stdout=None, stderr=None, env=None):
         return FakeProcess(stderr=b"gateway unavailable", returncode=1)
 
     monkeypatch.setattr(openclaw, "get_settings", lambda: _settings())
@@ -212,7 +233,7 @@ async def test_execute_reports_nonzero_exit(monkeypatch):
 async def test_execute_reports_timeout(monkeypatch):
     proc = FakeProcess()
 
-    async def fake_exec(*command, stdout=None, stderr=None):
+    async def fake_exec(*command, stdout=None, stderr=None, env=None):
         return proc
 
     async def fake_wait_for(awaitable, timeout):

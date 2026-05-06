@@ -21,14 +21,12 @@ from src.agent.limits.config import LimitsConfig, get_limits_for_role
 logger = structlog.get_logger()
 
 # ── Approximate token pricing (per 1K tokens, USD) ───────────────────
-# Defaults for local models; overridden per model if needed.
+# DeepSeek defaults can be adjusted here when exact billing sync is needed.
 
 TOKEN_PRICING: dict[str, dict[str, float]] = {
     "default": {"input": 0.0005, "output": 0.0015},
-    "deepseek/deepseek-chat": {"input": 0.0, "output": 0.0},  # Local model, free
-    "claude-sonnet-4-6": {"input": 0.003, "output": 0.015},
-    "claude-haiku-4-5": {"input": 0.0008, "output": 0.004},
-    "claude-opus-4-6": {"input": 0.015, "output": 0.075},
+    "deepseek/deepseek-chat": {"input": 0.0005, "output": 0.0015},
+    "deepseek/deepseek-reasoner": {"input": 0.0005, "output": 0.0015},
 }
 
 # ── Safe completion message ──────────────────────────────────────────

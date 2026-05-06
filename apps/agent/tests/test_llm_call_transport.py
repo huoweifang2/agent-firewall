@@ -69,7 +69,7 @@ def _base_state(**overrides) -> dict:
         "message": "What is your return policy?",
         "chat_history": [],
         "api_key": "sk-test-key-123",
-        "model": "gpt-4o",
+        "model": "deepseek-chat",
         "policy": "balanced",
     }
     state.update(overrides)
@@ -83,45 +83,41 @@ class TestAcompletionModelRouting:
     """Verify acompletion is called with correct model prefix and kwargs."""
 
     @pytest.mark.asyncio
-    async def test_openai_model_no_prefix(self, httpx_mock):
-        """OpenAI models should be passed as-is (no prefix)."""
+    async def test_deepseek_model_gets_prefix(self, httpx_mock):
+        """DeepSeek models should be prefixed with 'deepseek/'."""
         httpx_mock.add_response(json=_scan_allow_json(), status_code=200)
         llm = _mock_llm_response()
 
         with patch(_ACOMPLETION_PATCH, return_value=llm) as mock_acomp:
-            await llm_call_node(_base_state(model="gpt-4o", api_key="sk-openai"))
+            await llm_call_node(_base_state(model="deepseek-chat", api_key="sk-deepseek"))
 
         mock_acomp.assert_called_once()
         call_kwargs = mock_acomp.call_args
-        assert call_kwargs.kwargs["model"] == "gpt-4o"
-        assert call_kwargs.kwargs["api_key"] == "sk-openai"
+        assert call_kwargs.kwargs["model"] == "deepseek/deepseek-chat"
+        assert call_kwargs.kwargs["api_key"] == "sk-deepseek"
         assert "api_base" not in call_kwargs.kwargs
 
     @pytest.mark.asyncio
-    async def test_google_model_gets_prefix(self, httpx_mock):
-        """DeepSeek models should be prefixed with 'gemini/'."""
+    async def test_deepseek_prefixed_model_is_preserved(self, httpx_mock):
         httpx_mock.add_response(json=_scan_allow_json(), status_code=200)
         llm = _mock_llm_response()
 
         with patch(_ACOMPLETION_PATCH, return_value=llm) as mock_acomp:
-            await llm_call_node(_base_state(model="deepseek-chat", api_key="sk-ds-key"))
+            await llm_call_node(_base_state(model="deepseek/deepseek-chat", api_key="sk-ds-key"))
 
         call_kwargs = mock_acomp.call_args
-        assert call_kwargs.kwargs["model"] == "gemini/deepseek-chat"
+        assert call_kwargs.kwargs["model"] == "deepseek/deepseek-chat"
         assert call_kwargs.kwargs["api_key"] == "sk-ds-key"
 
     @pytest.mark.asyncio
-    async def test_openrouter_model_gets_prefix(self, httpx_mock):
-        """OpenRouter models should be prefixed with 'openrouter/'."""
+    async def test_non_deepseek_model_is_not_called(self, httpx_mock):
         httpx_mock.add_response(json=_scan_allow_json(), status_code=200)
-        llm = _mock_llm_response()
 
-        with patch(_ACOMPLETION_PATCH, return_value=llm) as mock_acomp:
-            await llm_call_node(_base_state(model="auto", api_key="sk-or"))
+        with patch(_ACOMPLETION_PATCH) as mock_acomp:
+            result = await llm_call_node(_base_state(model="gpt-4o", api_key="sk-test"))
 
-        call_kwargs = mock_acomp.call_args
-        assert call_kwargs.kwargs["model"] == "openrouter/auto"
-        assert call_kwargs.kwargs["api_key"] == "sk-or"
+        mock_acomp.assert_not_called()
+        assert "technical difficulties" in result["final_response"].lower()
 
 
 class TestAcompletionParams:
@@ -133,7 +129,7 @@ class TestAcompletionParams:
         llm = _mock_llm_response()
 
         with patch(_ACOMPLETION_PATCH, return_value=llm) as mock_acomp:
-            await llm_call_node(_base_state(model="gpt-4o", api_key="sk-test"))
+            await llm_call_node(_base_state(model="deepseek-chat", api_key="sk-test"))
 
         call_kwargs = mock_acomp.call_args.kwargs
         # These come from settings defaults
@@ -148,7 +144,7 @@ class TestAcompletionParams:
         llm = _mock_llm_response()
 
         with patch(_ACOMPLETION_PATCH, return_value=llm) as mock_acomp:
-            await llm_call_node(_base_state(model="gpt-4o", api_key="sk-test"))
+            await llm_call_node(_base_state(model="deepseek-chat", api_key="sk-test"))
 
         messages = mock_acomp.call_args.kwargs["messages"]
         # build_messages should produce at least system + user messages
@@ -174,7 +170,7 @@ class TestScanTransportLayer:
             await llm_call_node(
                 _base_state(
                     session_id="scan-check-1",
-                    model="gpt-4o",
+                    model="deepseek-chat",
                     api_key="sk-test",
                     policy="strict",
                 )
@@ -198,7 +194,7 @@ class TestScanTransportLayer:
             await llm_call_node(
                 _base_state(
                     message="Tell me about refunds",
-                    model="gpt-4o",
+                    model="deepseek-chat",
                     api_key="sk-test",
                 )
             )
@@ -215,7 +211,7 @@ class TestScanTransportLayer:
         httpx_mock.add_response(json=_scan_block_json(), status_code=403)
 
         with patch(_ACOMPLETION_PATCH) as mock_acomp:
-            result = await llm_call_node(_base_state(model="gpt-4o", api_key="sk-test"))
+            result = await llm_call_node(_base_state(model="deepseek-chat", api_key="sk-test"))
 
         mock_acomp.assert_not_called()
         assert result["firewall_decision"]["decision"] == "BLOCK"
@@ -234,7 +230,7 @@ class TestResultPropagation:
         llm = _mock_llm_response("The return policy is 30 days.")
 
         with patch(_ACOMPLETION_PATCH, return_value=llm):
-            result = await llm_call_node(_base_state(model="gpt-4o", api_key="sk-test"))
+            result = await llm_call_node(_base_state(model="deepseek-chat", api_key="sk-test"))
 
         assert result["llm_response"] == "The return policy is 30 days."
         assert result["firewall_decision"]["decision"] == "ALLOW"
@@ -246,7 +242,7 @@ class TestResultPropagation:
         llm = _mock_llm_response()
 
         with patch(_ACOMPLETION_PATCH, return_value=llm):
-            result = await llm_call_node(_base_state(model="gpt-4o", api_key="sk-test"))
+            result = await llm_call_node(_base_state(model="deepseek-chat", api_key="sk-test"))
 
         trace = result.get("trace", {})
         # Trace stores LLM call data inside iterations[0]

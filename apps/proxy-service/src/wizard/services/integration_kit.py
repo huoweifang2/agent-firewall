@@ -150,8 +150,7 @@ async def build_kit_context(agent_id: uuid.UUID, db: AsyncSession) -> dict:
 # ── Kit generation ──────────────────────────────────────────────────────
 
 _FRAMEWORK_TEMPLATE = {
-    "langgraph": "langgraph_protection.py.j2",
-    "raw_python": "raw_python_protection.py.j2",
+    "openclaw": "proxy_only.py.j2",
     "proxy_only": "proxy_only.py.j2",
 }
 
@@ -184,7 +183,7 @@ async def generate_integration_kit(
 
     # 4: protected_agent.py (framework-specific)
     framework = ctx["framework"]
-    template_name = _FRAMEWORK_TEMPLATE.get(framework, "langgraph_protection.py.j2")
+    template_name = _FRAMEWORK_TEMPLATE.get(framework, "proxy_only.py.j2")
     protected_agent = env.get_template(template_name).render(ctx)
 
     # 5: .env.protector

@@ -116,13 +116,13 @@ SEED_AGENTS: list[dict] = [
         "agent": {
             "name": "E-commerce Assistant",
             "description": (
-                "LangGraph-based e-commerce assistant that handles order lookups, "
+                "OpenClaw-backed e-commerce assistant that handles order lookups, "
                 "user management, and product search. Uses tool calls for "
                 "retrieving orders, users, products, and admin write operations. "
-                "Connected to the LangGraph test agent on port 8004."
+                "Connected through the Agent-Firewall OpenClaw shell."
             ),
             "team": "commerce",
-            "framework": AgentFramework.LANGGRAPH,
+            "framework": AgentFramework.OPENCLAW,
             "environment": AgentEnvironment.PRODUCTION,
             "is_public_facing": True,
             "has_tools": True,
@@ -160,13 +160,11 @@ SEED_AGENTS: list[dict] = [
         "agent": {
             "name": "Python Shop Agent",
             "description": (
-                "Pure-Python e-commerce agent that handles the same order, "
-                "user, and product operations without a graph framework. "
-                "Runs as a simple request-response loop with tool dispatch. "
-                "Connected to the Pure Python test agent on port 8003."
+                "OpenClaw staging agent that handles order, user, and product operations "
+                "behind the same Agent-Firewall gateway."
             ),
             "team": "commerce",
-            "framework": AgentFramework.RAW_PYTHON,
+            "framework": AgentFramework.OPENCLAW,
             "environment": AgentEnvironment.STAGING,
             "is_public_facing": False,
             "has_tools": True,

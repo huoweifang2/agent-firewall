@@ -12,7 +12,6 @@ Requires-Dist: alembic==1.18.4
 Requires-Dist: asyncpg==0.31.0
 Requires-Dist: redis[hiredis]==7.3.0
 Requires-Dist: litellm==1.82.0
-Requires-Dist: langgraph==1.0.10
 Requires-Dist: langfuse==3.14.5
 Requires-Dist: structlog==25.5.0
 Requires-Dist: httpx==0.28.1

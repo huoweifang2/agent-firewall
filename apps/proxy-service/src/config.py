@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -74,7 +75,8 @@ class Settings(BaseSettings):
 
     # OpenClaw integration
     openclaw_bin: str = "openclaw"
-    openclaw_timeout_seconds: int = 30
+    openclaw_timeout_seconds: int = 120
+    openclaw_plugin_stage_dir: str = str(Path.home() / ".openclaw" / "agent-firewall-plugin-runtime-deps")
 
     # App
     mode: str = "dev"  # "dev" | "real"

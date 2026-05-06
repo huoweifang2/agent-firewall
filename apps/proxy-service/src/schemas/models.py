@@ -8,9 +8,9 @@ from pydantic import BaseModel
 class ModelInfo(BaseModel):
     """A single model entry in the catalog."""
 
-    id: str  # e.g. "deepseek/deepseek-chat" or "openai/gpt-4"
-    provider: str  # "openai", "anthropic", "google", "mistral"
-    name: str  # Human-readable: "GPT-4o", "Llama 3.1 8B"
+    id: str  # e.g. "deepseek-chat"
+    provider: str  # "deepseek"
+    name: str  # Human-readable: "DeepSeek Chat"
 
 
 class ModelsResponse(BaseModel):

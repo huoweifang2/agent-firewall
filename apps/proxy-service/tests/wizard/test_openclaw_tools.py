@@ -6,6 +6,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from src.main import app
+from src.wizard.services.openclaw import redact_openclaw_payload
 
 
 @pytest.fixture
@@ -22,7 +23,7 @@ async def _create_agent(client: AsyncClient) -> dict:
             "name": f"OpenClawAgent-{uuid.uuid4().hex[:8]}",
             "description": "Agent for OpenClaw tool tests",
             "team": "platform",
-            "framework": "langgraph",
+            "framework": "openclaw",
             "environment": "dev",
             "is_public_facing": False,
             "has_tools": True,
@@ -111,6 +112,33 @@ async def test_list_openclaw_hooks(client, monkeypatch):
     assert resp.status_code == 200
     assert resp.json()["items"][0]["name"] == "command-logger"
     assert resp.json()["items"][0]["events"] == ["command"]
+
+
+def test_redact_openclaw_payload_removes_model_status_secrets():
+    payload = {
+        "defaultModel": "deepseek/deepseek-chat",
+        "auth": {
+            "providers": [
+                {
+                    "provider": "deepseek",
+                    "profiles": {
+                        "count": 1,
+                        "apiKey": 1,
+                        "labels": ["deepseek:default=sk-secret-value"],
+                    },
+                }
+            ],
+            "shellEnvFallback": {"enabled": True, "appliedKeys": ["DEEPSEEK_API_KEY"]},
+        },
+    }
+
+    redacted = redact_openclaw_payload(payload)
+
+    assert redacted["defaultModel"] == "deepseek/deepseek-chat"
+    assert redacted["auth"]["providers"][0]["profiles"]["apiKey"] == 1
+    assert redacted["auth"]["providers"][0]["profiles"]["labels"] == []
+    assert redacted["auth"]["shellEnvFallback"]["appliedKeys"] == []
+    assert "sk-secret-value" not in str(redacted)
 
 
 @pytest.mark.asyncio

@@ -8,6 +8,7 @@ from pathlib import Path
 from fastapi import APIRouter
 
 from src.agent.openclaw_client import OpenClawClient, OpenClawError
+from src.agent.telegram_bridge import get_telegram_bridge_status
 from src.config import get_settings
 from src.schemas import OpenClawRuntimeDiagnostics
 
@@ -58,6 +59,7 @@ def _diagnostic_client() -> OpenClawClient:
         timeout_seconds=min(settings.openclaw_timeout_seconds, 20),
         default_agent_id=settings.openclaw_agent_id,
         local=settings.openclaw_agent_local,
+        plugin_stage_dir=settings.openclaw_plugin_stage_dir,
     )
 
 
@@ -67,17 +69,23 @@ async def openclaw_config() -> OpenClawRuntimeDiagnostics:
     openclaw_config = _read_openclaw_config()
     telegram_enabled, telegram_accounts = _telegram_summary(openclaw_config)
     gateway_mode, gateway_token_present = _gateway_summary(openclaw_config)
+    bridge_status = get_telegram_bridge_status(settings)
 
     diagnostics = OpenClawRuntimeDiagnostics(
         openclaw_bin=settings.openclaw_bin,
         openclaw_agent_id=settings.openclaw_agent_id,
         openclaw_agent_local=settings.openclaw_agent_local,
         openclaw_timeout_seconds=settings.openclaw_timeout_seconds,
+        openclaw_plugin_stage_dir=settings.openclaw_plugin_stage_dir,
         deepseek_configured=bool(settings.deepseek_api_key),
         default_model=settings.default_model,
         default_model_prefix=settings.default_model_prefix,
         telegram_enabled=telegram_enabled,
         telegram_accounts=telegram_accounts,
+        telegram_bridge_enabled=bool(bridge_status["enabled"]),
+        telegram_bridge_running=bool(bridge_status["running"]),
+        telegram_bridge_accounts=int(bridge_status["accounts"]),
+        telegram_bridge_last_error=bridge_status["last_error"],
         gateway_mode=gateway_mode,
         gateway_token_present=gateway_token_present,
     )

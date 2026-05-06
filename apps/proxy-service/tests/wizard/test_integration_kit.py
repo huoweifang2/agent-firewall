@@ -724,8 +724,8 @@ async def test_env_has_required_vars(client):
 
 
 @pytest.mark.asyncio
-async def test_env_provider_keys_commented(client):
-    """OPENAI_API_KEY, GOOGLE_API_KEY are commented out."""
+async def test_env_provider_key_commented(client):
+    """DEEPSEEK_API_KEY is documented but commented out."""
     ref = await _seed_ref_agent(client)
 
     from src.db.session import get_db
@@ -734,10 +734,8 @@ async def test_env_provider_keys_commented(client):
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
         content = kit["files"][".env.protector"]
         for line in content.splitlines():
-            if "OPENAI_API_KEY" in line:
-                assert line.strip().startswith("#"), "OPENAI_API_KEY should be commented"
-            if "GOOGLE_API_KEY" in line:
-                assert line.strip().startswith("#"), "GOOGLE_API_KEY should be commented"
+            if "DEEPSEEK_API_KEY" in line:
+                assert line.strip().startswith("#"), "DEEPSEEK_API_KEY should be commented"
         break
 
 

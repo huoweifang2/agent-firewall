@@ -133,18 +133,13 @@ const roleItems = computed(() => {
 })
 
 const PROVIDER_LABELS: Record<string, string> = {
-  openai: 'OpenAI',
-  anthropic: 'Anthropic',
-  google: 'Google AI',
-  mistral: 'Mistral',
   deepseek: 'DeepSeek',
-  openrouter: 'OpenRouter',
   mock: 'Demo',
 }
 
 const agentItems = computed(() => agents.value ?? [])
 
-/** Only show models that are available (providers with key). */
+/** Only show models enabled by the local runtime. */
 const modelItems = computed(() =>
   (groupedModels.value ?? [])
     .filter((m) => m.available)

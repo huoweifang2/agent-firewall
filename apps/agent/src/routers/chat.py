@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import json
+import re
 import time
+from typing import Any
 
+import httpx
 import structlog
 from fastapi import APIRouter, Header, HTTPException
 from fastapi.responses import StreamingResponse
 
-from src.agent.graph import get_agent_graph
 from src.agent.openclaw_client import OpenClawClient, OpenClawError
 from src.agent.rbac.service import get_rbac_service
 from src.config import get_settings
@@ -20,11 +22,11 @@ from src.schemas import (
     FirewallDecision,
     OpenClawDirectRequest,
     OpenClawDirectResponse,
-    ToolCallInfo,
 )
 
 logger = structlog.get_logger()
 router = APIRouter(tags=["agent"])
+_UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.IGNORECASE)
 
 
 def _validate_legacy_role(body: AgentChatRequest) -> None:
@@ -35,54 +37,221 @@ def _validate_legacy_role(body: AgentChatRequest) -> None:
     raise HTTPException(status_code=422, detail=f"Unknown user_role '{body.user_role}'")
 
 
-def _build_response_obj(final_state: dict, started_at: float) -> AgentChatResponse:
+def _firewall_decision(scan: dict) -> FirewallDecision:
+    return FirewallDecision(
+        decision=str(scan.get("decision", "UNKNOWN")),
+        risk_score=float(scan.get("risk_score", 0.0) or 0.0),
+        intent=str(scan.get("intent", "") or ""),
+        risk_flags=scan.get("risk_flags") if isinstance(scan.get("risk_flags"), dict) else {},
+        blocked_reason=scan.get("blocked_reason"),
+    )
+
+
+_NO_REPLY_VALUES = {"", "NO_REPLY", "null", "None"}
+_NO_VISIBLE_REPLY = "OpenClaw completed the request without a visible reply."
+
+
+def _clean_openclaw_text(text: str) -> str:
+    lines = [line for line in text.splitlines() if line.strip() not in _NO_REPLY_VALUES]
+    cleaned = "\n".join(lines).strip()
+    if not cleaned:
+        return _NO_VISIBLE_REPLY
+    if len(cleaned) > 2000 and "finalAssistantVisibleText" in cleaned and "NO_REPLY" in cleaned:
+        return _NO_VISIBLE_REPLY
+    return cleaned
+
+
+def _first_text(value: Any, keys: tuple[str, ...]) -> str | None:
+    if not isinstance(value, dict):
+        return None
+    for key in keys:
+        text = value.get(key)
+        if isinstance(text, str) and text.strip() not in _NO_REPLY_VALUES:
+            return text.strip()
+    return None
+
+
+def _extract_openclaw_response(payload: object) -> str:
+    if isinstance(payload, dict):
+        direct = _first_text(payload, ("response", "reply", "message", "content", "text", "result", "output"))
+        if direct:
+            return direct
+
+        result = payload.get("result")
+        if isinstance(result, dict):
+            nested = _first_text(result, ("response", "reply", "message", "content", "text", "output"))
+            if nested:
+                return _clean_openclaw_text(nested)
+            meta = result.get("meta")
+            meta_text = _first_text(meta, ("finalAssistantVisibleText", "finalAssistantRawText")) if isinstance(meta, dict) else None
+            if meta_text:
+                return _clean_openclaw_text(meta_text)
+            summary = result.get("summary") or payload.get("summary")
+            if isinstance(summary, str) and summary.strip():
+                return f"OpenClaw completed: {summary.strip()}"
+
+        meta = payload.get("meta")
+        meta_text = _first_text(meta, ("finalAssistantVisibleText", "finalAssistantRawText")) if isinstance(meta, dict) else None
+        if meta_text:
+            return _clean_openclaw_text(meta_text)
+
+        return _NO_VISIBLE_REPLY
+    return _clean_openclaw_text(str(payload))
+
+
+def _resolve_openclaw_agent_id(request_agent_id: str | None) -> str:
+    """Treat wizard UUIDs as control-plane IDs, not OpenClaw agent IDs."""
+    settings = get_settings()
+    if not request_agent_id or _UUID_RE.match(request_agent_id):
+        return settings.openclaw_agent_id
+    return request_agent_id
+
+
+def _build_openclaw_response(
+    *,
+    body: AgentChatRequest,
+    response: str,
+    scan: dict,
+    started_at: float,
+    agent_id: str,
+    trace: dict,
+) -> AgentChatResponse:
     return AgentChatResponse(
-        session_id=final_state.get("session_id", ""),
-        response=final_state.get("final_response", ""),
-        tools_called=[
-            ToolCallInfo(
-                tool=t.get("tool", ""),
-                args=t.get("args", {}),
-                result_preview=str(t.get("result", "")),
-                allowed=t.get("allowed", True),
-                blocked_reason=t.get("post_gate", {}).get("reason") if t.get("post_gate") else None,
-            )
-            for t in final_state.get("tool_calls", [])
-        ],
+        session_id=body.session_id,
+        response=response,
+        tools_called=[],
         agent_trace=AgentTrace(
-            agent_id=str(final_state.get("agent_id", "")),
-            agent_name=final_state.get("agent_name", ""),
-            agent_kind=(final_state.get("runtime_spec") or {}).get("agent_kind", ""),
-            parent_agent_id=final_state.get("parent_agent_id"),
-            delegated_from=final_state.get("delegated_from"),
-            delegated_to=(final_state.get("trace") or {}).get("delegated_to"),
-            task=final_state.get("delegated_task"),
-            tool_flow=(final_state.get("trace") or {}).get("tool_flow", []),
-            intent=final_state.get("intent", "unknown"),
-            user_role=final_state.get("user_role", "customer"),
-            allowed_tools=final_state.get("allowed_tools", []),
-            available_sub_agents=[sa.get("name", "") for sa in final_state.get("available_sub_agents", [])],
-            iterations=final_state.get("iterations", 0),
+            agent_id=agent_id,
+            agent_name="OpenClaw",
+            agent_kind="openclaw",
+            tool_flow=trace.get("tool_flow", []),
+            intent=str(scan.get("intent", "unknown") or "unknown"),
+            user_role=body.user_role,
+            allowed_tools=["openclaw.agent"],
+            iterations=1,
             latency_ms=int((time.perf_counter() - started_at) * 1000),
         ),
-        firewall_decision=FirewallDecision(
-            decision=final_state.get("firewall_decision", {}).get("decision", "UNKNOWN")
-            if final_state.get("firewall_decision")
-            else "UNKNOWN",
-            risk_score=final_state.get("firewall_decision", {}).get("risk_score", 0.0)
-            if final_state.get("firewall_decision")
-            else 0.0,
-            intent=final_state.get("firewall_decision", {}).get("intent", "")
-            if final_state.get("firewall_decision")
-            else "",
-            risk_flags=final_state.get("firewall_decision", {}).get("risk_flags", {})
-            if final_state.get("firewall_decision")
-            else {},
-            blocked_reason=final_state.get("firewall_decision", {}).get("blocked_reason")
-            if final_state.get("firewall_decision")
-            else None,
-        ),
-        trace=final_state.get("trace", {}),
+        firewall_decision=_firewall_decision(scan),
+        trace=trace,
+    )
+
+
+async def _scan_via_proxy(
+    *,
+    body: AgentChatRequest,
+    policy: str,
+    model: str,
+    api_key: str | None,
+    x_middlewares: str | None,
+) -> dict:
+    settings = get_settings()
+    headers: dict[str, str] = {
+        "Content-Type": "application/json",
+        "x-client-id": f"agent-openclaw-{body.session_id}",
+        "x-policy": policy,
+        "x-correlation-id": body.session_id,
+    }
+    if api_key:
+        headers["x-api-key"] = api_key
+    if x_middlewares:
+        headers["x-middlewares"] = x_middlewares
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.post(
+            f"{settings.proxy_base_url.rstrip('/')}/scan",
+            headers=headers,
+            json={
+                "model": model,
+                "messages": [{"role": "user", "content": body.message}],
+                "temperature": settings.default_temperature,
+                "max_tokens": settings.default_max_tokens,
+                "stream": False,
+            },
+        )
+
+    data = resp.json()
+    if not isinstance(data, dict):
+        raise HTTPException(status_code=502, detail="Proxy scan returned an unexpected response.")
+    data["status_code"] = resp.status_code
+    if resp.status_code not in (200, 403):
+        raise HTTPException(status_code=502, detail=f"Proxy scan failed with status {resp.status_code}.")
+    return data
+
+
+async def _run_openclaw_protected(
+    *,
+    body: AgentChatRequest,
+    x_api_key: str | None,
+    x_middlewares: str | None,
+) -> AgentChatResponse:
+    """Run the OpenClaw-only protected agent path."""
+    settings = get_settings()
+    started_at = time.perf_counter()
+    policy = body.policy or settings.default_policy
+    model = body.model or settings.default_model
+    agent_id = _resolve_openclaw_agent_id(body.agent_id)
+    trace: dict = {
+        "runtime": "openclaw",
+        "session_id": body.session_id,
+        "policy": policy,
+        "model": model,
+        "tool_flow": [],
+    }
+
+    scan = await _scan_via_proxy(
+        body=body,
+        policy=policy,
+        model=model,
+        api_key=x_api_key,
+        x_middlewares=x_middlewares,
+    )
+    trace["tool_flow"].append(
+        {
+            "stage": "input_scan",
+            "decision": scan.get("decision"),
+            "risk_score": scan.get("risk_score"),
+            "intent": scan.get("intent"),
+        }
+    )
+
+    if scan.get("decision") == "BLOCK":
+        reason = scan.get("blocked_reason") or "Request blocked by security policy."
+        return _build_openclaw_response(
+            body=body,
+            response=f"Request blocked by Agent-Firewall: {reason}",
+            scan=scan,
+            started_at=started_at,
+            agent_id=agent_id,
+            trace=trace,
+        )
+
+    client = OpenClawClient(
+        binary=settings.openclaw_bin,
+        timeout_seconds=settings.openclaw_timeout_seconds,
+        default_agent_id=agent_id,
+        local=settings.openclaw_agent_local,
+        plugin_stage_dir=settings.openclaw_plugin_stage_dir,
+    )
+    try:
+        payload = await client.agent_message(
+            message=body.message,
+            session_id=body.session_id,
+            agent_id=agent_id,
+            timeout_seconds=settings.openclaw_timeout_seconds,
+        )
+    except OpenClawError as exc:
+        trace["tool_flow"].append({"stage": "openclaw_agent", "status": "error"})
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    response = _extract_openclaw_response(payload)
+    trace["tool_flow"].append({"stage": "openclaw_agent", "status": "ok", "agent_id": agent_id})
+    return _build_openclaw_response(
+        body=body,
+        response=response,
+        scan=scan,
+        started_at=started_at,
+        agent_id=agent_id,
+        trace=trace,
     )
 
 
@@ -93,59 +262,18 @@ async def agent_chat(
     x_middlewares: str | None = Header(default=None),
     accept: str | None = Header(default=None),
 ):
-    """Stream the agent graph execution."""
-    settings = get_settings()
+    """Run Agent-Firewall scan, then call OpenClaw as the only agent runtime."""
     _validate_legacy_role(body)
-
-    # Build initial state
-    initial_state = {
-        "agent_id": body.agent_id,
-        "session_id": body.session_id,
-        "user_role": body.user_role,
-        "message": body.message,
-        "policy": body.policy or settings.default_policy,
-        "model": body.model or settings.default_model,
-        "api_key": x_api_key,
-        "x_middlewares": x_middlewares,
-    }
-
-    graph = get_agent_graph()
     wants_sse = bool(accept and "text/event-stream" in accept.lower())
 
     if not wants_sse:
-        start = time.perf_counter()
-        final_state = await graph.ainvoke(initial_state)
-        return _build_response_obj(final_state, start)
+        return await _run_openclaw_protected(body=body, x_api_key=x_api_key, x_middlewares=x_middlewares)
 
     async def event_generator():
-        start = time.perf_counter()
-
-        async for event in graph.astream_events(initial_state, version="v2"):
-            kind = event["event"]
-
-            if kind == "on_chat_model_stream":
-                chunk = event["data"]["chunk"]
-                if chunk.content:
-                    yield f"event: chunk\ndata: {json.dumps({'content': chunk.content})}\n\n"
-
-            elif kind == "on_tool_start":
-                kwargs = event["data"].get("input")
-                yield f"event: tool_start\ndata: {json.dumps({'name': event['name'], 'kwargs': kwargs})}\n\n"
-
-            elif kind == "on_tool_end":
-                output = event["data"].get("output", {})
-                if isinstance(output, dict):
-                    result = output.get("result", "")
-                    allowed = output.get("allowed", True)
-                else:
-                    result = str(output)
-                    allowed = True
-                yield f"event: tool_end\ndata: {json.dumps({'result': result, 'allowed': allowed})}\n\n"
-
-            elif kind == "on_chain_end" and event["name"] == "LangGraph":
-                final_state = event["data"]["output"]
-                response_obj = _build_response_obj(final_state, start)
-                yield f"event: final\ndata: {response_obj.model_dump_json()}\n\n"
+        response_obj = await _run_openclaw_protected(body=body, x_api_key=x_api_key, x_middlewares=x_middlewares)
+        if response_obj.response:
+            yield f"event: chunk\ndata: {json.dumps({'content': response_obj.response})}\n\n"
+        yield f"event: final\ndata: {response_obj.model_dump_json()}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -158,12 +286,13 @@ async def openclaw_direct(body: OpenClawDirectRequest) -> OpenClawDirectResponse
     compare raw OpenClaw behavior against the protected `/agent/chat` path.
     """
     settings = get_settings()
-    agent_id = body.agent_id or settings.openclaw_agent_id
+    agent_id = _resolve_openclaw_agent_id(body.agent_id)
     client = OpenClawClient(
         binary=settings.openclaw_bin,
         timeout_seconds=settings.openclaw_timeout_seconds,
         default_agent_id=agent_id,
         local=settings.openclaw_agent_local,
+        plugin_stage_dir=settings.openclaw_plugin_stage_dir,
     )
 
     started_at = time.perf_counter()
@@ -177,17 +306,7 @@ async def openclaw_direct(body: OpenClawDirectRequest) -> OpenClawDirectResponse
     except OpenClawError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
-    if isinstance(payload, dict):
-        response = next(
-            (
-                str(payload[key])
-                for key in ("response", "reply", "message", "content", "text", "result", "output")
-                if payload.get(key)
-            ),
-            json.dumps(payload, ensure_ascii=False),
-        )
-    else:
-        response = str(payload)
+    response = _extract_openclaw_response(payload)
 
     return OpenClawDirectResponse(
         session_id=body.session_id,

@@ -361,12 +361,7 @@ const agentItems = computed(() =>
 )
 
 const PROVIDER_LABELS: Record<string, string> = {
-  openai: 'OpenAI',
-  anthropic: 'Anthropic',
-  google: 'Google AI',
-  mistral: 'Mistral',
   deepseek: 'DeepSeek',
-  openrouter: 'OpenRouter',
 }
 
 /** All models available in Compare mode. */
@@ -376,7 +371,7 @@ const hasAvailableModel = computed(() =>
   allModels.value.some((m) => m.provider === 'deepseek' && m.available),
 )
 
-/** Only show models that are available (providers with key). */
+/** Only show models enabled by the local runtime. */
 const modelItems = computed(() =>
   allModels.value
     .filter((m) => m.available && m.provider === 'deepseek')
@@ -391,7 +386,7 @@ const rememberedModel = useRememberedModel('compare')
 /**
  * Auto-select model:
  * 1. Restore remembered model from localStorage (if still available)
- * 2. Otherwise pick first available external model
+ * 2. Otherwise pick first available DeepSeek runtime model
  */
 watch(
   allModels,
