@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 _SCAN_PATCH = "src.agent.nodes.llm_call._scan_via_proxy"
 _LLM_PATCH = "src.agent.nodes.llm_call.acompletion"
+_OPENCLAW_CLIENT_PATCH = "src.routers.chat.OpenClawClient"
 
 
 def _scan_allow(risk_score: float = 0.1, intent: str = "qa") -> dict:
@@ -136,3 +137,38 @@ class TestAgentChatEndpoint:
         data = response.json()
         # getInternalSecrets should not be in allowed_tools
         assert "getInternalSecrets" not in data["agent_trace"]["allowed_tools"]
+
+    def test_openclaw_direct_endpoint_parses_direct_response(self, client):
+        """Direct Compare path should call OpenClaw and return the raw response."""
+
+        class FakeOpenClawClient:
+            def __init__(self, *, binary, timeout_seconds, default_agent_id, local):
+                assert binary == "openclaw"
+                assert timeout_seconds > 0
+                assert default_agent_id == "coder"
+                assert local is False
+
+            async def agent_message(self, *, message, session_id, agent_id, timeout_seconds):
+                assert message == "hello"
+                assert session_id == "direct-session"
+                assert agent_id == "coder"
+                assert timeout_seconds == 12
+                return {"response": "direct hello"}
+
+        with patch(_OPENCLAW_CLIENT_PATCH, FakeOpenClawClient):
+            response = client.post(
+                "/agent/openclaw/direct",
+                json={
+                    "message": "hello",
+                    "session_id": "direct-session",
+                    "agent_id": "coder",
+                    "timeout_seconds": 12,
+                },
+            )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["response"] == "direct hello"
+        assert data["session_id"] == "direct-session"
+        assert data["agent_id"] == "coder"
+        assert data["latency_ms"] >= 0

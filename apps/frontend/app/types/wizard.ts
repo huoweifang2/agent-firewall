@@ -389,6 +389,7 @@ export interface AgentRuntimeSpec {
   skills: RuntimeSkillSpec[]
   sub_agents: RuntimeSubAgentSpec[]
   generated_config: Record<string, unknown> | null
+  openclaw_agent_id?: string | null
 }
 
 // ─── Config ───

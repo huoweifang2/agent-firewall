@@ -546,6 +546,7 @@ class AgentRuntimeSpec(BaseModel):
     skills: list[RuntimeSkillSpec] = Field(default_factory=list)
     sub_agents: list[RuntimeSubAgentSpec] = Field(default_factory=list)
     generated_config: dict | None = None
+    openclaw_agent_id: str | None = None
 
 
 # ═══════════════════════════════════════════════════════════════════════

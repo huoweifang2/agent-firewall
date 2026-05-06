@@ -12,7 +12,9 @@ from typing import Any
 
 _SECRET_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\bsk-[A-Za-z0-9_-]{16,}\b"),
-    re.compile(r"(?i)(api[_-]?key|token|secret|password)\s*[:=]\s*['\"]?[^'\"\s]+"),
+    re.compile(
+        r"(?i)(['\"]?(?:api[_-]?key|access[_-]?token|accesstoken|refresh[_-]?token|refreshtoken|token|secret|password)['\"]?\s*[:=]\s*['\"]?)[^'\"\s,}]+"
+    ),
     re.compile(r"(?i)bearer\s+[A-Za-z0-9._-]{16,}"),
 )
 
@@ -138,7 +140,7 @@ class OpenClawClient:
         redacted = text
         for pattern in _SECRET_PATTERNS:
             redacted = pattern.sub(
-                lambda match: f"{match.group(1)}=<redacted>" if match.lastindex else "<redacted>", redacted
+                lambda match: f"{match.group(1)}<redacted>" if match.lastindex else "<redacted>", redacted
             )
         return redacted
 

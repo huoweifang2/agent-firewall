@@ -36,7 +36,9 @@ def _openclaw_agent_id(agent: Agent) -> str:
     name = (agent.name or "").lower()
     if "research" in name:
         return "researcher"
-    if "code" in name or "coder" in name:
+    if "code" in name or "coder" in name or "openclaw" in name:
+        return "coder"
+    if agent.framework.value == "langgraph":
         return "coder"
     return re.sub(r"[^a-z0-9_-]+", "-", name).strip("-") or str(agent.id)
 
@@ -256,4 +258,5 @@ async def build_agent_runtime_spec(agent_id: uuid.UUID, db: AsyncSession) -> Age
         skills=skill_specs,
         sub_agents=sub_agents,
         generated_config=agent.generated_config,
+        openclaw_agent_id=_openclaw_agent_id(agent),
     )

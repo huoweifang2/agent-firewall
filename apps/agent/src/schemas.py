@@ -16,6 +16,44 @@ class AgentChatRequest(BaseModel):
     model: str | None = Field(default=None, max_length=128, description="Model override (default: from config)")
 
 
+class OpenClawDirectRequest(BaseModel):
+    """POST /agent/openclaw/direct request body."""
+
+    message: str = Field(..., min_length=1, max_length=8192)
+    session_id: str = Field(..., min_length=1, max_length=128)
+    agent_id: str | None = Field(default=None, max_length=128)
+    timeout_seconds: int | None = Field(default=None, ge=1, le=600)
+
+
+class OpenClawDirectResponse(BaseModel):
+    """Direct OpenClaw response used by Compare."""
+
+    session_id: str
+    response: str
+    agent_id: str
+    latency_ms: int
+
+
+class OpenClawRuntimeDiagnostics(BaseModel):
+    """Redacted local OpenClaw runtime diagnostics."""
+
+    openclaw_bin: str
+    openclaw_agent_id: str
+    openclaw_agent_local: bool
+    openclaw_timeout_seconds: int
+    deepseek_configured: bool
+    default_model: str
+    default_model_prefix: str
+    status_ok: bool = False
+    models_ok: bool = False
+    agents_ok: bool = False
+    telegram_enabled: bool = False
+    telegram_accounts: int = 0
+    gateway_mode: str = "unknown"
+    gateway_token_present: bool = False
+    error: str | None = None
+
+
 class ToolCallInfo(BaseModel):
     """Single tool call trace."""
 

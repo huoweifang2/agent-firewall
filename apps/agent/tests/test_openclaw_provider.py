@@ -56,6 +56,18 @@ def test_openclaw_client_redacts_secrets():
     assert "<redacted>" in text
 
 
+def test_openclaw_client_redacts_json_token_fields():
+    text = OpenClawClient.redact(
+        '{"accessToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",'
+        '"refresh_token":"refresh-token-value","token":"plain-token-value"}'
+    )
+
+    assert "eyJhbGci" not in text
+    assert "refresh-token-value" not in text
+    assert "plain-token-value" not in text
+    assert text.count("<redacted>") == 3
+
+
 def test_build_scoped_prompt_mentions_skill_and_args():
     prompt = openclaw.build_scoped_prompt(
         tool_name="openclaw_weather",

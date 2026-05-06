@@ -65,16 +65,15 @@ export async function streamChat(
 ): Promise<Response> {
   const baseURL = import.meta.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:8000'
 
-  // Auto-inject x-api-key from browser storage if model requires an external provider
+  // Browser keys are optional now. DeepSeek normally resolves server-side from
+  // .env/.openclaw; localStorage remains a dev override when present.
   const model = options.body.model ?? ''
   const apiKeyHeaders: Record<string, string> = {}
   if (model) {
     const provider = detectProviderClient(model)
-    if (true) {
-      const key = getKey(provider)
-      if (key) {
-        apiKeyHeaders['x-api-key'] = key
-      }
+    const key = getKey(provider)
+    if (key) {
+      apiKeyHeaders['x-api-key'] = key
     }
   }
 

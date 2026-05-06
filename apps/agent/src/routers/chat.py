@@ -10,6 +10,7 @@ from fastapi import APIRouter, Header, HTTPException
 from fastapi.responses import StreamingResponse
 
 from src.agent.graph import get_agent_graph
+from src.agent.openclaw_client import OpenClawClient, OpenClawError
 from src.agent.rbac.service import get_rbac_service
 from src.config import get_settings
 from src.schemas import (
@@ -17,6 +18,8 @@ from src.schemas import (
     AgentChatResponse,
     AgentTrace,
     FirewallDecision,
+    OpenClawDirectRequest,
+    OpenClawDirectResponse,
     ToolCallInfo,
 )
 
@@ -145,3 +148,50 @@ async def agent_chat(
                 yield f"event: final\ndata: {response_obj.model_dump_json()}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@router.post("/agent/openclaw/direct", response_model=OpenClawDirectResponse)
+async def openclaw_direct(body: OpenClawDirectRequest) -> OpenClawDirectResponse:
+    """Call OpenClaw directly for Compare's unprotected side.
+
+    This intentionally bypasses Agent-Firewall scan and tool gates so the UI can
+    compare raw OpenClaw behavior against the protected `/agent/chat` path.
+    """
+    settings = get_settings()
+    agent_id = body.agent_id or settings.openclaw_agent_id
+    client = OpenClawClient(
+        binary=settings.openclaw_bin,
+        timeout_seconds=settings.openclaw_timeout_seconds,
+        default_agent_id=agent_id,
+        local=settings.openclaw_agent_local,
+    )
+
+    started_at = time.perf_counter()
+    try:
+        payload = await client.agent_message(
+            message=body.message,
+            session_id=body.session_id,
+            agent_id=agent_id,
+            timeout_seconds=body.timeout_seconds,
+        )
+    except OpenClawError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    if isinstance(payload, dict):
+        response = next(
+            (
+                str(payload[key])
+                for key in ("response", "reply", "message", "content", "text", "result", "output")
+                if payload.get(key)
+            ),
+            json.dumps(payload, ensure_ascii=False),
+        )
+    else:
+        response = str(payload)
+
+    return OpenClawDirectResponse(
+        session_id=body.session_id,
+        response=response,
+        agent_id=agent_id,
+        latency_ms=int((time.perf_counter() - started_at) * 1000),
+    )

@@ -57,6 +57,14 @@
         <div class="text-caption text-medium-emphasis mb-1">Loadable hooks</div>
         <div class="text-h6">{{ loadableHooks.length }}</div>
       </v-sheet>
+      <v-sheet border rounded class="pa-3">
+        <div class="text-caption text-medium-emphasis mb-1">MCP / plugin skills</div>
+        <div class="text-h6">{{ mcpSkillCount }}</div>
+      </v-sheet>
+      <v-sheet border rounded class="pa-3">
+        <div class="text-caption text-medium-emphasis mb-1">Missing deps</div>
+        <div class="text-h6">{{ skillsWithMissingDeps.length + hooksWithMissingDeps.length }}</div>
+      </v-sheet>
     </div>
 
     <v-alert
@@ -94,7 +102,19 @@
         <v-progress-circular indeterminate color="primary" />
       </div>
 
-      <v-table v-else density="comfortable" class="middleware-table">
+      <div v-else-if="skillGroups.length" class="middleware-groups px-3 pt-3">
+        <v-chip
+          v-for="group in skillGroups"
+          :key="group.source"
+          size="small"
+          variant="tonal"
+          class="mr-1 mb-2"
+        >
+          {{ group.source }} · {{ group.count }}
+        </v-chip>
+      </div>
+
+      <v-table v-if="!isSkillsLoading && !isToolsLoading" density="comfortable" class="middleware-table">
         <thead>
           <tr>
             <th class="text-left">Skill</th>
@@ -119,6 +139,9 @@
                 <div class="middleware-table__skill">
                   <div class="text-subtitle-2">{{ skill.name }}</div>
                   <div class="text-caption text-medium-emphasis">{{ skill.description || 'OpenClaw skill' }}</div>
+                  <div v-if="missingSummary(skill.missing)" class="text-caption text-warning">
+                    Missing: {{ missingSummary(skill.missing) }}
+                  </div>
                 </div>
               </div>
             </td>
@@ -215,6 +238,9 @@
                 <v-chip v-for="event in hook.events" :key="event" size="x-small" class="mr-1" variant="tonal">
                   {{ event }}
                 </v-chip>
+                <div v-if="missingSummary(hook.missing)" class="text-caption text-warning mt-1">
+                  Missing: {{ missingSummary(hook.missing) }}
+                </div>
               </td>
               <td class="text-center">
                 <v-icon :color="hook.loadable ? 'success' : 'warning'" :icon="hook.loadable ? 'mdi-check-circle' : 'mdi-alert-circle-outline'" />
@@ -271,6 +297,22 @@ const openClawHooks = computed(() => hooksResponse.value?.items ?? [])
 const openClawAgents = computed(() => openClawAgentsResponse.value?.items ?? [])
 const openClawStatusOk = computed(() => !!openClawStatus.value?.status)
 const loadableHooks = computed(() => openClawHooks.value.filter(hook => hook.loadable && !hook.disabled))
+const skillsWithMissingDeps = computed(() => openClawSkills.value.filter(skill => missingSummary(skill.missing)))
+const hooksWithMissingDeps = computed(() => openClawHooks.value.filter(hook => missingSummary(hook.missing)))
+const mcpSkillCount = computed(() =>
+  openClawSkills.value.filter(skill => String(skill.source || '').toLowerCase().includes('mcp')).length,
+)
+const skillGroups = computed(() => {
+  const counts = new Map<string, number>()
+  for (const skill of openClawSkills.value) {
+    const source = String(skill.source || 'local')
+    const normalized = source.includes('.openclaw/plugins') ? 'plugin' : source.includes('mcp') ? 'mcp' : source
+    counts.set(normalized, (counts.get(normalized) ?? 0) + 1)
+  }
+  return [...counts.entries()]
+    .map(([source, count]) => ({ source, count }))
+    .sort((a, b) => a.source.localeCompare(b.source))
+})
 const enabledOpenClawTools = computed(() => tools.value.filter(t => t.category === 'openclaw' || t.name.startsWith('openclaw_')))
 const selectedAgent = computed(() => agents.value.find(agent => agent.id === selectedAgentId.value) ?? null)
 const agentItems = computed(() =>
@@ -292,6 +334,17 @@ watch(
 function openClawToolName(skillName: string) {
   const slug = skillName.trim().replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '').toLowerCase()
   return `openclaw_${slug || 'skill'}`.slice(0, 64)
+}
+
+function missingSummary(missing: Record<string, unknown> | null | undefined): string {
+  if (!missing || typeof missing !== 'object') return ''
+  return Object.entries(missing)
+    .filter(([, value]) => {
+      if (Array.isArray(value)) return value.length > 0
+      return Boolean(value)
+    })
+    .map(([key, value]) => Array.isArray(value) ? `${key}(${value.length})` : key)
+    .join(', ')
 }
 
 function toolForSkill(skillName: string): ToolRead | undefined {
@@ -445,7 +498,7 @@ function agentModel(model: string | Record<string, unknown> | null) {
 .middleware-page__summary,
 .middleware-page__grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }

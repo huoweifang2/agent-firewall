@@ -41,7 +41,7 @@
         density="compact"
         class="mb-4"
       >
-        Runtime: {{ skills.length }} skills, {{ subAgents.length }} sub-agents, {{ runtimeSpec.tools.length }} tools
+        OpenClaw {{ runtimeSpec.openclaw_agent_id || 'coder' }} · {{ skills.length }} skills · {{ subAgents.length }} sub-agents · {{ runtimeSpec.tools.length }} tools
       </v-alert>
 
       <v-select

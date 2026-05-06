@@ -4,10 +4,24 @@
     <div class="compare-page__config">
       <div class="d-flex align-center flex-wrap ga-3 px-4 py-2">
         <v-icon size="20" color="primary">mdi-compare</v-icon>
-        <span class="text-subtitle-2 font-weight-bold">Agent Protection Compare</span>
-        <span class="text-caption text-medium-emphasis ml-1 d-none d-md-inline">Same prompt, protected path versus direct path. Agent trace fields are reserved for the OpenClaw compare flow.</span>
+        <span class="text-subtitle-2 font-weight-bold">OpenClaw Agent Compare</span>
+        <span class="text-caption text-medium-emphasis ml-1 d-none d-md-inline">Same prompt through Agent-Firewall gates versus direct OpenClaw.</span>
 
         <v-divider vertical class="mx-1" />
+
+        <v-select
+          v-model="config.agentId"
+          :items="agentItems"
+          :loading="teamsLoading"
+          :disabled="isBusy"
+          label="Agent"
+          variant="outlined"
+          density="compact"
+          item-title="title"
+          item-value="value"
+          hide-details
+          style="max-width: 220px"
+        />
 
         <v-select
           v-model="config.policy"
@@ -25,7 +39,7 @@
           v-model="config.model"
           :items="modelItems"
           :loading="modelsLoading"
-          :disabled="isBusy || !hasExternalModels"
+          :disabled="isBusy"
           label="Model"
           variant="outlined"
           density="compact"
@@ -72,8 +86,8 @@
       </div>
       <v-divider />
 
-      <!-- No API key banner -->
-      <v-alert
+        <!-- Runtime banner -->
+        <v-alert
         v-if="!hasAvailableModel"
         type="warning"
         variant="tonal"
@@ -81,9 +95,8 @@
         class="mx-4 mt-2 mb-0"
         prominent
       >
-        <strong>No external API keys configured.</strong>
-        Compare requires an external LLM provider.
-        Go to <nuxt-link to="/settings" class="text-decoration-underline">Settings</nuxt-link> to add an API key.
+        <strong>DeepSeek runtime is not available.</strong>
+        Check <nuxt-link to="/settings" class="text-decoration-underline">Runtime Settings</nuxt-link> for the local OpenClaw and DeepSeek diagnostics.
       </v-alert>
 
       <!-- Error banner -->
@@ -173,7 +186,6 @@
           :is-streaming="isDirectStreaming"
           :timing="timings.direct"
           :endpoint-url="directEndpointUrl"
-          :is-direct-browser="isDirectBrowser"
           :compare-mode="compareMode"
         />
       </div>
@@ -183,9 +195,9 @@
     <div v-else class="compare-page__panels compare-page__empty">
       <div class="text-center">
         <v-icon size="56" color="grey-darken-1" class="mb-3">mdi-compare</v-icon>
-        <p class="text-h6 text-grey-lighten-1 mb-1">Compare protected vs direct agent behavior</p>
-        <p class="text-body-2 text-medium-emphasis mb-5" style="max-width: 480px">
-          Run the same scenario through Agent-Firewall and a direct path to compare blocking, output, policy enforcement, and the future OpenClaw agent trace.
+          <p class="text-h6 text-grey-lighten-1 mb-1">Compare protected vs direct OpenClaw behavior</p>
+          <p class="text-body-2 text-medium-emphasis mb-5" style="max-width: 480px">
+          Run the same scenario through Agent-Firewall and direct OpenClaw to compare blocking, output, tool use, policy enforcement, and trace latency.
         </p>
         <div class="d-flex flex-wrap justify-center ga-2">
           <v-chip
@@ -245,7 +257,7 @@
       <div class="px-4 py-2">
         <playground-chat-input
           ref="chatInputRef"
-          :disabled="isBusy || !hasAvailableModel || !selectedModelAvailable"
+          :disabled="isBusy || !hasAvailableModel"
           @send="handleManualSend"
         />
       </div>
@@ -283,6 +295,8 @@ import { useModels } from '~/composables/useModels'
 import { decisionColor as _dc } from '~/utils/colors'
 import { useRememberedModel } from '~/composables/useRememberedModel'
 import { sortedPolicyItems } from '~/utils/policyOrder'
+import { useAgentTeams } from '~/composables/useAgentTeams'
+import { useAgentRuntimeSpec } from '~/composables/useAgentRuntimeSpec'
 
 const ATTACK_SUBMIT_DELAY_MS = 300
 
@@ -300,7 +314,6 @@ const {
   phase,
   isBusy,
   directEndpointUrl,
-  isDirectBrowser,
   send,
   clear,
   abort,
@@ -309,10 +322,13 @@ const {
 const { scenarios, isLoading: scenariosLoading } = useScenarios('compare')
 const { policies, isLoading: policiesLoading } = usePolicies()
 const { groupedModels, isLoading: modelsLoading, refreshAvailability } = useModels()
+const { teams, isLoading: teamsLoading } = useAgentTeams()
 
 const showScenarios = ref(false)
 const chatInputRef = ref<{ setText: (s: string) => void } | null>(null)
 const activeScenario = ref<import('~/types/scenarios').ScenarioItem | null>(null)
+const selectedAgentRef = computed(() => config.agentId)
+const { runtimeSpec } = useAgentRuntimeSpec(selectedAgentRef)
 
 const scenarioDecisionColor = computed(() => {
   if (!activeScenario.value) return 'grey'
@@ -337,6 +353,13 @@ const showParityBar = computed(() =>
 
 const policyItems = computed(() => sortedPolicyItems(policies.value ?? []))
 
+const agentItems = computed(() =>
+  teams.value.map(team => ({
+    title: `${team.main_agent.name} · ${team.tools_count} tools`,
+    value: team.main_agent.id,
+  })),
+)
+
 const PROVIDER_LABELS: Record<string, string> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic',
@@ -349,28 +372,19 @@ const PROVIDER_LABELS: Record<string, string> = {
 /** All models available in Compare mode. */
 const allModels = computed(() => groupedModels.value ?? [])
 
-const hasExternalModels = computed(() => allModels.value.length > 0)
-
 const hasAvailableModel = computed(() =>
-  allModels.value.some((m) => m.available),
+  allModels.value.some((m) => m.provider === 'deepseek' && m.available),
 )
 
 /** Only show models that are available (providers with key). */
 const modelItems = computed(() =>
   allModels.value
-    .filter((m) => m.available)
+    .filter((m) => m.available && m.provider === 'deepseek')
     .map((m) => ({
       title: `${m.name}  ·  ${PROVIDER_LABELS[m.provider] ?? m.provider}`,
       value: m.id,
     })),
 )
-
-/** Whether the currently selected model has an API key. */
-const selectedModelAvailable = computed(() => {
-  if (!config.model) return false
-  const m = allModels.value.find((model) => model.id === config.model)
-  return m?.available ?? false
-})
 
 const rememberedModel = useRememberedModel('compare')
 
@@ -384,22 +398,38 @@ watch(
   (models) => {
     const saved = rememberedModel.get()
     if (saved) {
-      const mem = models.find((m) => m.id === saved && m.available)
+      const mem = models.find((m) => m.id === saved && m.available && m.provider === 'deepseek')
       if (mem) { config.model = mem.id; return }
     }
     if (config.model) {
       const current = models.find((m) => m.id === config.model)
-      if (current?.available) return
+      if (current?.available && current.provider === 'deepseek') return
     }
-    const firstExternal = models.find((m) => m.id === 'deepseek-chat' && m.available) || models.find((m) => m.available && m.provider !== 'mock') || models.find((m) => m.available)
+    const firstExternal = models.find((m) => m.id === 'deepseek-chat' && m.available) || models.find((m) => m.provider === 'deepseek' && m.available)
     if (firstExternal) { config.model = firstExternal.id; return }
-    const firstAny = models.find((m) => m.available)
-    config.model = firstAny?.id ?? ''
+    config.model = ''
   },
   { immediate: true },
 )
 
 watch(() => config.model, (id) => rememberedModel.set(id))
+
+watch(
+  teams,
+  (items) => {
+    if (config.agentId && items.some(team => team.main_agent.id === config.agentId)) return
+    config.agentId = items[0]?.main_agent.id ?? null
+  },
+  { immediate: true },
+)
+
+watch(
+  runtimeSpec,
+  (spec) => {
+    config.openClawAgentId = spec?.openclaw_agent_id || 'coder'
+  },
+  { immediate: true },
+)
 
 /**
  * Re-check API key availability when user returns to this tab

@@ -89,6 +89,11 @@
         <span class="text-caption text-grey">Latency</span>
         <span class="text-body-2 font-weight-medium">{{ trace.latency_ms }} ms</span>
       </div>
+
+      <div v-if="trace.tool_flow?.length || trace.allowed_tools.length" class="trace-row mb-3">
+        <span class="text-caption text-grey">Runtime gates</span>
+        <span class="text-body-2 font-weight-medium">scan · RBAC · pre-tool · post-tool</span>
+      </div>
     </v-card-text>
 
     <v-divider />

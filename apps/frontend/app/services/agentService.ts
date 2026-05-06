@@ -22,8 +22,34 @@ export const agentService = {
     openclaw_agent_id: string
     openclaw_agent_local: boolean
     openclaw_timeout_seconds: number
+    deepseek_configured: boolean
+    default_model: string
+    default_model_prefix: string
+    status_ok: boolean
+    models_ok: boolean
+    agents_ok: boolean
+    telegram_enabled: boolean
+    telegram_accounts: number
+    gateway_mode: string
+    gateway_token_present: boolean
+    error?: string | null
   }> {
     const { data } = await agentApi.get('/agent/openclaw/config')
+    return data
+  },
+
+  async directOpenClaw(request: {
+    message: string
+    session_id: string
+    agent_id?: string | null
+    timeout_seconds?: number
+  }): Promise<{
+    response: string
+    session_id: string
+    agent_id: string
+    latency_ms: number
+  }> {
+    const { data } = await agentApi.post('/agent/openclaw/direct', request)
     return data
   },
 
@@ -33,11 +59,9 @@ export const agentService = {
     // Inject API key for external providers
     if (request.model) {
       const provider = detectProviderClient(request.model)
-      if (true) {
-        const apiKey = getKey(provider)
-        if (apiKey) {
-          headers['x-api-key'] = apiKey
-        }
+      const apiKey = getKey(provider)
+      if (apiKey) {
+        headers['x-api-key'] = apiKey
       }
     }
 
@@ -54,11 +78,9 @@ export const agentService = {
 
     if (request.model) {
       const provider = detectProviderClient(request.model)
-      if (provider) {
-        const apiKey = getKey(provider)
-        if (apiKey) {
-          headers['x-api-key'] = apiKey
-        }
+      const apiKey = getKey(provider)
+      if (apiKey) {
+        headers['x-api-key'] = apiKey
       }
     }
 

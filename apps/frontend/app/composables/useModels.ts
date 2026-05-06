@@ -5,8 +5,9 @@
  * to avoid SSR issues — the frontend Docker container cannot reach the proxy
  * at localhost:8000 during server rendering.
  *
- * Models for providers with a browser-stored API key are "available".
- * Others are hidden from dropdowns.
+ * Agent-Firewall is OpenClaw-first now: DeepSeek is configured server-side for
+ * the local runtime. Browser keys remain supported for legacy/dev overrides, but
+ * DeepSeek should be available even when localStorage is empty.
  */
 import { computed, ref, type Ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
@@ -40,13 +41,13 @@ export function useModels() {
     keyVersion.value++
   }
 
-  /** All models with an `available` flag based on browser-stored keys. */
+  /** All models with an `available` flag based on runtime/server defaults. */
   const groupedModels = computed<ModelInfo[]>(() => {
     void keyVersion.value // touch to create reactive dependency
     if (!rawModels.value) return []
     return rawModels.value.map((m) => ({
       ...m,
-      available: m.provider === 'mock' || hasKeyForProvider(m.provider),
+      available: m.provider === 'mock' || m.provider === 'deepseek' || hasKeyForProvider(m.provider),
     }))
   })
 

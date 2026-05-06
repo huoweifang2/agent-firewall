@@ -61,31 +61,29 @@
           <!-- Route -->
           <div class="d-flex align-center flex-wrap ga-1 mb-2">
             <template v-if="variant === 'protected'">
-              <span class="text-caption text-medium-emphasis">OpenAI SDK</span>
+              <span class="text-caption text-medium-emphasis">Agent Sandbox</span>
               <v-icon size="12" color="grey">mdi-arrow-right</v-icon>
               <v-chip size="x-small" color="primary" variant="tonal" label>
                 <v-icon start size="12">mdi-shield-check</v-icon>
                 Agent-Firewall
               </v-chip>
               <v-icon size="12" color="grey">mdi-arrow-right</v-icon>
-              <span class="text-caption text-medium-emphasis">LLM</span>
+              <span class="text-caption text-medium-emphasis">OpenClaw</span>
             </template>
             <template v-else>
-              <span class="text-caption text-medium-emphasis">OpenAI SDK</span>
+              <span class="text-caption text-medium-emphasis">Compare</span>
               <v-icon size="12" color="grey">mdi-arrow-right</v-icon>
               <v-chip size="x-small" :color="isDanger ? 'error' : 'warning'" variant="tonal" label>
-                <v-icon start size="12">{{ isDirectBrowser ? 'mdi-web' : 'mdi-shield-off' }}</v-icon>
-                {{ isDirectBrowser ? 'Direct API' : 'No scanning' }}
+                <v-icon start size="12">mdi-shield-off</v-icon>
+                Direct OpenClaw
               </v-chip>
               <v-icon size="12" color="grey">mdi-arrow-right</v-icon>
-              <span class="text-caption text-medium-emphasis">LLM</span>
+              <span class="text-caption text-medium-emphasis">DeepSeek</span>
             </template>
           </div>
           <!-- Code snippet -->
-          <pre class="code-snippet__block"><span class="c-var">client</span> = <span class="c-fn">OpenAI</span>(
-  <span class="c-key">api_key</span>=<span class="c-str">"sk-..."</span>,
-  <span class="c-key">base_url</span>=<span class="c-str">"<span class="c-url">{{ codeBaseUrl }}</span>"</span>  <span class="c-comment">{{ codeComment }}</span>
-)</pre>
+          <pre class="code-snippet__block"><span class="c-var">route</span> = <span class="c-str">"{{ codeRoute }}"</span>
+<span class="c-var">endpoint</span> = <span class="c-str">"{{ codeBaseUrl }}"</span> <span class="c-comment">{{ codeComment }}</span></pre>
           <div class="compare-panel__endpoint mt-2">
             <code class="compare-panel__url">
               <v-icon size="12" class="mr-1">mdi-arrow-right-bold</v-icon>
@@ -109,7 +107,6 @@ const props = defineProps<{
   decision?: PipelineDecision | null
   timing?: number | null
   endpointUrl?: string
-  isDirectBrowser?: boolean
   compareMode?: 'neutral' | 'attack'
 }>()
 
@@ -149,23 +146,23 @@ const headerTitle = computed(() =>
 
 const headerSubtitle = computed(() => {
   if (props.variant === 'protected') {
-    if (props.decision?.decision === 'BLOCK') return 'Threat detected and blocked — model never saw the prompt'
-    if (props.decision?.decision === 'MODIFY') return 'Prompt sanitized before forwarding to model'
+    if (props.decision?.decision === 'BLOCK') return 'Threat detected and blocked before direct agent execution'
+    if (props.decision?.decision === 'MODIFY') return 'Prompt sanitized before reaching the agent runtime'
     if (props.decision) return 'All checks passed — no threats detected'
-    return 'Full security pipeline active'
+    return 'Agent scan, RBAC, pre-tool, and post-tool gates active'
   }
   // Direct side
-  if (isDanger.value) return 'Model followed the malicious instruction — no guardrails'
-  if (hasDirectResponse.value) return 'Direct response — no security scanning'
-  return 'No protection pipeline — raw LLM access'
+  if (isDanger.value) return 'Direct OpenClaw responded without Agent-Firewall gates'
+  if (hasDirectResponse.value) return 'Direct OpenClaw response — no security scanning'
+  return 'No protection pipeline — raw OpenClaw access'
 })
 
 // ── Endpoint computations ──
 const endpoint = computed(() => {
   if (props.endpointUrl) return props.endpointUrl
   return props.variant === 'protected'
-    ? `${apiBase}/v1/chat/completions`
-    : '/v1/chat/direct'
+    ? `${apiBase.replace(/:8000$/, ':8002')}/agent/chat`
+    : '/agent/openclaw/direct'
 })
 
 const endpointBase = computed(() => {
@@ -189,15 +186,19 @@ const endpointPath = computed(() => {
 })
 
 const codeBaseUrl = computed(() => {
-  if (props.variant === 'protected') return `${apiBase}/v1`
-  const url = props.endpointUrl ?? ''
-  const idx = url.indexOf('/v1/')
-  return idx >= 0 ? `${url.slice(0, idx)}/v1` : url
+  if (props.variant === 'protected') return '/agent/chat'
+  return props.endpointUrl ?? '/agent/openclaw/direct'
+})
+
+const codeRoute = computed(() => {
+  return props.variant === 'protected'
+    ? 'protected OpenClaw via Agent-Firewall'
+    : 'direct OpenClaw without gates'
 })
 
 const codeComment = computed(() =>
   props.variant === 'protected'
-    ? '# ONE LINE CHANGE'
+    ? '# SCAN + GATES'
     : '# NO PROTECTION',
 )
 </script>

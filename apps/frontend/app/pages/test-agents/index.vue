@@ -4,7 +4,7 @@
       <div class="pa-4 d-flex align-center justify-space-between">
         <div>
           <h1 class="text-subtitle-1 mb-1">Agent Sandbox</h1>
-          <p class="text-caption text-medium-emphasis mb-0">OpenClaw shell with runtime gates</p>
+          <p class="text-caption text-medium-emphasis mb-0">OpenClaw coder shell with runtime gates</p>
         </div>
         <v-btn icon="mdi-refresh" size="small" variant="text" :loading="teamsLoading" @click="refetchTeams" />
       </div>
@@ -123,9 +123,17 @@
               </v-chip>
             </template>
 
-            <div class="text-caption text-medium-emphasis mt-3 mb-2">Skills</div>
+          <div class="text-caption text-medium-emphasis mt-3 mb-2">Skills</div>
             <v-chip v-for="skill in inspectedRuntimeSpec.skills" :key="skill.name" size="small" class="mr-1 mb-1" variant="outlined">
               {{ skill.name }}
+            </v-chip>
+
+            <div class="text-caption text-medium-emphasis mt-3 mb-2">OpenClaw mapping</div>
+            <v-chip size="small" variant="tonal" color="primary" class="mr-1 mb-1">
+              {{ inspectedRuntimeSpec.openclaw_agent_id || 'coder' }}
+            </v-chip>
+            <v-chip size="small" variant="outlined" class="mr-1 mb-1">
+              pre/post gates visible in tool chips
             </v-chip>
           </template>
         </v-card-text>
