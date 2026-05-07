@@ -2,10 +2,10 @@
 
 ## Project Shape
 
-Agent-Firewall is a local monorepo for a Telegram-first OpenClaw bot firewall.
+Agent-Firewall is a local monorepo for an OpenClaw safety shell. It wraps OpenClaw/MCP tool execution with scan-only proxy checks, runtime gates, approvals, and traces.
 
 - `apps/proxy-service`: FastAPI firewall, scan pipeline, audit log, intervention queue, OpenClaw discovery, runtime specs.
-- `apps/agent`: FastAPI agent runtime, Telegram Bridge, protected runtime graph, OpenClaw/MCP providers, traces.
+- `apps/agent`: FastAPI protected runtime, message ingress adapters including Telegram Bridge, OpenClaw/MCP providers, traces.
 - `apps/frontend`: Nuxt/Vuetify operator console at `localhost:3000`.
 - `docs/architecture`: current architecture docs.
 - `docs/archive`: historical design notes only.
@@ -14,13 +14,13 @@ Agent-Firewall is a local monorepo for a Telegram-first OpenClaw bot firewall.
 ## Runtime Flow
 
 ```text
-Telegram -> apps/agent -> apps/proxy-service /v1/scan
-         -> apps/agent runtime graph
-         -> pre-tool gate -> OpenClaw/MCP provider -> post-tool gate
-         -> trace/audit -> Telegram
+Message ingress adapter -> apps/agent protected runtime
+                        -> apps/proxy-service /v1/scan
+                        -> runtime gates -> OpenClaw/MCP provider
+                        -> post-tool gate -> trace/audit -> reply channel
 ```
 
-Blocked input and confirmation-gated tools create `interventions` rows in the proxy database. The frontend approves or rejects them; the Telegram Bridge worker continues approved items.
+Blocked input and confirmation-gated tools create `interventions` rows in the proxy database. The frontend approves or rejects them; the originating worker continues approved items.
 
 ## Local Runtime
 
@@ -35,9 +35,9 @@ Blocked input and confirmation-gated tools create `interventions` rows in the pr
 - `start-local.sh`: starts proxy, agent, and frontend.
 - `apps/proxy-service/src/routers/scan.py`: scan-only firewall endpoint.
 - `apps/proxy-service/src/routers/interventions.py`: approval queue API.
-- `apps/proxy-service/src/wizard/seed.py`: seeds `Telegram OpenClaw Gateway`.
+- `apps/proxy-service/src/wizard/seed.py`: seeds the protected OpenClaw gateway agent.
 - `apps/agent/src/agent/graph.py`: runtime graph runner.
-- `apps/agent/src/agent/telegram_bridge.py`: Telegram polling and approval continuation.
+- `apps/agent/src/agent/telegram_bridge.py`: optional Telegram ingress adapter and approval continuation.
 - `apps/frontend/app/pages/approvals.vue`: operator approval page.
 - `apps/frontend/app/components/app-nav-drawer.vue`: navigation order.
 

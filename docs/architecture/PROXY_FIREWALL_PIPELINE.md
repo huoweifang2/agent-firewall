@@ -21,4 +21,4 @@ The proxy owns `/v1/interventions`:
 - `GET /v1/interventions/{id}`: read one item.
 - `PATCH /v1/interventions/{id}`: set `approved`, `rejected`, `completed`, or `failed`.
 
-The agent uses this API to pause Telegram requests and to continue approved replays.
+The agent uses this API to pause protected-runtime requests and to continue approved replays through the originating ingress adapter.

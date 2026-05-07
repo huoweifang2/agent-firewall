@@ -2,7 +2,7 @@
 
 ## Assets
 
-- Telegram bot token and allowed Telegram user IDs.
+- Message ingress credentials, including Telegram bot token and allowed Telegram user IDs when the Telegram Bridge adapter is enabled.
 - DeepSeek/OpenClaw credentials in local config.
 - OpenClaw skills, hooks, MCP providers, and local files they can reach.
 - Agent-Firewall SQLite audit database.
@@ -10,24 +10,24 @@
 
 ## Trust Boundaries
 
-- Telegram input is untrusted.
+- External message ingress is untrusted. Telegram input is one currently implemented ingress source.
 - LLM tool plans are untrusted until the pre-tool gate approves them.
 - Tool output is untrusted until the post-tool gate scans it.
 - Browser/operator actions are trusted only for local development on `localhost:3000`.
-- Raw OpenClaw direct access is trusted only for Compare and must not be used as the Telegram path.
+- Raw OpenClaw direct access is trusted only for Compare and must not be used for protected runtime traffic.
 
 ## Primary Risks
 
-- Prompt injection in Telegram messages.
+- Prompt injection in external messages.
 - Tool abuse through model-proposed tool calls.
 - Sensitive OpenClaw skill execution without approval.
 - MCP endpoint misuse or unexpected output injection.
 - Secret leakage in logs, traces, UI, or error messages.
-- Duplicate Telegram consumers polling the same bot.
+- Duplicate ingress consumers polling the same channel.
 
 ## Controls
 
-- Telegram Bridge allowlist from `~/.openclaw/openclaw.json`.
+- Ingress allowlists such as Telegram Bridge allowlist from `~/.openclaw/openclaw.json`.
 - Proxy `/v1/scan` before model execution.
 - Runtime RBAC and tool allowlists.
 - Argument schema validation and injection scanning.

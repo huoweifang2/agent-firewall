@@ -24,4 +24,4 @@ All provider calls flow through pre-tool and post-tool gates unless the runtime 
 
 ## Approved Replays
 
-Approved Telegram interventions call `/agent/chat` with `approved_intervention_id`. The runtime verifies the intervention with the proxy before treating the input scan/confirmation as approved.
+Approved interventions call `/agent/chat` with `approved_intervention_id`. The runtime verifies the intervention with the proxy before treating the input scan/confirmation as approved. Telegram Bridge is one ingress adapter that can perform this replay, but the runtime contract is adapter-neutral.

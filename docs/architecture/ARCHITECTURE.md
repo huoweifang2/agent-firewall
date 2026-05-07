@@ -1,10 +1,10 @@
 # Architecture
 
-Agent-Firewall is a local Telegram-first firewall for a personal OpenClaw bot.
+Agent-Firewall is a local safety shell around an OpenClaw runtime. It places deterministic scan, gate, approval, and audit controls between message ingress adapters and OpenClaw/MCP/Internal tool execution.
 
 ## Components
 
-- **Telegram Bridge (`apps/agent`)**: polls the configured OpenClaw Telegram bot account, sends messages into the protected runtime, and sends replies back to Telegram.
+- **Message ingress adapters (`apps/agent`)**: send external messages into the protected runtime. Telegram Bridge is the currently implemented chat adapter.
 - **Proxy Service (`apps/proxy-service`)**: owns `/v1/scan`, request audit logs, OpenClaw discovery, runtime specs, and `/v1/interventions`.
 - **Agent Runtime (`apps/agent`)**: executes the runtime graph, applies pre-tool and post-tool gates, calls OpenClaw skills/MCP providers, and forwards traces.
 - **Frontend (`apps/frontend`)**: operator console for Attack Playground, Approvals / Audit, Skills & Hooks, Trace / Audit, and Runtime Settings.
@@ -12,8 +12,7 @@ Agent-Firewall is a local Telegram-first firewall for a personal OpenClaw bot.
 ## Main Flow
 
 ```text
-Telegram message
-  -> Telegram Bridge
+Message ingress adapter
   -> /agent/chat
   -> /v1/scan
   -> LLM tool planning
@@ -22,7 +21,7 @@ Telegram message
   -> post-tool gate
   -> final response
   -> audit + trace
-  -> Telegram reply
+  -> reply channel
 ```
 
 ## Human Intervention
@@ -33,7 +32,7 @@ The runtime pauses when:
 - A tool call is blocked by pre-tool checks.
 - A tool requires confirmation.
 
-The bridge creates an intervention row. The frontend approves or rejects it. Approved Telegram interventions are picked up by the bridge worker and replayed with `approved_intervention_id`.
+The runtime creates an intervention row. The frontend approves or rejects it. Approved interventions are picked up by the originating worker and replayed with `approved_intervention_id`.
 
 ## Local Persistence
 

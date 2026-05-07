@@ -310,6 +310,10 @@ INPUT /usr/local/texlive/2025/texmf-dist/tex/generic/pgf/libraries/pgflibraryplo
 INPUT /usr/local/texlive/2025/texmf-dist/tex/generic/pgf/libraries/pgflibraryplotmarks.code.tex
 INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/makecell/makecell.sty
 INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/makecell/makecell.sty
+INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/xurl/xurl.sty
+INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/xurl/xurl.sty
+INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/url/url.sty
+INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/url/url.sty
 INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/hyperref/hyperref.sty
 INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/kvsetkeys/kvsetkeys.sty
 INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/kvsetkeys/kvsetkeys.sty
@@ -345,8 +349,6 @@ INPUT /usr/local/texlive/2025/texmf-dist/tex/generic/intcalc/intcalc.sty
 INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/hyperref/puenc.def
 INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/hyperref/puenc.def
 INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/hyperref/puenc.def
-INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/url/url.sty
-INPUT /usr/local/texlive/2025/texmf-dist/tex/latex/url/url.sty
 INPUT /usr/local/texlive/2025/texmf-dist/fonts/tfm/adobe/zapfding/pzdr.tfm
 INPUT /usr/local/texlive/2025/texmf-dist/tex/generic/bitset/bitset.sty
 INPUT /usr/local/texlive/2025/texmf-dist/tex/generic/bitset/bitset.sty
@@ -421,10 +423,6 @@ INPUT /usr/local/texlive/2025/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm1
 INPUT /usr/local/texlive/2025/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm10.tfm
 INPUT /usr/local/texlive/2025/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm7.tfm
 OUTPUT article.xdv
-INPUT ./article.toc
-INPUT ./article.toc
-INPUT article.toc
-OUTPUT article.toc
 INPUT /usr/local/texlive/2025/texmf-dist/fonts/tfm/public/cm/cmr10.tfm
 INPUT /usr/local/texlive/2025/texmf-dist/fonts/tfm/public/cm/cmmi10.tfm
 INPUT /usr/local/texlive/2025/texmf-dist/fonts/tfm/public/cm/cmsy10.tfm
@@ -437,6 +435,10 @@ INPUT /usr/local/texlive/2025/texmf-dist/fonts/tfm/public/amsfonts/symbols/msam5
 INPUT /usr/local/texlive/2025/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm10.tfm
 INPUT /usr/local/texlive/2025/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm7.tfm
 INPUT /usr/local/texlive/2025/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm5.tfm
+INPUT ./article.toc
+INPUT ./article.toc
+INPUT article.toc
+OUTPUT article.toc
 INPUT /usr/local/texlive/2025/texmf-dist/fonts/tfm/public/cm/cmr7.tfm
 INPUT /usr/local/texlive/2025/texmf-dist/fonts/tfm/public/cm/cmmi7.tfm
 INPUT /usr/local/texlive/2025/texmf-dist/fonts/tfm/public/cm/cmsy7.tfm

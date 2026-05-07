@@ -1,6 +1,6 @@
 # Agent-Firewall Frontend
 
-Nuxt/Vuetify console for the Telegram-first Agent-Firewall workflow.
+Nuxt/Vuetify console for the OpenClaw safety-shell Agent-Firewall workflow.
 
 `http://localhost:3000` opens Attack Playground. The main navigation then
 exposes Approvals / Audit, OpenClaw Sandbox, OpenClaw Agents, Skills & Hooks,
