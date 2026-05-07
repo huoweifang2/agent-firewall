@@ -1,4 +1,4 @@
-"""OpenClaw CLI helpers for wizard tool import and control-plane discovery."""
+"""OpenClaw CLI helpers for control-plane tool import and control-plane discovery."""
 
 from __future__ import annotations
 

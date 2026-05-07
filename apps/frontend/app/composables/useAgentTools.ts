@@ -9,12 +9,12 @@ import type {
   ToolCreate,
   ToolRead,
   ToolUpdate,
-} from '~/types/wizard'
+} from '~/types/agentControl'
 
 export const useAgentTools = (agentId: () => string) => {
   const queryClient = useQueryClient()
 
-  const queryKey = computed(() => ['wizard-agent-tools', agentId()])
+  const queryKey = computed(() => ['agent-control-tools', agentId()])
 
   const { data: tools, isLoading, error, refetch } = useQuery<ToolRead[]>({
     queryKey,

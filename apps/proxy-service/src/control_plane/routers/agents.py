@@ -1,4 +1,4 @@
-"""CRUD router for agent registration (Agent Wizard — spec 26)."""
+"""CRUD router for agent registration (Agent Control Plane — spec 26)."""
 
 from __future__ import annotations
 
@@ -9,10 +9,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.control_plane.models import Agent, AgentKind, AgentStatus, RiskLevel, RolloutMode
+from src.control_plane.schemas import AgentCreate, AgentListResponse, AgentRead, AgentUpdate
+from src.control_plane.services.risk import apply_risk_classification
 from src.db.session import get_db
-from src.wizard.models import Agent, AgentKind, AgentStatus, RiskLevel, RolloutMode
-from src.wizard.schemas import AgentCreate, AgentListResponse, AgentRead, AgentUpdate
-from src.wizard.services.risk import apply_risk_classification
 
 logger = structlog.get_logger()
 

@@ -6,13 +6,13 @@ import type {
   ReadinessResponse,
   RolloutMode,
   RolloutPromoteResponse,
-} from '~/types/wizard'
+} from '~/types/agentControl'
 
 export const useAgentRollout = (agentId: () => string) => {
   const queryClient = useQueryClient()
 
-  const readinessKey = computed(() => ['wizard-agent-readiness', agentId()])
-  const eventsKey = computed(() => ['wizard-agent-rollout-events', agentId()])
+  const readinessKey = computed(() => ['agent-control-readiness', agentId()])
+  const eventsKey = computed(() => ['agent-control-rollout-events', agentId()])
 
   const { data: readiness, isLoading: readinessLoading, refetch: refetchReadiness } = useQuery<ReadinessResponse>({
     queryKey: readinessKey,
@@ -34,7 +34,7 @@ export const useAgentRollout = (agentId: () => string) => {
     mutationFn: (mode: RolloutMode) =>
       api.patch<RolloutPromoteResponse>(`/v1/agents/${agentId()}/rollout`, { mode }).then(r => r.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['wizard-agents'] })
+      queryClient.invalidateQueries({ queryKey: ['agent-controls'] })
       queryClient.invalidateQueries({ queryKey: readinessKey.value })
       queryClient.invalidateQueries({ queryKey: eventsKey.value })
     },

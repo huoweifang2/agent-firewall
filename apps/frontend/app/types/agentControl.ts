@@ -1,9 +1,9 @@
 // ─── Enums ───
 
-export type AgentFramework = 'openclaw' | 'proxy_only'
+export type AgentFramework = 'openclaw'
 export type AgentEnvironment = 'dev' | 'staging' | 'production'
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical'
-export type ProtectionLevel = 'proxy_only' | 'agent_runtime' | 'full'
+export type ProtectionLevel = 'openclaw' | 'agent_runtime' | 'full'
 export type RolloutMode = 'observe' | 'warn' | 'enforce'
 export type AgentStatus = 'draft' | 'active' | 'archived'
 export type AgentKind = 'main_agent' | 'sub_agent'

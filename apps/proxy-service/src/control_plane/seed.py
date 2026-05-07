@@ -8,8 +8,7 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.session import async_session
-from src.wizard.models import (
+from src.control_plane.models import (
     AccessType,
     Agent,
     AgentCreatedFrom,
@@ -25,9 +24,10 @@ from src.wizard.models import (
     Sensitivity,
     SkillScope,
 )
-from src.wizard.services.openclaw import list_openclaw_skills, openclaw_arg_schema, openclaw_tool_name
-from src.wizard.services.risk import apply_risk_classification
-from src.wizard.services.tools import apply_smart_defaults
+from src.control_plane.services.openclaw import list_openclaw_skills, openclaw_arg_schema, openclaw_tool_name
+from src.control_plane.services.risk import apply_risk_classification
+from src.control_plane.services.tools import apply_smart_defaults
+from src.db.session import async_session
 
 logger = structlog.get_logger()
 
@@ -196,7 +196,7 @@ async def _ensure_skills(session: AsyncSession, agent: Agent) -> None:
             session.add(AgentSkill(agent_id=agent.id, **spec))
 
 
-async def seed_wizard() -> None:
+async def seed_control_plane() -> None:
     """Seed the single Telegram/OpenClaw gateway agent."""
     async with async_session() as session:
         await _archive_legacy_agents(session)
@@ -214,9 +214,9 @@ REFERENCE_AGENT = GATEWAY_AGENT
 
 async def seed_reference_agent() -> None:
     """Backward-compatible alias used by tests."""
-    await seed_wizard()
+    await seed_control_plane()
 
 
 async def seed_reference_tools_and_roles() -> None:
     """Backward-compatible alias used by tests."""
-    await seed_wizard()
+    await seed_control_plane()

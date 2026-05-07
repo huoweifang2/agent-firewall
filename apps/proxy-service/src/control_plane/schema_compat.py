@@ -1,4 +1,4 @@
-"""Development schema compatibility helpers for wizard tables."""
+"""Development schema compatibility helpers for control-plane tables."""
 
 from __future__ import annotations
 
@@ -18,19 +18,15 @@ async def ensure_agent_hierarchy_columns(engine: AsyncEngine) -> None:
             await conn.execute(
                 sa.text(
                     """
-                    DO $$ BEGIN
-                        ALTER TYPE agent_framework ADD VALUE IF NOT EXISTS 'OPENCLAW';
-                    EXCEPTION WHEN undefined_object THEN null;
-                    END $$;
-                    """
-                )
-            )
-            await conn.execute(
-                sa.text(
-                    """
-                    UPDATE agents
-                    SET framework = 'OPENCLAW'
-                    WHERE framework::text IN ('LANGGRAPH', 'RAW_PYTHON')
+                    DO $$ BEGIN ALTER TYPE agent_framework ADD VALUE IF NOT EXISTS 'openclaw';
+                    EXCEPTION WHEN undefined_object THEN null; END $$;
+                    DO $$ BEGIN ALTER TYPE protection_level ADD VALUE IF NOT EXISTS 'openclaw';
+                    EXCEPTION WHEN undefined_object THEN null; END $$;
+                    UPDATE agents SET framework = 'openclaw'
+                    WHERE framework::text != 'openclaw';
+                    UPDATE agents SET protection_level = 'openclaw'
+                    WHERE protection_level IS NOT NULL
+                      AND protection_level::text NOT IN ('openclaw', 'agent_runtime', 'full');
                     """
                 )
             )
@@ -56,7 +52,9 @@ async def ensure_agent_hierarchy_columns(engine: AsyncEngine) -> None:
             )
         if dialect == "postgresql":
             await conn.execute(
-                sa.text("ALTER TABLE agents ADD COLUMN IF NOT EXISTS agent_kind agent_kind NOT NULL DEFAULT 'MAIN_AGENT'")
+                sa.text(
+                    "ALTER TABLE agents ADD COLUMN IF NOT EXISTS agent_kind agent_kind NOT NULL DEFAULT 'MAIN_AGENT'"
+                )
             )
             await conn.execute(
                 sa.text(
@@ -71,11 +69,20 @@ async def ensure_agent_hierarchy_columns(engine: AsyncEngine) -> None:
             columns = await conn.execute(sa.text("PRAGMA table_info(agents)"))
             existing = {row[1] for row in columns}
             if "agent_kind" not in existing:
-                await conn.execute(sa.text("ALTER TABLE agents ADD COLUMN agent_kind VARCHAR(16) NOT NULL DEFAULT 'MAIN_AGENT'"))
+                await conn.execute(
+                    sa.text("ALTER TABLE agents ADD COLUMN agent_kind VARCHAR(16) NOT NULL DEFAULT 'MAIN_AGENT'")
+                )
             if "created_from" not in existing:
                 await conn.execute(
                     sa.text("ALTER TABLE agents ADD COLUMN created_from VARCHAR(16) NOT NULL DEFAULT 'MANUAL'")
                 )
             if "template_key" not in existing:
                 await conn.execute(sa.text("ALTER TABLE agents ADD COLUMN template_key VARCHAR(64)"))
-            await conn.execute(sa.text("UPDATE agents SET framework = 'openclaw' WHERE framework NOT IN ('openclaw', 'proxy_only')"))
+            await conn.execute(sa.text("UPDATE agents SET framework = 'openclaw' WHERE framework != 'openclaw'"))
+            await conn.execute(
+                sa.text(
+                    "UPDATE agents SET protection_level = 'openclaw' "
+                    "WHERE protection_level IS NOT NULL "
+                    "AND protection_level NOT IN ('openclaw', 'agent_runtime', 'full')"
+                )
+            )

@@ -1,9 +1,8 @@
 """Agent runtime graph for Telegram-first Agent-Firewall execution.
 
-The project no longer depends on LangGraph at runtime, but the surrounding
-code and tests still expect a small graph-like object with ``compile`` and
-``ainvoke`` methods. This module provides that adapter while preserving the
-node boundaries used by the original implementation.
+The runtime uses a small in-process graph adapter with ``compile`` and
+``ainvoke`` methods so the node boundaries stay explicit without an external
+graph framework dependency.
 """
 
 from __future__ import annotations

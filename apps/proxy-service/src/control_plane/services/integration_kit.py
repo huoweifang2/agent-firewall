@@ -16,13 +16,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.attributes import set_committed_value
 
-from src.wizard.models import Agent, AgentRole, AgentTool, RoleToolPermission
-from src.wizard.services.config_gen import (
+from src.control_plane.models import Agent, AgentRole, AgentTool, RoleToolPermission
+from src.control_plane.services.config_gen import (
     generate_limits_yaml,
     generate_policy_yaml,
     generate_rbac_yaml,
 )
-from src.wizard.services.policy_packs import get_policy_pack
+from src.control_plane.services.policy_packs import get_policy_pack
 
 # ── Jinja2 environment ──────────────────────────────────────────────────
 
@@ -149,10 +149,7 @@ async def build_kit_context(agent_id: uuid.UUID, db: AsyncSession) -> dict:
 
 # ── Kit generation ──────────────────────────────────────────────────────
 
-_FRAMEWORK_TEMPLATE = {
-    "openclaw": "proxy_only.py.j2",
-    "proxy_only": "proxy_only.py.j2",
-}
+_OPENCLAW_TEMPLATE = "openclaw.py.j2"
 
 
 def _slugify(name: str) -> str:
@@ -181,10 +178,9 @@ async def generate_integration_kit(
     limits_yaml = await generate_limits_yaml(agent_id, db)
     policy_yaml = await generate_policy_yaml(agent_id, db)
 
-    # 4: protected_agent.py (framework-specific)
+    # 4: protected_agent.py (OpenClaw integration)
     framework = ctx["framework"]
-    template_name = _FRAMEWORK_TEMPLATE.get(framework, "proxy_only.py.j2")
-    protected_agent = env.get_template(template_name).render(ctx)
+    protected_agent = env.get_template(_OPENCLAW_TEMPLATE).render(ctx)
 
     # 5: .env.protector
     env_protector = env.get_template("env.protector.j2").render(ctx)

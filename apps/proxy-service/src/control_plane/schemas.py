@@ -1,4 +1,4 @@
-"""Pydantic schemas for Agent Wizard."""
+"""Pydantic schemas for Agent Control Plane."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.wizard.models import (
+from src.control_plane.models import (
     AccessType,
     AgentCreatedFrom,
     AgentEnvironment,
@@ -530,7 +530,7 @@ class RuntimeSubAgentSpec(BaseModel):
 
 
 class AgentRuntimeSpec(BaseModel):
-    """Complete agent runtime spec resolved from wizard state."""
+    """Complete agent runtime spec resolved from control-plane state."""
 
     agent_id: uuid.UUID
     name: str

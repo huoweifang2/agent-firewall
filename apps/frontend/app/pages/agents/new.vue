@@ -1,10 +1,10 @@
 <template>
-  <v-container fluid class="wizard-page">
+  <v-container fluid class="agent-control-page">
     <div class="d-flex align-center mb-4">
       <v-btn icon="mdi-arrow-left" variant="text" @click="navigateTo('/agents')" />
       <div class="ml-2 flex-grow-1">
         <div class="d-flex align-center justify-space-between">
-          <h1 class="text-h5">{{ isEditing ? 'Edit Agent' : 'Register New Agent' }}</h1>
+          <h1 class="text-h5">{{ isEditing ? 'Edit Agent' : 'Register Bot Agent' }}</h1>
           <v-btn
             variant="text"
             prepend-icon="mdi-book-open-outline"
@@ -64,7 +64,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useAgents } from '~/composables/useAgents'
-import type { AgentRead } from '~/types/wizard'
+import type { AgentRead } from '~/types/agentControl'
 
 definePageMeta({ title: 'New Agent' })
 
@@ -128,8 +128,8 @@ onMounted(async () => {
     }
   }
   else {
-    // Fresh wizard entry — always start clean
-    localStorage.removeItem('agent-firewall-wizard-state')
+    // Fresh agent-control entry — always start clean
+    localStorage.removeItem('agent-firewall-agent-control-state')
     currentStep.value = 1
     agentId.value = null
     editAgent.value = null
@@ -138,8 +138,8 @@ onMounted(async () => {
 })
 
 const onComplete = () => {
-  // Clear wizard state and navigate to agent detail
-  localStorage.removeItem('agent-firewall-wizard-state')
+  // Clear agent-control state and navigate to agent detail
+  localStorage.removeItem('agent-firewall-agent-control-state')
   if (agentId.value) {
     navigateTo(`/agents/${agentId.value}`)
   }

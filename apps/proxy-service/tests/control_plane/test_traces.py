@@ -17,9 +17,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.db.session import async_session
-from src.main import app
-from src.wizard.models import (
+from src.control_plane.models import (
     AgentIncident,
     AgentTrace,
     IncidentCategory,
@@ -29,7 +27,9 @@ from src.wizard.models import (
     TraceDecision,
     TraceGate,
 )
-from src.wizard.services.trace_recorder import TraceRecorder, compute_severity
+from src.control_plane.services.trace_recorder import TraceRecorder, compute_severity
+from src.db.session import async_session
+from src.main import app
 
 
 @pytest.fixture
@@ -45,7 +45,7 @@ _AGENT_BODY = {
     "name": "TraceTestAgent",
     "description": "Agent for trace tests",
     "team": "security",
-    "framework": "langgraph",
+    "framework": "openclaw",
     "environment": "dev",
     "is_public_facing": True,
     "has_tools": True,

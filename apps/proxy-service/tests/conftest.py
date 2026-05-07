@@ -23,7 +23,7 @@ os.environ["ENABLE_LANGFUSE"] = "false"
 from src.db.seed import seed_denylist, seed_policies
 from src.db.session import engine
 from src.models import Base  # noqa: F401 — triggers model registration
-from src.wizard.schema_compat import ensure_agent_hierarchy_columns
+from src.control_plane.schema_compat import ensure_agent_hierarchy_columns
 
 _db_seeded = False
 

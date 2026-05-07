@@ -6,7 +6,7 @@ import type {
   AgentListResponse,
   AgentRead,
   AgentUpdate,
-} from '~/types/wizard'
+} from '~/types/agentControl'
 
 export const useAgents = (params?: {
   page?: Ref<number>
@@ -20,7 +20,7 @@ export const useAgents = (params?: {
   const queryClient = useQueryClient()
 
   const queryKey = computed(() => [
-    'wizard-agents',
+    'agent-controls',
     params?.page?.value ?? 1,
     params?.perPage?.value ?? 20,
     params?.search?.value,
@@ -56,7 +56,7 @@ export const useAgents = (params?: {
     mutationFn: (body: AgentCreate) =>
       api.post<AgentRead>('/v1/agents', body).then(r => r.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['wizard-agents'] })
+      queryClient.invalidateQueries({ queryKey: ['agent-controls'] })
     },
   })
 
@@ -64,14 +64,14 @@ export const useAgents = (params?: {
     mutationFn: ({ id, body }: { id: string; body: AgentUpdate }) =>
       api.patch<AgentRead>(`/v1/agents/${id}`, body).then(r => r.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['wizard-agents'] })
+      queryClient.invalidateQueries({ queryKey: ['agent-controls'] })
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/v1/agents/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['wizard-agents'] })
+      queryClient.invalidateQueries({ queryKey: ['agent-controls'] })
     },
   })
 

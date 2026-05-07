@@ -1,4 +1,4 @@
-"""Tests for the agent LangGraph — graph compilation and basic flow."""
+"""Tests for the agent runtime graph compilation and basic flow."""
 
 from unittest.mock import AsyncMock, patch
 

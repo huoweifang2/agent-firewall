@@ -11,18 +11,19 @@ Covers:
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.db.session import async_session
-from src.main import app
-from src.wizard.models import (
+from src.control_plane.models import (
     Agent,
     RolloutMode,
     ValidationRun,
 )
-from src.wizard.schemas import AgentRead
+from src.control_plane.schemas import AgentRead
+from src.db.session import async_session
+from src.main import app
 
 
 @pytest.fixture
@@ -38,7 +39,7 @@ _AGENT_BODY = {
     "name": "RolloutTestAgent",
     "description": "Agent for rollout mode tests",
     "team": "security",
-    "framework": "langgraph",
+    "framework": "openclaw",
     "environment": "dev",
     "is_public_facing": True,
     "has_tools": True,
@@ -98,6 +99,7 @@ async def _inject_validation_run(agent_id: str, passed: int, total: int) -> None
     async with async_session() as db:
         run = ValidationRun(
             agent_id=uuid.UUID(agent_id),
+            created_at=datetime.now(UTC),
             pack="basic",
             pack_version="1.0.0",
             score=int(passed / total * 100) if total > 0 else 0,

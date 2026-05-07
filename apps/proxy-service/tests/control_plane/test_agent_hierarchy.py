@@ -7,10 +7,10 @@ import uuid
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from src.control_plane.schema_compat import ensure_agent_hierarchy_columns
+from src.control_plane.services.runtime_spec import build_agent_runtime_spec
 from src.db.session import async_session, engine
 from src.main import app
-from src.wizard.schema_compat import ensure_agent_hierarchy_columns
-from src.wizard.services.runtime_spec import build_agent_runtime_spec
 
 
 @pytest.fixture
@@ -28,7 +28,7 @@ async def _create_main(client: AsyncClient) -> dict:
             "name": f"Main-{uuid.uuid4().hex[:8]}",
             "description": "main hierarchy test",
             "team": "tests",
-            "framework": "langgraph",
+            "framework": "openclaw",
             "environment": "dev",
         },
     )

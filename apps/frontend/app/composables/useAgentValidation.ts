@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed } from 'vue'
 import { api } from '~/services/api'
-import type { ValidationResponse, ValidationRunRead } from '~/types/wizard'
+import type { ValidationResponse, ValidationRunRead } from '~/types/agentControl'
 
 export const useAgentValidation = (agentId: () => string) => {
   const queryClient = useQueryClient()
 
-  const queryKey = computed(() => ['wizard-agent-validations', agentId()])
+  const queryKey = computed(() => ['agent-control-validations', agentId()])
 
   const { data: validations, isLoading, error, refetch } = useQuery<ValidationRunRead[]>({
     queryKey,

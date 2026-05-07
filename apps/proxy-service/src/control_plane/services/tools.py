@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from src.wizard.models import RATE_LIMIT_DEFAULTS, AccessType, AgentTool, Sensitivity
+from src.control_plane.models import RATE_LIMIT_DEFAULTS, AccessType, AgentTool, Sensitivity
 
 
 def apply_smart_defaults(tool: AgentTool) -> AgentTool:

@@ -84,7 +84,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useAgentRollout } from '~/composables/useAgentRollout'
-import type { RolloutMode } from '~/types/wizard'
+import type { RolloutMode } from '~/types/agentControl'
 
 const props = defineProps<{
   agentId: string

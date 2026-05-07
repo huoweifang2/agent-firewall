@@ -60,7 +60,15 @@ def box(ax, xy, w, h, text, fc="#f8fafc", ec="#334155", fs=9, lw=1.2):
         lw=lw,
     )
     ax.add_patch(patch)
-    ax.text(xy[0] + w / 2, xy[1] + h / 2, text, ha="center", va="center", fontsize=fs, linespacing=1.35)
+    ax.text(
+        xy[0] + w / 2,
+        xy[1] + h / 2,
+        text,
+        ha="center",
+        va="center",
+        fontsize=fs,
+        linespacing=1.35,
+    )
     return patch
 
 
@@ -89,11 +97,46 @@ def architecture() -> None:
     ax.set_ylim(0, 7)
     ax.axis("off")
 
-    box(ax, (3.4, 6.05), 3.2, 0.62, "Nuxt 4 + Vuetify Web 控制台\nPlayground / Agents / Traces / Analytics", "#e0f2fe")
-    box(ax, (0.5, 4.7), 3.2, 0.85, "Proxy Firewall API\nFastAPI :8000\n9 节点 LangGraph 检测流水线", "#dcfce7")
-    box(ax, (6.3, 4.7), 3.2, 0.85, "Agent Runtime API\nFastAPI :8002\n11 节点工具调用防护图", "#fef3c7")
-    box(ax, (0.8, 3.05), 2.6, 0.75, "本地扫描器\nRules / Intent\nLLM Guard / Presidio / NeMo", "#f1f5f9")
-    box(ax, (3.95, 3.05), 2.1, 0.75, "PostgreSQL + Redis\n策略 / 日志 / Trace", "#f1f5f9")
+    box(
+        ax,
+        (3.4, 6.05),
+        3.2,
+        0.62,
+        "Nuxt 4 + Vuetify Web 控制台\nPlayground / Agents / Traces / Analytics",
+        "#e0f2fe",
+    )
+    box(
+        ax,
+        (0.5, 4.7),
+        3.2,
+        0.85,
+        "Proxy Firewall API\nFastAPI :8000\n9 节点检测流水线",
+        "#dcfce7",
+    )
+    box(
+        ax,
+        (6.3, 4.7),
+        3.2,
+        0.85,
+        "Agent Runtime API\nFastAPI :8002\n11 节点工具调用防护图",
+        "#fef3c7",
+    )
+    box(
+        ax,
+        (0.8, 3.05),
+        2.6,
+        0.75,
+        "本地扫描器\nRules / Intent\nLLM Guard / Presidio / NeMo",
+        "#f1f5f9",
+    )
+    box(
+        ax,
+        (3.95, 3.05),
+        2.1,
+        0.75,
+        "PostgreSQL + Redis\n策略 / 日志 / Trace",
+        "#f1f5f9",
+    )
     box(ax, (6.6, 3.05), 2.6, 0.75, "工具提供者\nInternal / MCP / OpenClaw", "#f1f5f9")
     box(ax, (0.9, 1.35), 2.4, 0.7, "LLM Provider\nLiteLLM 路由", "#f8fafc")
     box(ax, (3.8, 1.35), 2.4, 0.7, "Langfuse 可选导出\n结构化 Span", "#f8fafc")
@@ -107,7 +150,13 @@ def architecture() -> None:
     arrow(ax, (2.1, 3.05), (2.1, 2.05))
     arrow(ax, (5.0, 3.05), (5.0, 2.05))
     arrow(ax, (7.9, 3.05), (7.9, 2.05))
-    ax.text(5, 0.55, "设计原则：确定性安全决策与 LLM 业务推理解耦，Proxy 层管控文本风险，Agent 层管控能力边界。", ha="center", fontsize=9)
+    ax.text(
+        5,
+        0.55,
+        "设计原则：确定性安全决策与 LLM 业务推理解耦，Proxy 层管控文本风险，Agent 层管控能力边界。",
+        ha="center",
+        fontsize=9,
+    )
     save(fig, "fig_architecture.pdf")
 
 
@@ -137,7 +186,13 @@ def proxy_pipeline() -> None:
             arrow(ax, (centers[i - 1][0] + 0.5, 1.66), (x, 1.66), lw=1.0)
     box(ax, (5.25, 0.35), 1.25, 0.45, "BLOCK\n不调用模型", "#fecaca", fs=8)
     arrow(ax, (5.25, 1.35), (5.9, 0.8), color="#dc2626", rad=0.05)
-    ax.text(5.2, 2.5, "Proxy Firewall：请求进入模型前完成确定性拦截，ALLOW/MODIFY 才进入模型调用路径", ha="center", fontsize=10)
+    ax.text(
+        5.2,
+        2.5,
+        "Proxy Firewall：请求进入模型前完成确定性拦截，ALLOW/MODIFY 才进入模型调用路径",
+        ha="center",
+        fontsize=10,
+    )
     save(fig, "fig_proxy_pipeline.pdf")
 
 
@@ -158,19 +213,59 @@ def agent_pipeline() -> None:
         ("response\n响应格式化", 10.9),
     ]
     for i, (label, x) in enumerate(top):
-        box(ax, (x, 3.55), 1.05, 0.72, label, "#f8fafc" if i not in (4, 6, 7) else "#fee2e2", fs=7.4)
+        box(
+            ax,
+            (x, 3.55),
+            1.05,
+            0.72,
+            label,
+            "#f8fafc" if i not in (4, 6, 7) else "#fee2e2",
+            fs=7.4,
+        )
         if i:
             arrow(ax, (top[i - 1][1] + 1.05, 3.91), (x, 3.91), lw=1.0)
-    box(ax, (5.55, 2.15), 1.45, 0.52, "confirmation_response\n敏感操作人工确认", "#fef3c7", fs=7.6)
+    box(
+        ax,
+        (5.55, 2.15),
+        1.45,
+        0.52,
+        "confirmation_response\n敏感操作人工确认",
+        "#fef3c7",
+        fs=7.6,
+    )
     box(ax, (9.45, 2.15), 1.05, 0.52, "memory\n会话持久化", "#e0f2fe", fs=7.6)
     box(ax, (10.85, 2.15), 1.05, 0.52, "trace\n审计轨迹", "#e0f2fe", fs=7.6)
     arrow(ax, (5.95, 3.55), (6.25, 2.67), color="#d97706")
     arrow(ax, (11.4, 3.55), (10.0, 2.67), color="#2563eb", rad=0.18)
     arrow(ax, (10.5, 2.41), (10.85, 2.41), color="#2563eb")
 
-    box(ax, (0.7, 0.7), 3.0, 0.65, "第一道防线：pre-tool gate\n调用前判定“能不能调用、参数能不能用”", "#dcfce7", fs=8.5)
-    box(ax, (4.45, 0.7), 3.0, 0.65, "第二道防线：post-tool gate\n调用后判定“结果能不能进入 LLM 上下文”", "#fef3c7", fs=8.5)
-    box(ax, (8.2, 0.7), 3.0, 0.65, "第三道防线：proxy firewall\n模型调用前再次扫描用户输入", "#dbeafe", fs=8.5)
+    box(
+        ax,
+        (0.7, 0.7),
+        3.0,
+        0.65,
+        "第一道防线：pre-tool gate\n调用前判定“能不能调用、参数能不能用”",
+        "#dcfce7",
+        fs=8.5,
+    )
+    box(
+        ax,
+        (4.45, 0.7),
+        3.0,
+        0.65,
+        "第二道防线：post-tool gate\n调用后判定“结果能不能进入 LLM 上下文”",
+        "#fef3c7",
+        fs=8.5,
+    )
+    box(
+        ax,
+        (8.2, 0.7),
+        3.0,
+        0.65,
+        "第三道防线：proxy firewall\n模型调用前再次扫描用户输入",
+        "#dbeafe",
+        fs=8.5,
+    )
     save(fig, "fig_agent_pipeline.pdf")
 
 
@@ -207,14 +302,27 @@ def redteam_categories() -> None:
     ]
     labels, values = zip(*data)
     fig, ax = plt.subplots(figsize=(8.4, 5.0))
-    bars = ax.barh(range(len(values)), values, color=["#22c55e" if v >= 90 else "#f59e0b" if v >= 60 else "#ef4444" for v in values])
+    bars = ax.barh(
+        range(len(values)),
+        values,
+        color=[
+            "#22c55e" if v >= 90 else "#f59e0b" if v >= 60 else "#ef4444"
+            for v in values
+        ],
+    )
     ax.set_yticks(range(len(labels)), labels)
     ax.invert_yaxis()
     ax.set_xlim(0, 105)
     ax.set_xlabel("检出率 / %")
     ax.set_title("离线红队复测中代表性类别检出率")
     for bar, value in zip(bars, values):
-        ax.text(value + 1, bar.get_y() + bar.get_height() / 2, f"{value:.1f}%", va="center", fontsize=8)
+        ax.text(
+            value + 1,
+            bar.get_y() + bar.get_height() / 2,
+            f"{value:.1f}%",
+            va="center",
+            fontsize=8,
+        )
     save(fig, "fig_redteam_categories.pdf")
 
 
@@ -224,8 +332,20 @@ def benchmark_compare() -> None:
     false_positive = [0.0, 0.0]
     fig, ax = plt.subplots(figsize=(6.8, 4.2))
     x = range(len(labels))
-    ax.bar([i - 0.17 for i in x], detection, width=0.34, label="攻击检出率", color="#2563eb")
-    ax.bar([i + 0.17 for i in x], false_positive, width=0.34, label="误报率", color="#f97316")
+    ax.bar(
+        [i - 0.17 for i in x],
+        detection,
+        width=0.34,
+        label="攻击检出率",
+        color="#2563eb",
+    )
+    ax.bar(
+        [i + 0.17 for i in x],
+        false_positive,
+        width=0.34,
+        label="误报率",
+        color="#f97316",
+    )
     ax.set_xticks(list(x), labels)
     ax.set_ylim(0, 105)
     ax.set_ylabel("比例 / %")
@@ -244,8 +364,20 @@ def latency_breakdown() -> None:
     full = [0.01, 0.02, 0.02, 47.33, 0.01]
     fig, ax = plt.subplots(figsize=(7.5, 4.4))
     x = list(range(len(nodes)))
-    ax.bar([i - 0.18 for i in x], current, width=0.36, label="当前离线 p50/ms", color="#38bdf8")
-    ax.bar([i + 0.18 for i in x], full, width=0.36, label="完整扫描器 p50/ms", color="#f97316")
+    ax.bar(
+        [i - 0.18 for i in x],
+        current,
+        width=0.36,
+        label="当前离线 p50/ms",
+        color="#38bdf8",
+    )
+    ax.bar(
+        [i + 0.18 for i in x],
+        full,
+        width=0.36,
+        label="完整扫描器 p50/ms",
+        color="#f97316",
+    )
     ax.set_xticks(x, nodes)
     ax.set_ylabel("节点耗时 / ms")
     ax.set_yscale("symlog", linthresh=0.1)

@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed } from 'vue'
 import { api } from '~/services/api'
-import type { IntegrationKit } from '~/types/wizard'
+import type { IntegrationKit } from '~/types/agentControl'
 
 export const useAgentKit = (agentId: () => string) => {
   const queryClient = useQueryClient()
 
-  const queryKey = computed(() => ['wizard-agent-kit', agentId()])
+  const queryKey = computed(() => ['agent-control-kit', agentId()])
 
   const { data: kit, isLoading, error, refetch } = useQuery<IntegrationKit | null>({
     queryKey,

@@ -99,9 +99,34 @@ def wrap_user_message(raw_message: str) -> dict[str, str]:
     return {"role": "user", "content": content}
 
 
-def wrap_tool_results(tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _legacy_tool_result_content(tool_calls: list[dict[str, Any]]) -> str:
+    blocks = []
+    for tc in tool_calls:
+        tool_name = tc.get("tool", "unknown")
+        allowed = tc.get("allowed", False)
+        result_text = tc.get("sanitized_result", tc.get("result", ""))
+        post_gate = tc.get("post_gate")
+        if post_gate and post_gate.get("decision") == "BLOCK":
+            status = "BLOCKED"
+        elif not allowed:
+            status = "DENIED"
+        else:
+            status = "OK"
+        prefix = TOOL_OUTPUT_PREFIX.format(tool_name=tool_name)
+        blocks.append(f"{prefix}[Status: {status}]\n{result_text}{TOOL_OUTPUT_SUFFIX}")
+    return "\n\n".join(blocks)
+
+
+def wrap_tool_results(
+    tool_calls: list[dict[str, Any]],
+    *,
+    openai_tool_messages: bool = False,
+) -> dict[str, str] | list[dict[str, Any]] | None:
     if not tool_calls:
-        return []
+        return None
+
+    if not openai_tool_messages:
+        return {"role": "system", "content": _legacy_tool_result_content(tool_calls)}
 
     messages = []
     import uuid
@@ -140,7 +165,11 @@ def wrap_tool_results(tool_calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return messages
 
 
-def build_messages(state: AgentState) -> list[dict[str, str]]:
+def build_messages(
+    state: AgentState,
+    *,
+    openai_tool_messages: bool = False,
+) -> list[dict[str, Any]]:
     """Build the complete message list for the LLM call.
 
     Order:
@@ -151,7 +180,7 @@ def build_messages(state: AgentState) -> list[dict[str, str]]:
     """
     allowed_tools = state.get("allowed_tools", [])
 
-    messages: list[dict[str, str]] = []
+    messages: list[dict[str, Any]] = []
 
     # 1. System prompt — no user/tool data
     messages.append(build_system_message(allowed_tools, state))
@@ -167,8 +196,11 @@ def build_messages(state: AgentState) -> list[dict[str, str]]:
 
     # 4. Tool results — wrapped with anti-instruction markers
     tool_calls = state.get("tool_calls", [])
-    tool_msgs = wrap_tool_results(tool_calls)
+    tool_msgs = wrap_tool_results(tool_calls, openai_tool_messages=openai_tool_messages)
     if tool_msgs:
-        messages.extend(tool_msgs)
+        if isinstance(tool_msgs, list):
+            messages.extend(tool_msgs)
+        else:
+            messages.append(tool_msgs)
 
     return messages

@@ -159,7 +159,7 @@ import { useAgentTeams } from '~/composables/useAgentTeams'
 import { useModels } from '~/composables/useModels'
 import { useRememberedModel } from '~/composables/useRememberedModel'
 import { useScenarios } from '~/composables/useScenarios'
-import type { AgentRead } from '~/types/wizard'
+import type { AgentRead } from '~/types/agentControl'
 import type { ScenarioItem } from '~/types/scenarios'
 
 definePageMeta({ title: 'Agent Sandbox' })

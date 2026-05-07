@@ -9,8 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.session import get_db
-from src.wizard.models import (
+from src.control_plane.models import (
     AccessType,
     Agent,
     AgentCreatedFrom,
@@ -23,7 +22,7 @@ from src.wizard.models import (
     RoleToolPermission,
     Sensitivity,
 )
-from src.wizard.schemas import (
+from src.control_plane.schemas import (
     AgentRuntimeSpec,
     DelegationCreate,
     DelegationRead,
@@ -33,9 +32,10 @@ from src.wizard.schemas import (
     SkillUpdate,
     SubAgentCreateRequest,
 )
-from src.wizard.services.risk import apply_risk_classification
-from src.wizard.services.runtime_spec import build_agent_runtime_spec
-from src.wizard.services.tools import apply_smart_defaults
+from src.control_plane.services.risk import apply_risk_classification
+from src.control_plane.services.runtime_spec import build_agent_runtime_spec
+from src.control_plane.services.tools import apply_smart_defaults
+from src.db.session import get_db
 
 logger = structlog.get_logger()
 router = APIRouter(prefix="/agents/{agent_id}", tags=["runtime"])
@@ -301,8 +301,7 @@ async def create_and_bind_sub_agent(
     binding = AgentDelegation(
         parent_agent_id=parent.id,
         child_agent_id=child.id,
-        delegation_description=body.delegation_description
-        or f"Delegate specialized tasks to {child.name}.",
+        delegation_description=body.delegation_description or f"Delegate specialized tasks to {child.name}.",
         when_to_delegate=body.when_to_delegate or "Use this subagent when its specialization matches the user task.",
         sort_order=body.sort_order,
         is_active=body.is_active,

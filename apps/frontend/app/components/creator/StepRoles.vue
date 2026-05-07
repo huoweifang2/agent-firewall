@@ -199,7 +199,7 @@
 import { computed, ref, watch } from 'vue'
 import { useAgentRoles } from '~/composables/useAgentRoles'
 import { useAgentTools } from '~/composables/useAgentTools'
-import type { RoleCreate, RoleRead } from '~/types/wizard'
+import type { RoleCreate, RoleRead } from '~/types/agentControl'
 
 // ─── Role Presets ───
 interface RolePresetDef {

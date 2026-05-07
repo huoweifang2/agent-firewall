@@ -1,4 +1,4 @@
-"""ORM models for the Agent Wizard."""
+"""ORM models for the Agent Control Plane."""
 
 from __future__ import annotations
 
@@ -28,7 +28,6 @@ class AgentFramework(str, enum.Enum):
     """Supported agent frameworks."""
 
     OPENCLAW = "openclaw"
-    PROXY_ONLY = "proxy_only"
 
 
 class AgentEnvironment(str, enum.Enum):
@@ -51,7 +50,7 @@ class RiskLevel(str, enum.Enum):
 class ProtectionLevel(str, enum.Enum):
     """Recommended protection level."""
 
-    PROXY_ONLY = "proxy_only"
+    OPENCLAW = "openclaw"
     AGENT_RUNTIME = "agent_runtime"
     FULL = "full"
 

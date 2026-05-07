@@ -16,7 +16,7 @@ import yaml
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.wizard.models import Agent, AgentRole, AgentTool
+from src.control_plane.models import Agent, AgentRole, AgentTool
 
 # ═══════════════════════════════════════════════════════════════════════
 # 30a — Test pack definition

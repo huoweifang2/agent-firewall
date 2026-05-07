@@ -76,7 +76,7 @@
 
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
-import type { AgentCreate,  AgentEnvironment } from '~/types/wizard'
+import type { AgentCreate,  AgentEnvironment } from '~/types/agentControl'
 
 const props = defineProps<{
   initialData?: Partial<AgentCreate>

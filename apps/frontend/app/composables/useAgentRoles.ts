@@ -8,13 +8,13 @@ import type {
   RoleCreate,
   RoleRead,
   RoleUpdate,
-} from '~/types/wizard'
+} from '~/types/agentControl'
 
 export const useAgentRoles = (agentId: () => string) => {
   const queryClient = useQueryClient()
 
-  const queryKey = computed(() => ['wizard-agent-roles', agentId()])
-  const matrixKey = computed(() => ['wizard-agent-matrix', agentId()])
+  const queryKey = computed(() => ['agent-control-roles', agentId()])
+  const matrixKey = computed(() => ['agent-control-matrix', agentId()])
 
   const { data: roles, isLoading, error, refetch } = useQuery<RoleRead[]>({
     queryKey,

@@ -4,7 +4,7 @@
     :items="stepItems"
     alt-labels
     flat
-    class="wizard-stepper"
+    class="agent-control-stepper"
   >
     <template #item.1>
       <slot name="step-1" />
@@ -63,7 +63,7 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'
 
-const STORAGE_KEY = 'agent-firewall-wizard-state'
+const STORAGE_KEY = 'agent-firewall-agent-control-state'
 
 const props = defineProps<{
   stepValid?: boolean
@@ -134,7 +134,7 @@ defineExpose({ next, prev, clearState })
 </script>
 
 <style lang="scss" scoped>
-.wizard-stepper {
+.agent-control-stepper {
   background: transparent;
 }
 </style>

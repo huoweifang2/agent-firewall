@@ -75,7 +75,7 @@
 import { computed, ref, watch } from 'vue'
 import { useAgents } from '~/composables/useAgents'
 import { useAgentConfig } from '~/composables/useAgentConfig'
-import type { GeneratedConfig } from '~/types/wizard'
+import type { GeneratedConfig } from '~/types/agentControl'
 
 const props = defineProps<{
   agentId: string

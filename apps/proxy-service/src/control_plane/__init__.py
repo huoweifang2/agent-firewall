@@ -1,15 +1,16 @@
-"""Agent Wizard — self-contained module for agent onboarding.
+"""Agent Control Plane — self-contained module for agent control.
 
 This package owns all models, schemas, routers, services, and seeds
-related to the Agent Wizard feature (specs 26-33).
+related to protected agent registration, OpenClaw bindings, runtime specs,
+roles, tools, skills, rollout, and traces.
 
 Usage in main.py:
-    from src.wizard import wizard_router, seed_wizard
-    app.include_router(wizard_router, prefix="/v1")
-    await seed_wizard()
+    from src.control_plane import control_plane_router, seed_control_plane
+    app.include_router(control_plane_router, prefix="/v1")
+    await seed_control_plane()
 """
 
-from src.wizard.router import wizard_router
-from src.wizard.seed import seed_wizard
+from src.control_plane.router import control_plane_router
+from src.control_plane.seed import seed_control_plane
 
-__all__ = ["wizard_router", "seed_wizard"]
+__all__ = ["control_plane_router", "seed_control_plane"]

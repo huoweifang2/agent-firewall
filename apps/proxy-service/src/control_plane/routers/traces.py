@@ -1,4 +1,4 @@
-"""Traces & incidents router (Agent Wizard — spec 32d/e).
+"""Traces & incidents router (Agent Control Plane — spec 32d/e).
 
 Endpoints:
   POST   /agents/:id/traces/record      — record a trace (uses TraceRecorder)
@@ -11,15 +11,14 @@ Endpoints:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.session import get_db
-from src.wizard.models import (
+from src.control_plane.models import (
     Agent,
     AgentIncident,
     AgentTrace,
@@ -30,7 +29,7 @@ from src.wizard.models import (
     TraceDecision,
     TraceGate,
 )
-from src.wizard.schemas import (
+from src.control_plane.schemas import (
     IncidentListResponse,
     IncidentRead,
     IncidentStatsBreakdown,
@@ -40,7 +39,8 @@ from src.wizard.schemas import (
     TraceRead,
     TraceStatsResponse,
 )
-from src.wizard.services.trace_recorder import TraceRecorder
+from src.control_plane.services.trace_recorder import TraceRecorder
+from src.db.session import get_db
 
 logger = structlog.get_logger()
 
@@ -288,7 +288,7 @@ def _trace_to_read(trace: AgentTrace) -> TraceRead:
         id=trace.id,
         agent_id=trace.agent_id,
         session_id=trace.session_id,
-        timestamp=trace.timestamp,
+        timestamp=_aware_utc(trace.timestamp),
         gate=trace.gate,
         tool_name=trace.tool_name,
         role=trace.role,
@@ -311,8 +311,14 @@ def _incident_to_read(incident: AgentIncident) -> IncidentRead:
         category=incident.category,
         title=incident.title,
         status=incident.status,
-        first_seen=incident.first_seen,
-        last_seen=incident.last_seen,
+        first_seen=_aware_utc(incident.first_seen),
+        last_seen=_aware_utc(incident.last_seen),
         trace_count=incident.trace_count,
         details=incident.details,
     )
+
+
+def _aware_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)

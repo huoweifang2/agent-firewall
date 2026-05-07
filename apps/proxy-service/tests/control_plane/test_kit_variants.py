@@ -1,14 +1,14 @@
-"""Full wizard variant tests — spec 33v (cross-product integration kit tests).
+"""Full agent-control variant tests — spec 33v (cross-product integration kit tests).
 
-Covers every meaningful combination of wizard inputs and validates that
+Covers every meaningful combination of control-plane inputs and validates that
 generated files are correct, parseable, and internally consistent.
 
 Variant matrix:
   V1  — 1 role + 1 tool (minimal agent)
   V2  — 3 roles + 5 tools with RBAC matrix (reference agent)
   V3  — 0 tools, 0 roles (empty agent)
-  V4  — All 3 frameworks × customer_support pack
-  V5  — All 5 policy packs × langgraph framework
+  V4  — OpenClaw framework × customer_support pack
+  V5  — All 6 policy packs × OpenClaw framework
   V6  — Sensitivity levels: all-low vs all-critical
   V7  — Rate limits: per-tool + per-role cross-check
   V8  — Rollout modes: observe / warn / enforce
@@ -46,7 +46,7 @@ async def _create_agent(client: AsyncClient, **overrides) -> dict:
         "name": f"Variant-{uuid.uuid4().hex[:8]}",
         "description": "Variant test agent",
         "team": "platform",
-        "framework": "langgraph",
+        "framework": "openclaw",
         "environment": "dev",
         "is_public_facing": False,
         "has_tools": True,
@@ -274,22 +274,25 @@ class TestVariantRichAgent:
         assert len(all_tools) == 5
 
     @pytest.mark.asyncio
-    async def test_rich_protection_has_all_tool_names(self, client):
-        """protected_agent.py references all 5 tool names."""
+    async def test_rich_rbac_has_all_tool_names(self, client):
+        """rbac.yaml references all 5 tool names."""
         agent, tools, roles = await self._setup_rich_agent(client)
         kit = await _generate_kit(client, agent["id"])
-        code = kit["files"]["protected_agent.py"]
+        rbac = yaml.safe_load(kit["files"]["rbac.yaml"])
+        all_tools = {
+            tool_name for role_data in rbac.get("roles", {}).values() for tool_name in role_data.get("tools", {})
+        }
         for t in tools:
-            assert t["name"] in code, f"Missing tool name: {t['name']}"
+            assert t["name"] in all_tools, f"Missing tool name: {t['name']}"
 
     @pytest.mark.asyncio
-    async def test_rich_protection_has_all_role_names(self, client):
-        """protected_agent.py references all 3 role names."""
+    async def test_rich_rbac_has_all_role_names(self, client):
+        """rbac.yaml references all 3 role names."""
         agent, tools, roles = await self._setup_rich_agent(client)
         kit = await _generate_kit(client, agent["id"])
-        code = kit["files"]["protected_agent.py"]
+        rbac = yaml.safe_load(kit["files"]["rbac.yaml"])
         for r in roles:
-            assert r["name"] in code, f"Missing role name: {r['name']}"
+            assert r["name"] in rbac.get("roles", {}), f"Missing role name: {r['name']}"
 
     @pytest.mark.asyncio
     async def test_rich_limits_has_tool_rate_limits(self, client):
@@ -357,91 +360,72 @@ class TestVariantEmptyAgent:
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# V4 — Framework variants: langgraph / raw_python / proxy_only
+# V4 — OpenClaw framework
 # ═══════════════════════════════════════════════════════════════════════
 
 
 class TestVariantFrameworks:
-    """Same agent config, different frameworks → different generated code."""
-
-    FRAMEWORKS = ["langgraph", "raw_python", "proxy_only"]
+    """OpenClaw is the only generated framework."""
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("framework", FRAMEWORKS)
-    async def test_framework_kit_generates(self, client, framework):
-        """Kit generates for each framework."""
-        agent = await _create_agent(client, framework=framework, policy_pack="customer_support")
+    async def test_framework_kit_generates(self, client):
+        """Kit generates for OpenClaw."""
+        agent = await _create_agent(client, policy_pack="customer_support")
         await _create_tool(client, agent["id"], name="frameworkTool")
         kit = await _generate_kit(client, agent["id"])
         assert len(kit["files"]) == 7
-        assert kit["framework"] == framework
+        assert kit["framework"] == "openclaw"
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("framework", FRAMEWORKS)
-    async def test_framework_protection_valid_python(self, client, framework):
-        """protected_agent.py is valid Python for each framework."""
-        agent = await _create_agent(client, framework=framework, policy_pack="customer_support")
+    async def test_framework_protection_valid_python(self, client):
+        """protected_agent.py is valid Python."""
+        agent = await _create_agent(client, policy_pack="customer_support")
         await _create_tool(client, agent["id"], name="fwTool")
         kit = await _generate_kit(client, agent["id"])
         ast.parse(kit["files"]["protected_agent.py"])
 
     @pytest.mark.asyncio
-    async def test_langgraph_has_stategraph_classes(self, client):
-        """LangGraph variant has RBACService, PreToolGate, PostToolGate, LimitsService."""
-        agent = await _create_agent(client, framework="langgraph", policy_pack="customer_support")
-        await _create_tool(client, agent["id"], name="lgTool")
+    async def test_openclaw_exposes_firewall_base_url(self, client):
+        """OpenClaw integration points clients at Agent-Firewall."""
+        agent = await _create_agent(client, policy_pack="customer_support")
+        await _create_tool(client, agent["id"], name="ocTool")
         kit = await _generate_kit(client, agent["id"])
-        classes = _get_class_names(kit["files"]["protected_agent.py"])
-        assert {"RBACService", "PreToolGate", "PostToolGate", "LimitsService"} <= classes
+        code = kit["files"]["protected_agent.py"]
+        assert "AGENT_FIREWALL_URL" in code
+        assert "/v1" in code
 
     @pytest.mark.asyncio
-    async def test_raw_python_has_protected_call(self, client):
-        """Raw Python variant has protected_tool_call function."""
-        agent = await _create_agent(client, framework="raw_python", policy_pack="customer_support")
-        await _create_tool(client, agent["id"], name="rpTool")
+    async def test_openclaw_uses_openai_compatible_client(self, client):
+        """OpenClaw kit uses an OpenAI-compatible client against the firewall."""
+        agent = await _create_agent(client, policy_pack="customer_support")
+        await _create_tool(client, agent["id"], name="clientTool")
         kit = await _generate_kit(client, agent["id"])
-        funcs = _get_function_names(kit["files"]["protected_agent.py"])
-        assert "protected_tool_call" in funcs
+        code = kit["files"]["protected_agent.py"]
+        assert "from openai import OpenAI" in code
+        assert "client = OpenAI(" in code
 
     @pytest.mark.asyncio
-    async def test_proxy_only_is_short(self, client):
-        """Proxy-only variant is ≤ 20 lines."""
-        agent = await _create_agent(client, framework="proxy_only", policy_pack="customer_support")
+    async def test_openclaw_wrapper_is_compact(self, client):
+        """OpenClaw wrapper stays as a small entrypoint."""
+        agent = await _create_agent(client, policy_pack="customer_support")
         kit = await _generate_kit(client, agent["id"])
         lines = kit["files"]["protected_agent.py"].strip().splitlines()
         assert len(lines) <= 20
 
     @pytest.mark.asyncio
-    async def test_framework_codes_differ(self, client):
-        """All 3 frameworks produce different protected_agent.py content."""
-        codes = {}
-        for fw in self.FRAMEWORKS:
-            agent = await _create_agent(client, framework=fw, policy_pack="customer_support")
-            await _create_tool(client, agent["id"], name="diffTool")
-            kit = await _generate_kit(client, agent["id"])
-            codes[fw] = kit["files"]["protected_agent.py"]
-
-        assert codes["langgraph"] != codes["raw_python"]
-        assert codes["raw_python"] != codes["proxy_only"]
-        assert codes["langgraph"] != codes["proxy_only"]
-
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize("framework", FRAMEWORKS)
-    async def test_framework_yaml_files_identical(self, client, framework):
-        """YAML config files are framework-independent (same policy pack → same YAML)."""
-        agent = await _create_agent(client, framework=framework, policy_pack="customer_support")
+    async def test_framework_yaml_files_valid(self, client):
+        """YAML config files are valid for OpenClaw kits."""
+        agent = await _create_agent(client, policy_pack="customer_support")
         await _create_tool(client, agent["id"], name="yamlTool", sensitivity="medium")
         kit = await _generate_kit(client, agent["id"])
-        # All frameworks should have valid YAML
         for yaml_name in ["rbac.yaml", "limits.yaml", "policy.yaml"]:
             data = yaml.safe_load(kit["files"][yaml_name])
-            assert data is not None, f"{yaml_name} is None for {framework}"
+            assert data is not None, f"{yaml_name} is None"
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("framework", FRAMEWORKS)
-    async def test_framework_zip_download(self, client, framework):
-        """ZIP download works for each framework and contains 7 files."""
-        agent = await _create_agent(client, framework=framework, policy_pack="customer_support")
+    async def test_framework_zip_download(self, client):
+        """ZIP download works and contains 7 files."""
+        agent = await _create_agent(client, policy_pack="customer_support")
         await _create_tool(client, agent["id"], name="zipTool")
         await client.post(f"/v1/agents/{agent['id']}/integration-kit")
         resp = await client.get(f"/v1/agents/{agent['id']}/integration-kit/download")
@@ -452,14 +436,14 @@ class TestVariantFrameworks:
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# V5 — Policy pack variants: all 5 packs × langgraph
+# V5 — Policy pack variants: all 6 packs × OpenClaw
 # ═══════════════════════════════════════════════════════════════════════
 
 
 class TestVariantPolicyPacks:
     """Each policy pack produces different scanner thresholds and limits."""
 
-    PACKS = ["customer_support", "internal_copilot", "finance", "hr", "research"]
+    PACKS = ["telegram_gateway", "customer_support", "internal_copilot", "finance", "hr", "research"]
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("pack", PACKS)
@@ -601,9 +585,9 @@ class TestVariantSensitivity:
         for sens in ["low", "medium", "high", "critical"]:
             await _create_tool(client, agent["id"], name=f"mix_{sens}", sensitivity=sens)
         kit = await _generate_kit(client, agent["id"])
-        code = kit["files"]["protected_agent.py"]
-        for sens in ["low", "medium", "high", "critical"]:
-            assert f"mix_{sens}" in code
+        limits = yaml.safe_load(kit["files"]["limits.yaml"])
+        for sens in ["medium", "high", "critical"]:
+            assert f"mix_{sens}" in limits.get("tool_rate_limits", {})
 
     @pytest.mark.asyncio
     async def test_critical_tools_have_rate_limits(self, client):
@@ -639,14 +623,14 @@ class TestVariantRateLimits:
         assert "roles" in limits
 
     @pytest.mark.asyncio
-    async def test_langgraph_limits_service_checks_both(self, client):
-        """LangGraph LimitsService.check_limits checks per-role AND per-tool limits."""
-        agent = await _create_agent(client, framework="langgraph", policy_pack="customer_support")
+    async def test_openclaw_limits_yaml_checks_both(self, client):
+        """limits.yaml includes per-role and per-tool limits."""
+        agent = await _create_agent(client, policy_pack="customer_support")
         await _create_tool(client, agent["id"], name="rateTool", sensitivity="high", access_type="write")
         kit = await _generate_kit(client, agent["id"])
-        code = kit["files"]["protected_agent.py"]
-        # LimitsService should reference tool_rate_limits
-        assert "tool_rate_limits" in code
+        limits = yaml.safe_load(kit["files"]["limits.yaml"])
+        assert "roles" in limits
+        assert "tool_rate_limits" in limits
 
     @pytest.mark.asyncio
     async def test_limits_yaml_has_max_tool_calls(self, client):
@@ -698,8 +682,8 @@ class TestVariantRolloutModes:
     @pytest.mark.asyncio
     async def test_promoted_mode_in_env(self, client):
         """After observe→warn promotion, kit reflects warn mode."""
+        from src.control_plane.models import Agent, RolloutMode
         from src.db.session import async_session
-        from src.wizard.models import Agent, RolloutMode
 
         agent = await _create_agent(client, policy_pack="customer_support")
         aid = agent["id"]
@@ -811,8 +795,8 @@ class TestVariantRBACCoherence:
     """RBAC config in YAML ↔ role names in protection code ↔ test assertions."""
 
     @pytest.mark.asyncio
-    async def test_rbac_yaml_roles_in_protection_code(self, client):
-        """Every role in rbac.yaml appears in protected_agent.py."""
+    async def test_rbac_yaml_roles_are_emitted(self, client):
+        """Every configured role appears in rbac.yaml."""
         agent = await _create_agent(client, policy_pack="customer_support")
         aid = agent["id"]
         tools = []
@@ -825,23 +809,25 @@ class TestVariantRBACCoherence:
 
         kit = await _generate_kit(client, aid)
         rbac = yaml.safe_load(kit["files"]["rbac.yaml"])
-        code = kit["files"]["protected_agent.py"]
 
-        for role_name in rbac["roles"]:
-            assert role_name in code, f"Role '{role_name}' in YAML but not in code"
+        assert {"alpha", "beta", "gamma"} <= set(rbac["roles"])
 
     @pytest.mark.asyncio
-    async def test_rbac_yaml_tools_in_protection_code(self, client):
-        """Every tool in rbac.yaml appears in protected_agent.py."""
+    async def test_rbac_yaml_tools_are_emitted(self, client):
+        """Every configured tool appears in rbac.yaml."""
         agent = await _create_agent(client, policy_pack="customer_support")
         aid = agent["id"]
+        created_tools = []
         for name in ["searchDB", "updateRecord", "deleteEntry"]:
-            await _create_tool(client, aid, name=name)
+            created_tools.append(await _create_tool(client, aid, name=name))
+        role = await _create_role(client, aid, name="toolCarrier")
+        await _set_permissions(client, aid, role["id"], [tool["id"] for tool in created_tools])
 
         kit = await _generate_kit(client, aid)
-        code = kit["files"]["protected_agent.py"]
+        rbac = yaml.safe_load(kit["files"]["rbac.yaml"])
+        tools = {tool_name for role_data in rbac.get("roles", {}).values() for tool_name in role_data.get("tools", {})}
         for tname in ["searchDB", "updateRecord", "deleteEntry"]:
-            assert tname in code
+            assert tname in tools
 
     @pytest.mark.asyncio
     async def test_test_security_references_rbac_roles(self, client):
@@ -990,10 +976,8 @@ class TestVariantCrossFileConsistency:
             # Validate Python
             code = zf.read("protected_agent.py").decode()
             ast.parse(code)
-            for name in ["readDocs", "readUsers", "processPayment", "deleteAccount"]:
-                assert name in code
-            for name in ["viewer", "operator", "superadmin"]:
-                assert name in code
+            assert "OpenClaw" in code
+            assert "AGENT_FIREWALL_URL" in code
 
             # Validate tests
             test_code = zf.read("test_security.py").decode()

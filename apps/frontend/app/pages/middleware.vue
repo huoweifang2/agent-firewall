@@ -261,7 +261,7 @@
 import { computed, ref, watch } from 'vue'
 import { useAgents } from '~/composables/useAgents'
 import { useAgentTools, useOpenClawAgents, useOpenClawHooks, useOpenClawSkills, useOpenClawStatus } from '~/composables/useAgentTools'
-import type { ToolRead } from '~/types/wizard'
+import type { ToolRead } from '~/types/agentControl'
 
 definePageMeta({ title: 'Skills & Hooks' })
 

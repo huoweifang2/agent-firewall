@@ -55,7 +55,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useAgents } from '~/composables/useAgents'
-import type { AgentRead } from '~/types/wizard'
+import type { AgentRead } from '~/types/agentControl'
 
 definePageMeta({ title: 'Edit Agent' })
 

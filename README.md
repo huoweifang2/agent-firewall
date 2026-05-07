@@ -4,6 +4,8 @@ Agent-Firewall is a local safety shell around an OpenClaw runtime. It sits betwe
 
 Telegram is the currently implemented message ingress adapter. It is useful for real-world chat traffic, but it is not the core product boundary. The core boundary is the Agent-Firewall layer that wraps OpenClaw execution.
 
+The Agent Control Plane in `apps/proxy-service` stores protected bot-agent registrations, role/tool/skill bindings, runtime specs, rollout state, and trace metadata. Public HTTP routes remain `/v1/agents`, `/v1/openclaw/*`, and `/v1/interventions`.
+
 ## Protected Runtime Path
 
 ```text
@@ -59,6 +61,7 @@ The default local database is SQLite at `~/.openclaw/agent-firewall.sqlite`; Red
 
 - **Attack Playground**: first page and first nav item; manual prompt attack testing.
 - **Approvals / Audit**: pending interventions for blocked input and tool confirmations.
+- **Bot Agents**: Agent Control Plane records for Telegram-facing main agents, subagents, tools, skills, and delegation.
 - **Skills & Hooks**: discovers local OpenClaw skills/hooks and binds eligible skills as protected Agent-Firewall tools.
 - **Trace / Audit**: full agent runtime traces, including tool plans, pre-tool gates, tool execution, post-tool gates, and final responses.
 - **Runtime Settings**: redacted OpenClaw, DeepSeek, ingress adapter, and gateway diagnostics.

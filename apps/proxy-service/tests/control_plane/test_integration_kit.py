@@ -1,18 +1,16 @@
-"""Tests for Integration Kit Generator — spec 29 (58+ tests).
+"""Tests for the OpenClaw integration kit generator.
 
 Covers:
   29a — Template engine + context builder (6 tests)
   29b — rbac.yaml template (4 tests)
   29c — limits.yaml template (4 tests)
   29d — policy.yaml template (4 tests)
-  29e — LangGraph wrapper (8 tests)
-  29f — Raw Python wrapper (6 tests)
-  29g — Proxy-only snippet (4 tests)
+  29e — OpenClaw wrapper
   29h — .env.protector (4 tests)
   29i — test_security.py (6 tests)
   29j — README.md (3 tests)
   29k — Kit API + download (9 tests)
-  29l — End-to-end smoke (3 tests)
+  29l — End-to-end smoke
 """
 
 from __future__ import annotations
@@ -26,13 +24,13 @@ import pytest
 import yaml
 from httpx import ASGITransport, AsyncClient
 
-from src.main import app
-from src.wizard.seed import REFERENCE_AGENT, seed_reference_agent, seed_reference_tools_and_roles
-from src.wizard.services.integration_kit import (
+from src.control_plane.seed import REFERENCE_AGENT, seed_reference_agent, seed_reference_tools_and_roles
+from src.control_plane.services.integration_kit import (
     build_kit_context,
     generate_integration_kit,
     get_jinja_env,
 )
+from src.main import app
 
 
 @pytest.fixture
@@ -48,7 +46,7 @@ _AGENT_BODY = {
     "name": f"KitTestAgent-{uuid.uuid4().hex[:8]}",
     "description": "Agent for integration kit tests",
     "team": "platform",
-    "framework": "langgraph",
+    "framework": "openclaw",
     "environment": "dev",
     "is_public_facing": False,
     "has_tools": True,
@@ -90,7 +88,7 @@ async def _seed_ref_agent(client: AsyncClient) -> dict:
     return ref
 
 
-async def _create_agent_with_tools_roles(client: AsyncClient, framework: str = "langgraph") -> dict:
+async def _create_agent_with_tools_roles(client: AsyncClient, framework: str = "openclaw") -> dict:
     """Create agent with 3 tools + 2 roles for testing."""
     agent = await _create_agent(client, framework=framework, policy_pack="customer_support")
     aid = agent["id"]
@@ -132,7 +130,7 @@ async def test_jinja2_env_loads(client):
     assert env is not None
     # Should be able to list templates
     templates = env.loader.list_templates()
-    assert len(templates) >= 6
+    assert len(templates) >= 4
 
 
 @pytest.mark.asyncio
@@ -168,9 +166,8 @@ async def test_context_builder_tools_populated(client):
     async for db in get_db():
         ctx = await build_kit_context(uuid.UUID(ref["id"]), db)
         tool_names = {t["name"] for t in ctx["tools"]}
-        assert "getOrders" in tool_names
-        assert "updateOrder" in tool_names
-        assert len(ctx["tools"]) == 5
+        assert tool_names
+        assert all(name.startswith("openclaw_") for name in tool_names)
         break
 
 
@@ -183,7 +180,7 @@ async def test_context_builder_roles_populated(client):
     async for db in get_db():
         ctx = await build_kit_context(uuid.UUID(ref["id"]), db)
         role_names = {r["name"] for r in ctx["roles"]}
-        assert role_names == {"user", "admin"}
+        assert role_names == {"customer", "operator"}
         break
 
 
@@ -245,8 +242,8 @@ async def test_rbac_template_valid_yaml(client):
 async def test_rbac_template_matches_generator(client):
     """rbac.yaml from kit == direct generator output."""
     ref = await _seed_ref_agent(client)
+    from src.control_plane.services.config_gen import generate_rbac_yaml
     from src.db.session import get_db
-    from src.wizard.services.config_gen import generate_rbac_yaml
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -303,8 +300,8 @@ async def test_limits_template_valid_yaml(client):
 async def test_limits_template_matches_generator(client):
     """limits.yaml from kit == direct generator output."""
     ref = await _seed_ref_agent(client)
+    from src.control_plane.services.config_gen import generate_limits_yaml
     from src.db.session import get_db
-    from src.wizard.services.config_gen import generate_limits_yaml
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -361,8 +358,8 @@ async def test_policy_template_valid_yaml(client):
 async def test_policy_template_matches_generator(client):
     """policy.yaml from kit == direct generator output."""
     ref = await _seed_ref_agent(client)
+    from src.control_plane.services.config_gen import generate_policy_yaml
     from src.db.session import get_db
-    from src.wizard.services.config_gen import generate_policy_yaml
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -386,25 +383,26 @@ async def test_policy_template_all_scanners(client):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 29e — LangGraph wrapper (8 tests)
+# 29e — OpenClaw wrapper
 # ═══════════════════════════════════════════════════════════════════════
 
 
 @pytest.mark.asyncio
-async def test_langgraph_template_renders(client):
-    """LangGraph template renders without error."""
+async def test_openclaw_template_renders(client):
+    """OpenClaw template renders without error."""
     ref = await _seed_ref_agent(client)
     from src.db.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
         assert "protected_agent.py" in kit["files"]
+        assert kit["framework"] == "openclaw"
         assert len(kit["files"]["protected_agent.py"]) > 100
         break
 
 
 @pytest.mark.asyncio
-async def test_langgraph_ast_parse(client):
+async def test_openclaw_ast_parse(client):
     """ast.parse(output) — syntactically valid Python."""
     ref = await _seed_ref_agent(client)
     from src.db.session import get_db
@@ -418,80 +416,77 @@ async def test_langgraph_ast_parse(client):
 
 
 @pytest.mark.asyncio
-async def test_langgraph_has_required_imports(client):
-    """Imports RBACService, PreToolGate, PostToolGate, LimitsService."""
+async def test_openclaw_uses_agent_firewall_base_url(client):
+    """OpenClaw integration routes through Agent-Firewall."""
     ref = await _seed_ref_agent(client)
     from src.db.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
         code = kit["files"]["protected_agent.py"]
-        for cls in ["RBACService", "PreToolGate", "PostToolGate", "LimitsService"]:
-            assert f"class {cls}" in code, f"Missing class: {cls}"
+        assert "AGENT_FIREWALL_URL" in code
+        assert 'base_url=f"{AGENT_FIREWALL_URL}/v1"' in code
         break
 
 
 @pytest.mark.asyncio
-async def test_langgraph_has_gate_functions(client):
-    """pre_tool_gate_node, post_tool_gate_node exist."""
+async def test_openclaw_imports_openai_client(client):
+    """OpenClaw kit exposes an OpenAI-compatible client pointing at the firewall."""
     ref = await _seed_ref_agent(client)
     from src.db.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
         code = kit["files"]["protected_agent.py"]
-        tree = ast.parse(code)
-        func_names = {node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
-        assert "pre_tool_gate_node" in func_names
-        assert "post_tool_gate_node" in func_names
+        assert "from openai import OpenAI" in code
+        assert "client = OpenAI(" in code
         break
 
 
 @pytest.mark.asyncio
-async def test_langgraph_has_add_protection(client):
-    """add_protection function exists."""
+async def test_openclaw_has_firewall_runtime_comment(client):
+    """Generated OpenClaw kit names the protected runtime route."""
     ref = await _seed_ref_agent(client)
     from src.db.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
         code = kit["files"]["protected_agent.py"]
-        tree = ast.parse(code)
-        func_names = {node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
-        assert "add_protection" in func_names
+        assert "Agent-Firewall" in code
+        assert "OpenClaw" in code
         break
 
 
 @pytest.mark.asyncio
-async def test_langgraph_tool_names_parameterized(client):
-    """Agent's tool names appear in generated code."""
+async def test_openclaw_tool_names_stay_in_yaml(client):
+    """Agent tool names are represented in generated policy YAML, not framework code."""
     ref = await _seed_ref_agent(client)
     from src.db.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
-        code = kit["files"]["protected_agent.py"]
-        assert "getOrders" in code
-        assert "updateOrder" in code
+        rbac = yaml.safe_load(kit["files"]["rbac.yaml"])
+        all_tools = {tool_name for role in rbac.get("roles", {}).values() for tool_name in role.get("tools", {})}
+        assert all_tools
+        assert all(name.startswith("openclaw_") for name in all_tools)
         break
 
 
 @pytest.mark.asyncio
-async def test_langgraph_role_names_parameterized(client):
-    """Agent's role names appear in generated code."""
+async def test_openclaw_role_names_stay_in_yaml(client):
+    """Agent role names are represented in RBAC YAML."""
     ref = await _seed_ref_agent(client)
     from src.db.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
-        code = kit["files"]["protected_agent.py"]
-        assert '"user"' in code
-        assert '"admin"' in code
+        rbac = yaml.safe_load(kit["files"]["rbac.yaml"])
+        assert {"customer", "operator"} <= set(rbac.get("roles", {}))
         break
 
 
 @pytest.mark.asyncio
-async def test_langgraph_has_inline_comments(client):
+async def test_openclaw_has_inline_comments(client):
     """≥5 inline comments present."""
     ref = await _seed_ref_agent(client)
     from src.db.session import get_db
@@ -501,168 +496,6 @@ async def test_langgraph_has_inline_comments(client):
         code = kit["files"]["protected_agent.py"]
         comment_lines = [line for line in code.splitlines() if line.strip().startswith("#")]
         assert len(comment_lines) >= 5
-        break
-
-
-# ═══════════════════════════════════════════════════════════════════════
-# 29f — Raw Python wrapper (6 tests)
-# ═══════════════════════════════════════════════════════════════════════
-
-
-@pytest.mark.asyncio
-async def test_raw_python_template_renders(client):
-    """Raw Python template renders without error."""
-    agent = await _create_agent(client, framework="raw_python", policy_pack="customer_support")
-    await _create_tool(client, agent["id"], name="myTool")
-
-    from src.db.session import get_db
-
-    async for db in get_db():
-        kit = await generate_integration_kit(uuid.UUID(agent["id"]), db)
-        assert "protected_agent.py" in kit["files"]
-        assert kit["framework"] == "raw_python"
-        break
-
-
-@pytest.mark.asyncio
-async def test_raw_python_ast_parse(client):
-    """ast.parse(output) — syntactically valid Python."""
-    agent = await _create_agent(client, framework="raw_python", policy_pack="customer_support")
-    await _create_tool(client, agent["id"], name="someTool")
-
-    from src.db.session import get_db
-
-    async for db in get_db():
-        kit = await generate_integration_kit(uuid.UUID(agent["id"]), db)
-        tree = ast.parse(kit["files"]["protected_agent.py"])
-        assert tree is not None
-        break
-
-
-@pytest.mark.asyncio
-async def test_raw_python_has_protected_call(client):
-    """protected_tool_call function exists."""
-    agent = await _create_agent(client, framework="raw_python", policy_pack="customer_support")
-    await _create_tool(client, agent["id"], name="aTool")
-
-    from src.db.session import get_db
-
-    async for db in get_db():
-        kit = await generate_integration_kit(uuid.UUID(agent["id"]), db)
-        code = kit["files"]["protected_agent.py"]
-        tree = ast.parse(code)
-        func_names = {node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
-        assert "protected_tool_call" in func_names
-        break
-
-
-@pytest.mark.asyncio
-async def test_raw_python_standalone_imports(client):
-    """Only imports pydantic/pyyaml/structlog (no agent_firewall SDK)."""
-    agent = await _create_agent(client, framework="raw_python", policy_pack="customer_support")
-    await _create_tool(client, agent["id"], name="bTool")
-
-    from src.db.session import get_db
-
-    async for db in get_db():
-        kit = await generate_integration_kit(uuid.UUID(agent["id"]), db)
-        code = kit["files"]["protected_agent.py"]
-        assert "agent_firewall" not in code.lower().replace("ai protector", "")
-        assert "import structlog" in code
-        break
-
-
-@pytest.mark.asyncio
-async def test_raw_python_inline_config(client):
-    """Config embedded inline, no external file dependency."""
-    agent = await _create_agent(client, framework="raw_python", policy_pack="customer_support")
-    await _create_tool(client, agent["id"], name="cTool")
-
-    from src.db.session import get_db
-
-    async for db in get_db():
-        kit = await generate_integration_kit(uuid.UUID(agent["id"]), db)
-        code = kit["files"]["protected_agent.py"]
-        assert "RBAC_CONFIG" in code
-        assert "POLICY_CONFIG" in code
-        # Should NOT reference external yaml files
-        assert "rbac.yaml" not in code
-        break
-
-
-@pytest.mark.asyncio
-async def test_raw_python_tool_names_present(client):
-    """Agent's tool names in generated code."""
-    agent = await _create_agent(client, framework="raw_python", policy_pack="customer_support")
-    await _create_tool(client, agent["id"], name="mySpecialTool")
-
-    from src.db.session import get_db
-
-    async for db in get_db():
-        kit = await generate_integration_kit(uuid.UUID(agent["id"]), db)
-        code = kit["files"]["protected_agent.py"]
-        assert "mySpecialTool" in code
-        break
-
-
-# ═══════════════════════════════════════════════════════════════════════
-# 29g — Proxy-only snippet (4 tests)
-# ═══════════════════════════════════════════════════════════════════════
-
-
-@pytest.mark.asyncio
-async def test_proxy_only_template_renders(client):
-    """Proxy-only template renders without error."""
-    agent = await _create_agent(client, framework="proxy_only", policy_pack="customer_support")
-
-    from src.db.session import get_db
-
-    async for db in get_db():
-        kit = await generate_integration_kit(uuid.UUID(agent["id"]), db)
-        assert "protected_agent.py" in kit["files"]
-        assert kit["framework"] == "proxy_only"
-        break
-
-
-@pytest.mark.asyncio
-async def test_proxy_only_ast_parse(client):
-    """ast.parse(output) — syntactically valid Python."""
-    agent = await _create_agent(client, framework="proxy_only", policy_pack="customer_support")
-
-    from src.db.session import get_db
-
-    async for db in get_db():
-        kit = await generate_integration_kit(uuid.UUID(agent["id"]), db)
-        tree = ast.parse(kit["files"]["protected_agent.py"])
-        assert tree is not None
-        break
-
-
-@pytest.mark.asyncio
-async def test_proxy_only_short(client):
-    """Output ≤ 20 lines."""
-    agent = await _create_agent(client, framework="proxy_only", policy_pack="customer_support")
-
-    from src.db.session import get_db
-
-    async for db in get_db():
-        kit = await generate_integration_kit(uuid.UUID(agent["id"]), db)
-        lines = kit["files"]["protected_agent.py"].strip().splitlines()
-        assert len(lines) <= 20
-        break
-
-
-@pytest.mark.asyncio
-async def test_proxy_only_base_url_parameterized(client):
-    """proxy_url appears in output."""
-    agent = await _create_agent(client, framework="proxy_only", policy_pack="customer_support")
-
-    from src.db.session import get_db
-
-    async for db in get_db():
-        kit = await generate_integration_kit(uuid.UUID(agent["id"]), db)
-        code = kit["files"]["protected_agent.py"]
-        assert "http://localhost:8000" in code
         break
 
 
@@ -959,41 +792,20 @@ async def test_kit_stores_on_agent(client):
 
 
 @pytest.mark.asyncio
-async def test_kit_langgraph_vs_raw_python(client):
-    """Different framework → different protected_agent.py content."""
-    agent_lg = await _create_agent(client, framework="langgraph", policy_pack="customer_support")
-    agent_rp = await _create_agent(client, framework="raw_python", policy_pack="customer_support")
+async def test_kit_framework_is_openclaw(client):
+    """Generated kits always identify OpenClaw as the framework."""
+    agent = await _create_agent(client, policy_pack="customer_support")
+    await _create_tool(client, agent["id"], name="toolA")
 
-    await _create_tool(client, agent_lg["id"], name="toolA")
-    await _create_tool(client, agent_rp["id"], name="toolA")
+    resp = await client.post(f"/v1/agents/{agent['id']}/integration-kit")
 
-    resp_lg = await client.post(f"/v1/agents/{agent_lg['id']}/integration-kit")
-    resp_rp = await client.post(f"/v1/agents/{agent_rp['id']}/integration-kit")
-
-    code_lg = resp_lg.json()["files"]["protected_agent.py"]
-    code_rp = resp_rp.json()["files"]["protected_agent.py"]
-    assert code_lg != code_rp
-    assert "add_protection" in code_lg
-    assert "protected_tool_call" in code_rp
-
-
-@pytest.mark.asyncio
-async def test_kit_proxy_only_vs_langgraph(client):
-    """proxy_only generates simpler wrapper than langgraph."""
-    agent_lg = await _create_agent(client, framework="langgraph", policy_pack="customer_support")
-    agent_po = await _create_agent(client, framework="proxy_only", policy_pack="customer_support")
-
-    resp_lg = await client.post(f"/v1/agents/{agent_lg['id']}/integration-kit")
-    resp_po = await client.post(f"/v1/agents/{agent_po['id']}/integration-kit")
-
-    code_lg = resp_lg.json()["files"]["protected_agent.py"]
-    code_po = resp_po.json()["files"]["protected_agent.py"]
-
-    assert len(code_po) < len(code_lg)
+    assert resp.status_code == 200
+    assert resp.json()["framework"] == "openclaw"
+    assert "OpenClaw" in resp.json()["files"]["protected_agent.py"]
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# 29l — End-to-end smoke (3 tests)
+# 29l — End-to-end smoke
 # ═══════════════════════════════════════════════════════════════════════
 
 
@@ -1044,18 +856,6 @@ async def _e2e_flow(client: AsyncClient, framework: str) -> None:
 
 
 @pytest.mark.asyncio
-async def test_e2e_langgraph(client):
-    """Full e2e with langgraph framework."""
-    await _e2e_flow(client, "langgraph")
-
-
-@pytest.mark.asyncio
-async def test_e2e_raw_python(client):
-    """Full e2e with raw_python framework."""
-    await _e2e_flow(client, "raw_python")
-
-
-@pytest.mark.asyncio
-async def test_e2e_proxy_only(client):
-    """Full e2e with proxy_only framework."""
-    await _e2e_flow(client, "proxy_only")
+async def test_e2e_openclaw(client):
+    """Full e2e with OpenClaw framework."""
+    await _e2e_flow(client, "openclaw")

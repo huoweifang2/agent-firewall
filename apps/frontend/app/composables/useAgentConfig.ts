@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed } from 'vue'
 import { api } from '~/services/api'
-import type { GeneratedConfig, PolicyPack } from '~/types/wizard'
+import type { GeneratedConfig, PolicyPack } from '~/types/agentControl'
 
 export const useAgentConfig = (agentId: () => string) => {
   const queryClient = useQueryClient()
 
-  const queryKey = computed(() => ['wizard-agent-config', agentId()])
+  const queryKey = computed(() => ['agent-control-config', agentId()])
 
   const { data: config, isLoading, error, refetch } = useQuery<GeneratedConfig | null>({
     queryKey,
@@ -25,7 +25,7 @@ export const useAgentConfig = (agentId: () => string) => {
   })
 
   const { data: policyPacks } = useQuery<PolicyPack[]>({
-    queryKey: ['wizard-policy-packs'],
+    queryKey: ['agent-control-policy-packs'],
     queryFn: () => api.get<PolicyPack[]>('/v1/policy-packs').then(r => r.data),
     staleTime: 60_000,
   })

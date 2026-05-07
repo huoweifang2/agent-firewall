@@ -14,15 +14,15 @@ import uuid
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.main import app
-from src.wizard.models import (
+from src.control_plane.models import (
     Agent,
     ProtectionLevel,
     RiskLevel,
 )
-from src.wizard.schemas import AgentCreate, AgentUpdate
-from src.wizard.seed import seed_reference_agent, seed_wizard
-from src.wizard.services.risk import compute_risk_level, recommend_protection_level
+from src.control_plane.schemas import AgentCreate, AgentUpdate
+from src.control_plane.seed import seed_control_plane, seed_reference_agent
+from src.control_plane.services.risk import compute_risk_level, recommend_protection_level
+from src.main import app
 
 
 @pytest.fixture
@@ -39,7 +39,7 @@ _AGENT_BODY = {
     "name": "Test Agent",
     "description": "A test agent for unit tests",
     "team": "platform",
-    "framework": "langgraph",
+    "framework": "openclaw",
     "environment": "dev",
     "is_public_facing": False,
     "has_tools": True,
@@ -97,7 +97,7 @@ async def test_agent_default_values(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_agent_framework_enum(client: AsyncClient):
-    """Only langgraph/raw_python/proxy_only accepted."""
+    """Only OpenClaw is accepted."""
     resp = await client.post("/v1/agents", json={**_AGENT_BODY, "name": "enum-fw", "framework": "invalid"})
     assert resp.status_code == 422
 
@@ -210,8 +210,8 @@ async def test_risk_all_true():
 
 @pytest.mark.asyncio
 async def test_protection_level_low():
-    """risk LOW → proxy_only."""
-    assert recommend_protection_level(RiskLevel.LOW) == ProtectionLevel.PROXY_ONLY
+    """risk LOW → openclaw."""
+    assert recommend_protection_level(RiskLevel.LOW) == ProtectionLevel.OPENCLAW
 
 
 @pytest.mark.asyncio
@@ -376,11 +376,11 @@ async def test_delete_soft_deletes(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_seed_creates_reference_agent(client: AsyncClient):
-    """After seed, 'E-commerce Assistant' exists."""
+    """After seed, the OpenClaw gateway reference agent exists."""
     await seed_reference_agent()
     resp = await client.get("/v1/agents", params={"status": "active"})
     names = [a["name"] for a in resp.json()["items"]]
-    assert "E-commerce Assistant" in names
+    assert "Telegram OpenClaw Gateway" in names
 
 
 @pytest.mark.asyncio
@@ -408,9 +408,9 @@ async def test_reference_agent_top_of_list(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_seed_idempotent(client: AsyncClient):
-    """Run seed twice → still 2 reference agents (both SEED_AGENTS)."""
-    await seed_wizard()
-    await seed_wizard()
+    """Run seed twice → still one OpenClaw gateway reference agent."""
+    await seed_control_plane()
+    await seed_control_plane()
     resp = await client.get("/v1/agents", params={"status": "active"})
     ref_count = sum(1 for a in resp.json()["items"] if a["is_reference"])
-    assert ref_count == 2
+    assert ref_count == 1

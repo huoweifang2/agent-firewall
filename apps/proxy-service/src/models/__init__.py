@@ -7,16 +7,16 @@ from src.models.policy import Policy
 from src.models.request import Request
 
 
-def _register_wizard_models() -> None:
-    """Import wizard models so Alembic's autogenerate sees them.
+def _register_control_plane_models() -> None:
+    """Import control-plane models so Alembic's autogenerate sees them.
 
     Done as a function to avoid circular import at module load time
-    (wizard.models → models.base is fine, but models.__init__ → wizard.models
-    would trigger a loop).
+    (control_plane.models -> models.base is fine, but models.__init__ ->
+    control_plane.models would trigger a loop).
     """
-    import src.wizard.models  # noqa: F401
+    import src.control_plane.models  # noqa: F401
 
 
-_register_wizard_models()
+_register_control_plane_models()
 
 __all__ = ["Base", "DenylistPhrase", "Intervention", "Policy", "Request"]

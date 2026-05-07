@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { api } from '~/services/api'
-import type { DelegationRead } from '~/types/wizard'
+import type { DelegationRead } from '~/types/agentControl'
 
 export function useAgentDelegations(agentId: () => string) {
   const queryClient = useQueryClient()

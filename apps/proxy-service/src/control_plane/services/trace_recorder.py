@@ -12,7 +12,7 @@ import structlog
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.wizard.models import (
+from src.control_plane.models import (
     AgentIncident,
     AgentTrace,
     IncidentCategory,

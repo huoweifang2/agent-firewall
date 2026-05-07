@@ -18,16 +18,16 @@ import pytest
 import yaml
 from httpx import ASGITransport, AsyncClient
 
-from src.main import app
-from src.wizard.seed import (
+from src.control_plane.seed import (
     REFERENCE_AGENT,
     seed_reference_agent,
     seed_reference_tools_and_roles,
 )
-from src.wizard.services.policy_packs import (
+from src.control_plane.services.policy_packs import (
     get_policy_pack,
     list_policy_packs,
 )
+from src.main import app
 
 
 @pytest.fixture
@@ -43,7 +43,7 @@ _AGENT_BODY = {
     "name": f"ConfigTestAgent-{uuid.uuid4().hex[:8]}",
     "description": "Agent for config gen tests",
     "team": "platform",
-    "framework": "langgraph",
+    "framework": "openclaw",
     "environment": "dev",
     "is_public_facing": False,
     "has_tools": True,
@@ -117,7 +117,7 @@ async def test_rbac_roles_present(client):
     ref = await _seed_ref_agent(client)
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     data = yaml.safe_load(resp.json()["rbac_yaml"])
-    assert set(data["roles"].keys()) == {"user", "admin"}
+    assert set(data["roles"].keys()) == {"customer", "operator"}
 
 
 @pytest.mark.asyncio
@@ -126,9 +126,9 @@ async def test_rbac_tools_present(client):
     ref = await _seed_ref_agent(client)
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     data = yaml.safe_load(resp.json()["rbac_yaml"])
-    user_tools = set(data["roles"]["user"]["tools"].keys())
-    assert "getOrders" in user_tools
-    assert "searchProducts" in user_tools
+    customer_tools = set(data["roles"]["customer"]["tools"])
+    assert customer_tools
+    assert all(name.startswith("openclaw_") for name in customer_tools)
 
 
 @pytest.mark.asyncio
@@ -137,8 +137,8 @@ async def test_rbac_inheritance_chain(client):
     ref = await _seed_ref_agent(client)
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     data = yaml.safe_load(resp.json()["rbac_yaml"])
-    assert "inherits" not in data["roles"]["user"]
-    assert data["roles"]["admin"]["inherits"] == "user"
+    assert "inherits" not in data["roles"]["customer"]
+    assert data["roles"]["operator"]["inherits"] == "customer"
 
 
 @pytest.mark.asyncio
@@ -148,7 +148,7 @@ async def test_rbac_roles_sorted_by_depth(client):
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     data = yaml.safe_load(resp.json()["rbac_yaml"])
     role_names = list(data["roles"].keys())
-    assert role_names.index("user") < role_names.index("admin")
+    assert role_names.index("customer") < role_names.index("operator")
 
 
 @pytest.mark.asyncio
@@ -157,9 +157,9 @@ async def test_rbac_scopes_correct(client):
     ref = await _seed_ref_agent(client)
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     data = yaml.safe_load(resp.json()["rbac_yaml"])
-    # updateOrder is write → scopes should include write
-    admin_tools = data["roles"]["admin"]["tools"]
-    assert "write" in admin_tools["updateOrder"]["scopes"]
+    operator_tools = data["roles"]["operator"]["tools"]
+    first_tool = next(iter(operator_tools.values()))
+    assert "write" in first_tool["scopes"]
 
 
 @pytest.mark.asyncio
@@ -168,40 +168,36 @@ async def test_rbac_sensitivity_correct(client):
     ref = await _seed_ref_agent(client)
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     data = yaml.safe_load(resp.json()["rbac_yaml"])
-    assert data["roles"]["user"]["tools"]["getOrders"]["sensitivity"] == "low"
-    assert data["roles"]["admin"]["tools"]["updateUser"]["sensitivity"] == "high"
+    first_customer_tool = next(iter(data["roles"]["customer"]["tools"].values()))
+    first_operator_tool = next(iter(data["roles"]["operator"]["tools"].values()))
+    assert first_customer_tool["sensitivity"] == "medium"
+    assert first_operator_tool["sensitivity"] == "medium"
 
 
 @pytest.mark.asyncio
 async def test_rbac_confirmation_flag(client):
-    """requires_confirmation=true where DB says so."""
+    """OpenClaw medium-sensitivity gateway tools do not require confirmation."""
     ref = await _seed_ref_agent(client)
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     data = yaml.safe_load(resp.json()["rbac_yaml"])
-    assert data["roles"]["admin"]["tools"]["updateOrder"].get("requires_confirmation") is True
+    assert not any(
+        tool.get("requires_confirmation") is True
+        for role in data["roles"].values()
+        for tool in role.get("tools", {}).values()
+    )
 
 
 @pytest.mark.asyncio
 async def test_rbac_matches_existing_config(client):
-    """Demo agent output matches existing rbac_config.yaml semantically."""
+    """Gateway agent output matches current OpenClaw seed semantics."""
     ref = await _seed_ref_agent(client)
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     generated = yaml.safe_load(resp.json()["rbac_yaml"])
 
-    # Semantic comparison: same roles, same tools per role, same scopes
-    assert set(generated["roles"].keys()) == {"user", "admin"}
-    assert generated["roles"]["admin"]["inherits"] == "user"
-    # user has getOrders + searchProducts
-    assert set(generated["roles"]["user"]["tools"].keys()) == {
-        "getOrders",
-        "searchProducts",
-    }
-    # admin has getUsers + updateOrder + updateUser
-    assert set(generated["roles"]["admin"]["tools"].keys()) == {
-        "getUsers",
-        "updateOrder",
-        "updateUser",
-    }
+    assert set(generated["roles"].keys()) == {"customer", "operator"}
+    assert generated["roles"]["operator"]["inherits"] == "customer"
+    assert set(generated["roles"]["customer"]["tools"])
+    assert set(generated["roles"]["operator"]["tools"])
 
 
 @pytest.mark.asyncio
@@ -223,7 +219,7 @@ async def test_rbac_circular_inheritance_error(client):
     # so we test the function directly
     from unittest.mock import MagicMock
 
-    from src.wizard.services.config_gen import _sort_roles_by_depth
+    from src.control_plane.services.config_gen import _sort_roles_by_depth
 
     role_a = MagicMock()
     role_a.id = uuid.uuid4()
@@ -261,7 +257,7 @@ async def test_limits_all_roles_present(client):
     ref = await _seed_ref_agent(client)
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     data = yaml.safe_load(resp.json()["limits_yaml"])
-    assert set(data["roles"].keys()) == {"user", "admin"}
+    assert set(data["roles"].keys()) == {"customer", "operator"}
 
 
 @pytest.mark.asyncio
@@ -271,17 +267,17 @@ async def test_limits_defaults_from_pack(client):
     resp = await client.post(f"/v1/agents/{ref['id']}/generate-config")
     data = yaml.safe_load(resp.json()["limits_yaml"])
     pack = get_policy_pack("customer_support")
-    # user is depth 0 → "low" tier
+    # customer is depth 0 → "low" tier
     low_tier = pack.limit_tiers["low"]
-    assert data["roles"]["user"]["max_tool_calls_per_session"] == low_tier.max_tool_calls_per_session
-    assert data["roles"]["user"]["max_cost_usd"] == low_tier.max_cost_usd
+    assert data["roles"]["customer"]["max_tool_calls_per_session"] == low_tier.max_tool_calls_per_session
+    assert data["roles"]["customer"]["max_cost_usd"] == low_tier.max_cost_usd
 
 
 @pytest.mark.asyncio
 async def test_limits_override_single_value(client):
     """Override max_cost_usd via generate_limits_yaml → only that changes."""
+    from src.control_plane.services.config_gen import generate_limits_yaml
     from src.db.session import get_db
-    from src.wizard.services.config_gen import generate_limits_yaml
 
     ref = await _seed_ref_agent(client)
     async for db in get_db():
@@ -290,14 +286,14 @@ async def test_limits_override_single_value(client):
             await generate_limits_yaml(
                 uuid.UUID(ref["id"]),
                 db,
-                overrides={"user": {"max_cost_usd": 99.0}},
+                overrides={"customer": {"max_cost_usd": 99.0}},
             )
         )
-        assert overridden["roles"]["user"]["max_cost_usd"] == 99.0
+        assert overridden["roles"]["customer"]["max_cost_usd"] == 99.0
         # Other values unchanged
         assert (
-            overridden["roles"]["user"]["max_tool_calls_per_session"]
-            == normal["roles"]["user"]["max_tool_calls_per_session"]
+            overridden["roles"]["customer"]["max_tool_calls_per_session"]
+            == normal["roles"]["customer"]["max_tool_calls_per_session"]
         )
         break
 
@@ -364,9 +360,9 @@ async def test_limits_deterministic(client):
 
 @pytest.mark.asyncio
 async def test_list_packs_returns_5(client):
-    """list_policy_packs() → 5 packs."""
+    """list_policy_packs() → 6 packs."""
     packs = list_policy_packs()
-    assert len(packs) == 5
+    assert len(packs) == 6
 
 
 @pytest.mark.asyncio
@@ -473,8 +469,8 @@ async def test_policy_values_from_pack(client):
 @pytest.mark.asyncio
 async def test_policy_override_single_value(client):
     """Override toxicity_threshold → only that changes."""
+    from src.control_plane.services.config_gen import generate_policy_yaml
     from src.db.session import get_db
-    from src.wizard.services.config_gen import generate_policy_yaml
 
     ref = await _seed_ref_agent(client)
     async for db in get_db():

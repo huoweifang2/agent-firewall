@@ -490,8 +490,8 @@ import { useAgentDelegations } from '~/composables/useAgentDelegations'
 import { useAgentKit } from '~/composables/useAgentKit'
 import { useAgentValidation } from '~/composables/useAgentValidation'
 import { useAgentRollout } from '~/composables/useAgentRollout'
-import { useAgentTracesList, useAgentIncidents } from '~/composables/useWizardTraces'
-import type { AgentRead, DelegationRead, RoleRead, RolloutMode, Sensitivity, IncidentSeverity, IncidentStatus } from '~/types/wizard'
+import { useAgentTracesList, useAgentIncidents } from '~/composables/useAgentControlTraces'
+import type { AgentRead, DelegationRead, RoleRead, RolloutMode, Sensitivity, IncidentSeverity, IncidentStatus } from '~/types/agentControl'
 
 definePageMeta({ title: 'Agent Detail' })
 

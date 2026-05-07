@@ -10,8 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.attributes import set_committed_value
 
-from src.wizard.models import Agent, AgentDelegation, AgentRole, AgentSkill, AgentTool, RoleToolPermission
-from src.wizard.schemas import (
+from src.control_plane.models import Agent, AgentDelegation, AgentRole, AgentSkill, AgentTool, RoleToolPermission
+from src.control_plane.schemas import (
     AgentRuntimeSpec,
     RuntimePermissionSpec,
     RuntimeRoleSpec,
@@ -19,7 +19,7 @@ from src.wizard.schemas import (
     RuntimeSubAgentSpec,
     RuntimeToolSpec,
 )
-from src.wizard.services.permissions import resolve_permissions_for_role
+from src.control_plane.services.permissions import resolve_permissions_for_role
 
 _KNOWN_PROVIDER_TYPES = {"internal", "mcp", "openclaw"}
 

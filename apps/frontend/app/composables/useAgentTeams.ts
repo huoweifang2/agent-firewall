@@ -7,7 +7,7 @@ import type {
   AgentTeamTemplateCreate,
   DelegationRead,
   SubAgentCreateRequest,
-} from '~/types/wizard'
+} from '~/types/agentControl'
 
 export function useAgentTeams() {
   const queryClient = useQueryClient()
@@ -23,7 +23,7 @@ export function useAgentTeams() {
       api.post<DelegationRead>(`/v1/agents/${mainAgentId}/sub-agents/create`, body).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agent-teams'] })
-      queryClient.invalidateQueries({ queryKey: ['wizard-agents'] })
+      queryClient.invalidateQueries({ queryKey: ['agent-controls'] })
       queryClient.invalidateQueries({ queryKey: ['agent-runtime-spec'] })
     },
   })
@@ -33,7 +33,7 @@ export function useAgentTeams() {
       api.post<AgentTeamRead>('/v1/agent-team-templates', body).then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agent-teams'] })
-      queryClient.invalidateQueries({ queryKey: ['wizard-agents'] })
+      queryClient.invalidateQueries({ queryKey: ['agent-controls'] })
     },
   })
 

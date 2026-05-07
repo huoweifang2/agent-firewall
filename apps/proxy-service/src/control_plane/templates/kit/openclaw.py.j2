@@ -1,0 +1,17 @@
+# Agent-Firewall — OpenClaw integration
+# Agent: {{ agent_name }}
+# Generated at: {{ generated_at }}
+
+"""OpenClaw integration entrypoint for {{ agent_name }}."""
+
+from openai import OpenAI
+
+AGENT_FIREWALL_URL = "{{ proxy_url }}"
+
+client = OpenAI(
+    base_url=f"{AGENT_FIREWALL_URL}/v1",
+    api_key="your-api-key",  # passed through to the configured provider
+)
+
+# Route Telegram, Playground, Compare, and Agent Sandbox traffic through
+# Agent-Firewall before the request reaches OpenClaw runtime tools.

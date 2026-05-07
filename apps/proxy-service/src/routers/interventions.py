@@ -57,9 +57,7 @@ async def list_interventions(
         count_stmt = count_stmt.where(Intervention.session_id == session_id)
 
     total = (await db.execute(count_stmt)).scalar() or 0
-    rows = (
-        await db.execute(stmt.order_by(Intervention.created_at.desc()).offset(offset).limit(limit))
-    ).scalars().all()
+    rows = (await db.execute(stmt.order_by(Intervention.created_at.desc()).offset(offset).limit(limit))).scalars().all()
     return InterventionListResponse(
         items=[InterventionRead.model_validate(row) for row in rows],
         total=total,

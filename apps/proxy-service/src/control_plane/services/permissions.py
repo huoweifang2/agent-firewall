@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 if TYPE_CHECKING:
-    from src.wizard.models import AgentRole, AgentTool, RoleToolPermission
+    from src.control_plane.models import AgentRole, AgentTool, RoleToolPermission
 
 
 async def detect_circular_inheritance(
@@ -29,7 +29,7 @@ async def detect_circular_inheritance(
     if proposed_parent_id == role_id:
         return True
 
-    from src.wizard.models import AgentRole  # noqa: F811
+    from src.control_plane.models import AgentRole  # noqa: F811
 
     visited: set[uuid.UUID] = {role_id}
     current_id = proposed_parent_id

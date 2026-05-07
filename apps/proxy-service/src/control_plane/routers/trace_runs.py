@@ -16,14 +16,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.session import get_db
-from src.wizard.models import Agent, AgentTraceRun
-from src.wizard.schemas import (
+from src.control_plane.models import Agent, AgentTraceRun
+from src.control_plane.schemas import (
     TraceRunCreate,
     TraceRunDetail,
     TraceRunListResponse,
     TraceRunSummary,
 )
+from src.db.session import get_db
 
 logger = structlog.get_logger()
 

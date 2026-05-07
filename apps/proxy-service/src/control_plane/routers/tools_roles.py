@@ -1,4 +1,4 @@
-"""CRUD router for tools, roles, permissions (Agent Wizard — spec 27)."""
+"""CRUD router for tools, roles, permissions (Agent Control Plane — spec 27)."""
 
 from __future__ import annotations
 
@@ -10,8 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.db.session import get_db
-from src.wizard.models import (
+from src.control_plane.models import (
     AccessType,
     Agent,
     AgentRole,
@@ -19,7 +18,7 @@ from src.wizard.models import (
     RoleToolPermission,
     Sensitivity,
 )
-from src.wizard.schemas import (
+from src.control_plane.schemas import (
     OpenClawImportRequest,
     PermissionBatchSet,
     PermissionCheckResponse,
@@ -32,14 +31,15 @@ from src.wizard.schemas import (
     ToolRead,
     ToolUpdate,
 )
-from src.wizard.services.openclaw import openclaw_arg_schema, openclaw_tool_name
-from src.wizard.services.permissions import (
+from src.control_plane.services.openclaw import openclaw_arg_schema, openclaw_tool_name
+from src.control_plane.services.permissions import (
     build_permission_matrix,
     check_permission,
     detect_circular_inheritance,
     resolve_permissions_for_role,
 )
-from src.wizard.services.tools import apply_smart_defaults
+from src.control_plane.services.tools import apply_smart_defaults
+from src.db.session import get_db
 
 logger = structlog.get_logger()
 
@@ -82,7 +82,7 @@ async def create_tool(
     if explicit_rate_limit is not None:
         tool.rate_limit = explicit_rate_limit  # keep explicit value
         # Still apply confirmation logic
-        from src.wizard.models import AccessType, Sensitivity
+        from src.control_plane.models import AccessType, Sensitivity
 
         if tool.access_type == AccessType.WRITE and tool.sensitivity in (
             Sensitivity.HIGH,
@@ -201,7 +201,7 @@ async def update_tool(
     smart_fields = {"access_type", "sensitivity", "returns_pii", "returns_secrets"}
     if smart_fields & set(update_data.keys()):
         # Re-evaluate confirmation based on new access_type/sensitivity
-        from src.wizard.models import AccessType, Sensitivity
+        from src.control_plane.models import AccessType, Sensitivity
 
         if tool.access_type == AccessType.WRITE and tool.sensitivity in (
             Sensitivity.HIGH,
@@ -213,7 +213,7 @@ async def update_tool(
 
     # Only reset rate_limit to default if rate_limit wasn't explicitly set
     if "rate_limit" not in update_data and "sensitivity" in update_data:
-        from src.wizard.models import RATE_LIMIT_DEFAULTS
+        from src.control_plane.models import RATE_LIMIT_DEFAULTS
 
         tool.rate_limit = RATE_LIMIT_DEFAULTS.get(tool.sensitivity)
 

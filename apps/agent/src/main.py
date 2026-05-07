@@ -19,24 +19,28 @@ from src.routers.traces import router as traces_router
 
 logger = structlog.get_logger()
 
-_AGENT_NAME = "OpenClaw Gateway"
+_AGENT_NAME = "Telegram OpenClaw Gateway"
 _AGENT_PAYLOAD = {
     "name": _AGENT_NAME,
-    "description": "OpenClaw agent shell protected by Agent-Firewall gateway scans.",
-    "team": "demo",
+    "description": "Telegram OpenClaw agent protected by Agent-Firewall scans, tool gates, approvals, and traces.",
+    "team": "personal",
     "framework": "openclaw",
     "environment": "production",
     "is_public_facing": True,
     "has_tools": True,
-    "has_write_actions": False,
-    "touches_pii": False,
-    "handles_secrets": False,
-    "calls_external_apis": False,
+    "has_write_actions": True,
+    "touches_pii": True,
+    "handles_secrets": True,
+    "calls_external_apis": True,
+    "policy_pack": "telegram_gateway",
+    "agent_kind": "main_agent",
+    "created_from": "template",
+    "template_key": "telegram_openclaw_gateway",
 }
 
 
 async def _ensure_agent_registered(settings) -> None:
-    """Register the agent with proxy-service wizard if no agent_id is set.
+    """Register the agent with the proxy-service control plane if no agent_id is set.
 
     Tries to find an existing agent by name first; creates one if not found.
     Updates settings.agent_id in-place so memory_node picks it up immediately.
@@ -45,17 +49,17 @@ async def _ensure_agent_registered(settings) -> None:
         logger.info("agent_id_already_set", agent_id=settings.agent_id)
         return
 
-    # proxy_base_url is like http://proxy-service:8000/v1 — strip /v1 for wizard API
+    # proxy_base_url is like http://proxy-service:8000/v1; strip /v1 for control-plane API.
     base = settings.proxy_base_url.rstrip("/")
     if base.endswith("/v1"):
         base = base[:-3]
-    wizard_base = base + "/v1"
+    control_plane_base = base + "/v1"
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             # 1. Search for existing agent by name
             resp = await client.get(
-                f"{wizard_base}/agents",
+                f"{control_plane_base}/agents",
                 params={"search": _AGENT_NAME, "per_page": 5},
             )
             if resp.status_code == 200:
@@ -63,15 +67,18 @@ async def _ensure_agent_registered(settings) -> None:
                     if item.get("name") == _AGENT_NAME:
                         settings.agent_id = item["id"]
                         if item.get("framework") != "openclaw":
-                            await client.patch(f"{wizard_base}/agents/{settings.agent_id}", json={"framework": "openclaw"})
+                            await client.patch(
+                                f"{control_plane_base}/agents/{settings.agent_id}",
+                                json={"framework": "openclaw"},
+                            )
                         logger.info(
-                            "agent_found_in_wizard",
+                            "agent_found_in_control_plane",
                             agent_id=settings.agent_id,
                         )
                         return
 
             # 2. Not found — register
-            resp = await client.post(f"{wizard_base}/agents", json=_AGENT_PAYLOAD)
+            resp = await client.post(f"{control_plane_base}/agents", json=_AGENT_PAYLOAD)
             if resp.status_code == 201:
                 settings.agent_id = resp.json()["id"]
                 logger.info(
@@ -81,7 +88,7 @@ async def _ensure_agent_registered(settings) -> None:
             elif resp.status_code == 409:
                 # Race condition — search again
                 resp2 = await client.get(
-                    f"{wizard_base}/agents",
+                    f"{control_plane_base}/agents",
                     params={"search": _AGENT_NAME, "per_page": 5},
                 )
                 if resp2.status_code == 200:
@@ -113,7 +120,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     logger.info("agent_starting", version=settings.app_version)
 
-    # Auto-register with proxy-service wizard so traces are forwarded
+    # Auto-register with proxy-service control plane so traces are forwarded.
     await _ensure_agent_registered(settings)
     await start_telegram_bridge(settings)
 

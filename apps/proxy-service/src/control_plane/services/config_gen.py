@@ -15,14 +15,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.attributes import set_committed_value
 
-from src.wizard.models import (
+from src.control_plane.models import (
     Agent,
     AgentRole,
     AgentTool,
     RoleToolPermission,
 )
-from src.wizard.services.permissions import resolve_permissions_for_role
-from src.wizard.services.policy_packs import get_policy_pack
+from src.control_plane.services.permissions import resolve_permissions_for_role
+from src.control_plane.services.policy_packs import get_policy_pack
 
 if TYPE_CHECKING:
     pass
@@ -205,7 +205,7 @@ async def generate_limits_yaml(
         tier_name = _DEPTH_TO_TIER.get(d, "high")
         tier = pack.limit_tiers.get(tier_name, pack.limit_tiers.get("low"))
         if tier is None:
-            from src.wizard.services.policy_packs import LOW_TIER
+            from src.control_plane.services.policy_packs import LOW_TIER
 
             tier = LOW_TIER
 

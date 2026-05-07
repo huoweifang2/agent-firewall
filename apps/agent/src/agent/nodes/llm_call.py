@@ -259,7 +259,7 @@ async def llm_call_node(state: AgentState) -> AgentState:
     # Silence LiteLLM logs
     os.environ.setdefault("LITELLM_LOG", settings.litellm_log_level)
 
-    messages = build_messages(state)
+    messages = build_messages(state, openai_tool_messages=True)
     session_id = state.get("session_id", "unknown")
     policy = state.get("policy", settings.default_policy)
     trace = TraceAccumulator(state.get("trace"))

@@ -2,9 +2,9 @@
   <v-container fluid class="agents-page">
     <div class="d-flex align-center justify-space-between mb-6">
       <div>
-        <h1 class="text-h5 mb-1">My Agents</h1>
+        <h1 class="text-h5 mb-1">Bot Agents</h1>
         <p class="text-body-2 text-medium-emphasis">
-          Main agents own their subagents, tools, delegation rules, and traces.
+          Telegram-facing agents own their subagents, tools, skills, delegation rules, and traces.
         </p>
       </div>
       <div class="d-flex ga-2">
@@ -13,7 +13,7 @@
           Templates
         </v-btn>
         <v-btn color="primary" prepend-icon="mdi-plus" @click="navigateTo('/agents/new')">
-          New Main Agent
+          New Bot Agent
         </v-btn>
       </div>
     </div>
@@ -38,14 +38,14 @@
       <v-icon icon="mdi-account-supervisor-circle-outline" size="72" color="primary" class="mb-4" />
       <h2 class="text-h6 mb-2">No agent teams yet</h2>
       <p class="text-body-2 text-medium-emphasis mb-6">
-        Create a coordinator team or start with an empty main agent.
+        Create a Telegram gateway team or start with an empty bot agent.
       </p>
       <div class="d-flex justify-center ga-2">
         <v-btn color="primary" prepend-icon="mdi-shape-plus-outline" @click="navigateTo('/agents/templates')">
           Use Template
         </v-btn>
         <v-btn variant="tonal" prepend-icon="mdi-plus" @click="navigateTo('/agents/new')">
-          Empty Main Agent
+          Empty Bot Agent
         </v-btn>
       </div>
     </v-card>
@@ -151,9 +151,9 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { useAgentTeams } from '~/composables/useAgentTeams'
-import type { RolloutMode } from '~/types/wizard'
+import type { RolloutMode } from '~/types/agentControl'
 
-definePageMeta({ title: 'My Agents' })
+definePageMeta({ title: 'Bot Agents' })
 
 const search = ref('')
 const selectedMainAgentId = ref<string | null>(null)

@@ -14,12 +14,12 @@ import uuid
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.main import app
-from src.wizard.seed import (
+from src.control_plane.seed import (
     REFERENCE_AGENT,
     seed_reference_agent,
     seed_reference_tools_and_roles,
 )
+from src.main import app
 
 
 @pytest.fixture
@@ -36,7 +36,7 @@ _AGENT_BODY = {
     "name": f"ToolRoleTestAgent-{uuid.uuid4().hex[:8]}",
     "description": "Agent for tool/role tests",
     "team": "platform",
-    "framework": "langgraph",
+    "framework": "openclaw",
     "environment": "dev",
     "is_public_facing": False,
     "has_tools": True,
@@ -800,8 +800,8 @@ async def test_matrix_after_role_delete(client):
 
 
 @pytest.mark.asyncio
-async def test_seed_creates_5_tools(client):
-    """Reference agent has exactly 5 tools."""
+async def test_seed_imports_openclaw_tools(client):
+    """Reference agent imports eligible OpenClaw skills as protected tools."""
     await seed_reference_agent()
     await seed_reference_tools_and_roles()
 
@@ -812,12 +812,14 @@ async def test_seed_creates_5_tools(client):
     assert ref is not None
 
     resp = await client.get(f"/v1/agents/{ref['id']}/tools")
-    assert len(resp.json()) == 5
+    tools = resp.json()
+    assert len(tools) >= 1
+    assert {tool["category"] for tool in tools} == {"openclaw"}
 
 
 @pytest.mark.asyncio
 async def test_seed_creates_3_roles(client):
-    """Reference agent has exactly 2 roles."""
+    """Reference agent has the Telegram customer/operator roles."""
     await seed_reference_agent()
     await seed_reference_tools_and_roles()
 
@@ -825,12 +827,13 @@ async def test_seed_creates_3_roles(client):
     ref = next(a for a in resp.json()["items"] if a["name"] == REFERENCE_AGENT["name"])
 
     resp = await client.get(f"/v1/agents/{ref['id']}/roles")
-    assert len(resp.json()) == 2
+    roles = {role["name"] for role in resp.json()}
+    assert roles == {"customer", "operator"}
 
 
 @pytest.mark.asyncio
 async def test_seed_inheritance_chain(client):
-    """user→admin chain correct."""
+    """customer -> operator inheritance chain is correct."""
     await seed_reference_agent()
     await seed_reference_tools_and_roles()
 
@@ -840,13 +843,13 @@ async def test_seed_inheritance_chain(client):
     resp = await client.get(f"/v1/agents/{ref['id']}/roles")
     roles = {r["name"]: r for r in resp.json()}
 
-    assert roles["user"]["inherits_from"] is None
-    assert roles["admin"]["inherits_from"] == roles["user"]["id"]
+    assert roles["customer"]["inherits_from"] is None
+    assert roles["operator"]["inherits_from"] == roles["customer"]["id"]
 
 
 @pytest.mark.asyncio
 async def test_seed_matrix_matches_existing_config(client):
-    """Permission matrix matches existing rbac_config.yaml permissions."""
+    """Permission matrix grants Telegram customer/operator access to protected OpenClaw tools."""
     await seed_reference_agent()
     await seed_reference_tools_and_roles()
 
@@ -857,24 +860,15 @@ async def test_seed_matrix_matches_existing_config(client):
     data = resp.json()
     matrix = data["matrix"]
 
-    # user: getOrders=allow, searchProducts=allow, rest=deny
-    assert matrix["user"]["getOrders"] == "allow"
-    assert matrix["user"]["searchProducts"] == "allow"
-    assert matrix["user"]["getUsers"] == "deny"
-    assert matrix["user"]["updateOrder"] == "deny"
-    assert matrix["user"]["updateUser"] == "deny"
-
-    # admin inherits user + getUsers, updateOrder (confirm), updateUser
-    assert matrix["admin"]["getOrders"] == "allow"
-    assert matrix["admin"]["searchProducts"] == "allow"
-    assert matrix["admin"]["getUsers"] == "allow"
-    assert matrix["admin"]["updateOrder"] == "confirm"
-    assert matrix["admin"]["updateUser"] == "confirm"
+    assert set(matrix) == {"customer", "operator"}
+    assert data["tools"]
+    assert all(decision == "allow" for decision in matrix["customer"].values())
+    assert all(decision == "allow" for decision in matrix["operator"].values())
 
 
 @pytest.mark.asyncio
 async def test_seed_idempotent(client):
-    """Run seed twice → still 5 tools, 2 roles."""
+    """Run seed twice → no duplicate tools or roles."""
     await seed_reference_agent()
     await seed_reference_tools_and_roles()
     await seed_reference_tools_and_roles()  # second time
@@ -883,15 +877,18 @@ async def test_seed_idempotent(client):
     ref = next(a for a in resp.json()["items"] if a["name"] == REFERENCE_AGENT["name"])
 
     tools_resp = await client.get(f"/v1/agents/{ref['id']}/tools")
-    assert len(tools_resp.json()) == 5
+    tool_names = [tool["name"] for tool in tools_resp.json()]
+    assert len(tool_names) >= 1
+    assert len(tool_names) == len(set(tool_names))
 
     roles_resp = await client.get(f"/v1/agents/{ref['id']}/roles")
-    assert len(roles_resp.json()) == 2
+    role_names = [role["name"] for role in roles_resp.json()]
+    assert sorted(role_names) == ["customer", "operator"]
 
 
 @pytest.mark.asyncio
-async def test_seed_check_permission_matches_legacy(client):
-    """check_permission for key combos matches existing RBAC expectations."""
+async def test_seed_check_permission_matches_gateway_roles(client):
+    """check_permission allows customer/operator to use imported OpenClaw tools."""
     await seed_reference_agent()
     await seed_reference_tools_and_roles()
 
@@ -899,18 +896,11 @@ async def test_seed_check_permission_matches_legacy(client):
     ref = next(a for a in resp.json()["items"] if a["name"] == REFERENCE_AGENT["name"])
     aid = ref["id"]
 
-    # user + updateOrder → deny
-    r = await client.get(f"/v1/agents/{aid}/check-permission", params={"role": "user", "tool": "updateOrder"})
-    assert r.json()["decision"] == "deny"
+    tools_resp = await client.get(f"/v1/agents/{aid}/tools")
+    tool_name = tools_resp.json()[0]["name"]
 
-    # admin + updateOrder → confirm (write+high)
-    r = await client.get(f"/v1/agents/{aid}/check-permission", params={"role": "admin", "tool": "updateOrder"})
-    assert r.json()["decision"] == "confirm"
-
-    # admin + getOrders → allow (inherited from user)
-    r = await client.get(f"/v1/agents/{aid}/check-permission", params={"role": "admin", "tool": "getOrders"})
+    r = await client.get(f"/v1/agents/{aid}/check-permission", params={"role": "customer", "tool": tool_name})
     assert r.json()["decision"] == "allow"
 
-    # user + updateUser → deny
-    r = await client.get(f"/v1/agents/{aid}/check-permission", params={"role": "user", "tool": "updateUser"})
-    assert r.json()["decision"] == "deny"
+    r = await client.get(f"/v1/agents/{aid}/check-permission", params={"role": "operator", "tool": tool_name})
+    assert r.json()["decision"] == "allow"

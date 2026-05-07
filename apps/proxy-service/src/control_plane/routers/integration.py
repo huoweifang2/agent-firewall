@@ -1,4 +1,4 @@
-"""Integration kit router (Agent Wizard — spec 29k)."""
+"""Integration kit router (Agent Control Plane — spec 29k)."""
 
 from __future__ import annotations
 
@@ -11,9 +11,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.control_plane.models import Agent
+from src.control_plane.services.integration_kit import _slugify, generate_integration_kit
 from src.db.session import get_db
-from src.wizard.models import Agent
-from src.wizard.services.integration_kit import _slugify, generate_integration_kit
 
 logger = structlog.get_logger()
 

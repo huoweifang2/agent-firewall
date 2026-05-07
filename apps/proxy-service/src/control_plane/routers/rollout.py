@@ -1,4 +1,4 @@
-"""Rollout modes router (Agent Wizard — spec 31).
+"""Rollout modes router (Agent Control Plane — spec 31).
 
 Endpoints:
   PATCH  /agents/:id/rollout           — promote / demote rollout mode
@@ -11,14 +11,14 @@ Endpoints:
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.session import get_db
-from src.wizard.models import (
+from src.control_plane.models import (
     Agent,
     GateAction,
     GateDecision,
@@ -26,7 +26,7 @@ from src.wizard.models import (
     RolloutMode,
     ValidationRun,
 )
-from src.wizard.schemas import (
+from src.control_plane.schemas import (
     GateDecisionRead,
     GateEvalRequest,
     GateEvalResponse,
@@ -36,7 +36,8 @@ from src.wizard.schemas import (
     RolloutPromoteRequest,
     RolloutPromoteResponse,
 )
-from src.wizard.services.gate import evaluate_gate
+from src.control_plane.services.gate import evaluate_gate
+from src.db.session import get_db
 
 logger = structlog.get_logger()
 
@@ -161,6 +162,7 @@ async def promote_rollout(
         from_mode=previous,
         to_mode=requested,
         user="system",  # placeholder until auth is wired
+        created_at=datetime.now(UTC),
     )
     db.add(event)
 
@@ -286,7 +288,7 @@ async def evaluate_gate_endpoint(
     agent = await _get_agent_or_404(agent_id, db)
 
     # Simulate a deny decision for the gate type
-    from src.wizard.services.gate import _GATE_DENY_ACTIONS
+    from src.control_plane.services.gate import _GATE_DENY_ACTIONS
 
     raw_decision = _GATE_DENY_ACTIONS.get(body.gate_type, GateAction.DENY)
 

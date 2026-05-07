@@ -1,8 +1,9 @@
-"""Validation router (Agent Wizard — spec 30c)."""
+"""Validation router (Agent Control Plane — spec 30c)."""
 
 from __future__ import annotations
 
 import uuid
+from datetime import UTC, datetime
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException
@@ -10,9 +11,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.control_plane.models import Agent, ValidationRun
+from src.control_plane.services.validation_runner import run_validation
 from src.db.session import get_db
-from src.wizard.models import Agent, ValidationRun
-from src.wizard.services.validation_runner import run_validation
 
 logger = structlog.get_logger()
 
@@ -115,6 +116,7 @@ async def validate_agent(
     # Store run in DB
     run = ValidationRun(
         agent_id=agent_id,
+        created_at=datetime.now(UTC),
         pack=result.pack,
         pack_version=result.pack_version,
         score=result.score,

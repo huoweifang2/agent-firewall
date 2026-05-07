@@ -27,9 +27,7 @@ def upgrade() -> None:
         sa.Column("name", sa.String(length=128), nullable=False),
         sa.Column("description", sa.Text(), nullable=False),
         sa.Column("team", sa.String(length=64), nullable=True),
-        sa.Column(
-            "framework", sa.Enum("LANGGRAPH", "RAW_PYTHON", "PROXY_ONLY", name="agent_framework"), nullable=False
-        ),
+        sa.Column("framework", sa.Enum("openclaw", name="agent_framework"), nullable=False),
         sa.Column("environment", sa.Enum("DEV", "STAGING", "PRODUCTION", name="agent_environment"), nullable=False),
         sa.Column("is_public_facing", sa.Boolean(), nullable=False),
         sa.Column("has_tools", sa.Boolean(), nullable=False),
@@ -39,7 +37,7 @@ def upgrade() -> None:
         sa.Column("calls_external_apis", sa.Boolean(), nullable=False),
         sa.Column("risk_level", sa.Enum("LOW", "MEDIUM", "HIGH", "CRITICAL", name="risk_level"), nullable=True),
         sa.Column(
-            "protection_level", sa.Enum("PROXY_ONLY", "AGENT_RUNTIME", "FULL", name="protection_level"), nullable=True
+            "protection_level", sa.Enum("openclaw", "agent_runtime", "full", name="protection_level"), nullable=True
         ),
         sa.Column("policy_pack", sa.String(length=64), nullable=True),
         sa.Column("rollout_mode", sa.Enum("OBSERVE", "WARN", "ENFORCE", name="rollout_mode"), nullable=False),

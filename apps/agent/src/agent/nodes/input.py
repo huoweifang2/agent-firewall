@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import structlog
 
 from src.agent.limits.service import get_limits_service
@@ -16,7 +18,7 @@ from src.session import session_store
 logger = structlog.get_logger()
 
 
-async def input_node(state: AgentState) -> AgentState:
+async def _input_node_async(state: AgentState) -> AgentState:
     """Load session history, sanitize user input, check limits and initialize state."""
     session_id = state["session_id"]
     chat_history = session_store.get_history(session_id)
@@ -96,3 +98,17 @@ async def input_node(state: AgentState) -> AgentState:
         trace.record_limit_hit(limit_check.limit_type or "unknown")
 
     return base_state
+
+
+def input_node(state: AgentState):
+    """Load and validate input.
+
+    The runtime graph awaits this node. Some legacy unit tests call it
+    synchronously, so outside a running loop we execute the coroutine directly.
+    """
+    coro = _input_node_async(state)
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    return coro

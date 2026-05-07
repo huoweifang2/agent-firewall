@@ -84,7 +84,11 @@ def _extract_openclaw_response(payload: object) -> str:
             if nested:
                 return _clean_openclaw_text(nested)
             meta = result.get("meta")
-            meta_text = _first_text(meta, ("finalAssistantVisibleText", "finalAssistantRawText")) if isinstance(meta, dict) else None
+            meta_text = (
+                _first_text(meta, ("finalAssistantVisibleText", "finalAssistantRawText"))
+                if isinstance(meta, dict)
+                else None
+            )
             if meta_text:
                 return _clean_openclaw_text(meta_text)
             summary = result.get("summary") or payload.get("summary")
@@ -92,7 +96,11 @@ def _extract_openclaw_response(payload: object) -> str:
                 return f"OpenClaw completed: {summary.strip()}"
 
         meta = payload.get("meta")
-        meta_text = _first_text(meta, ("finalAssistantVisibleText", "finalAssistantRawText")) if isinstance(meta, dict) else None
+        meta_text = (
+            _first_text(meta, ("finalAssistantVisibleText", "finalAssistantRawText"))
+            if isinstance(meta, dict)
+            else None
+        )
         if meta_text:
             return _clean_openclaw_text(meta_text)
 
@@ -101,7 +109,7 @@ def _extract_openclaw_response(payload: object) -> str:
 
 
 def _resolve_openclaw_agent_id(request_agent_id: str | None) -> str:
-    """Treat wizard UUIDs as control-plane IDs, not OpenClaw agent IDs."""
+    """Treat control-plane UUIDs as registry IDs, not OpenClaw agent IDs."""
     settings = get_settings()
     if not request_agent_id or _UUID_RE.match(request_agent_id):
         return settings.openclaw_agent_id
@@ -172,7 +180,7 @@ def _state_to_chat_response(body: AgentChatRequest, state: dict) -> AgentChatRes
         tools_called=tool_calls,
         agent_trace=AgentTrace(
             agent_id=str(state.get("agent_id") or ""),
-            agent_name=str(state.get("agent_name") or trace.get("agent_name") or "OpenClaw Gateway"),
+            agent_name=str(state.get("agent_name") or trace.get("agent_name") or "Telegram OpenClaw Gateway"),
             agent_kind=str(trace.get("agent_kind") or "openclaw"),
             parent_agent_id=state.get("parent_agent_id"),
             delegated_from=state.get("delegated_from"),
@@ -192,7 +200,9 @@ def _state_to_chat_response(body: AgentChatRequest, state: dict) -> AgentChatRes
         ),
         firewall_decision=_firewall_decision(firewall),
         trace=trace,
-        pending_confirmation=state.get("pending_confirmation") if isinstance(state.get("pending_confirmation"), dict) else None,
+        pending_confirmation=state.get("pending_confirmation")
+        if isinstance(state.get("pending_confirmation"), dict)
+        else None,
     )
 
 

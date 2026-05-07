@@ -10,8 +10,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.db.session import get_db
-from src.wizard.models import (
+from src.control_plane.models import (
     AccessType,
     Agent,
     AgentCreatedFrom,
@@ -28,7 +27,7 @@ from src.wizard.models import (
     Sensitivity,
     SkillScope,
 )
-from src.wizard.schemas import (
+from src.control_plane.schemas import (
     AgentRead,
     AgentTeamRead,
     AgentTeamsResponse,
@@ -36,8 +35,9 @@ from src.wizard.schemas import (
     AgentTeamTemplateCreate,
     DelegationRead,
 )
-from src.wizard.services.risk import apply_risk_classification
-from src.wizard.services.tools import apply_smart_defaults
+from src.control_plane.services.risk import apply_risk_classification
+from src.control_plane.services.tools import apply_smart_defaults
+from src.db.session import get_db
 
 logger = structlog.get_logger()
 router = APIRouter(tags=["agent-teams"])
@@ -61,11 +61,17 @@ def _binding_to_read(binding: AgentDelegation) -> DelegationRead:
 
 
 async def _counts(db: AsyncSession, agent_id: uuid.UUID) -> tuple[int, int, int, object | None]:
-    tools = (await db.execute(select(func.count()).select_from(AgentTool).where(AgentTool.agent_id == agent_id))).scalar_one()
-    roles = (await db.execute(select(func.count()).select_from(AgentRole).where(AgentRole.agent_id == agent_id))).scalar_one()
-    skills = (await db.execute(select(func.count()).select_from(AgentSkill).where(AgentSkill.agent_id == agent_id))).scalar_one()
+    tools = (
+        await db.execute(select(func.count()).select_from(AgentTool).where(AgentTool.agent_id == agent_id))
+    ).scalar_one()
+    roles = (
+        await db.execute(select(func.count()).select_from(AgentRole).where(AgentRole.agent_id == agent_id))
+    ).scalar_one()
+    skills = (
+        await db.execute(select(func.count()).select_from(AgentSkill).where(AgentSkill.agent_id == agent_id))
+    ).scalar_one()
     try:
-        from src.wizard.models import AgentTraceRun
+        from src.control_plane.models import AgentTraceRun
 
         last_trace = (
             await db.execute(select(func.max(AgentTraceRun.timestamp)).where(AgentTraceRun.agent_id == agent_id))
@@ -165,7 +171,9 @@ async def _create_agent(
     return agent
 
 
-async def _add_tool(db: AsyncSession, agent: Agent, name: str, description: str, access: AccessType, sensitivity: Sensitivity) -> AgentTool:
+async def _add_tool(
+    db: AsyncSession, agent: Agent, name: str, description: str, access: AccessType, sensitivity: Sensitivity
+) -> AgentTool:
     tool = AgentTool(
         agent_id=agent.id,
         name=name,
@@ -227,7 +235,9 @@ async def create_agent_team_template(
         template_key=body.template_key,
         policy_pack="internal_copilot",
     )
-    web = await _add_tool(db, main, "WEB_SEARCH", "Read-only web search for lightweight coordination.", AccessType.READ, Sensitivity.LOW)
+    web = await _add_tool(
+        db, main, "WEB_SEARCH", "Read-only web search for lightweight coordination.", AccessType.READ, Sensitivity.LOW
+    )
     await _add_role_with_tools(db, main, "operator", [web])
     await _add_skill(
         db,
@@ -276,7 +286,13 @@ async def create_agent_team_template(
         )
         tools = [await _add_tool(db, child, *tool_def) for tool_def in tool_defs]
         await _add_role_with_tools(db, child, "operator", tools)
-        await _add_skill(db, child, "focused_execution", SkillScope.SUB_AGENT, "Complete delegated tasks and return concise structured results.")
+        await _add_skill(
+            db,
+            child,
+            "focused_execution",
+            SkillScope.SUB_AGENT,
+            "Complete delegated tasks and return concise structured results.",
+        )
         binding = AgentDelegation(
             parent_agent_id=main.id,
             child_agent_id=child.id,

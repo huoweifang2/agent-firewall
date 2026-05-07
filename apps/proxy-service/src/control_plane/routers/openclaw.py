@@ -5,8 +5,8 @@ from __future__ import annotations
 import structlog
 from fastapi import APIRouter, HTTPException, Query
 
-from src.wizard.schemas import OpenClawAgentsResponse, OpenClawHooksResponse, OpenClawSkillsResponse
-from src.wizard.services.openclaw import (
+from src.control_plane.schemas import OpenClawAgentsResponse, OpenClawHooksResponse, OpenClawSkillsResponse
+from src.control_plane.services.openclaw import (
     get_openclaw_models_status,
     get_openclaw_status,
     list_openclaw_agents,

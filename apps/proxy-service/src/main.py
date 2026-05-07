@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Ensure tables exist (dev convenience — production uses Alembic)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    from src.wizard.schema_compat import ensure_agent_hierarchy_columns
+    from src.control_plane.schema_compat import ensure_agent_hierarchy_columns
 
     await ensure_agent_hierarchy_columns(engine)
 
@@ -53,9 +53,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await seed_denylist()
 
     # Seed Telegram-first OpenClaw gateway data and protected local skills.
-    from src.wizard import seed_wizard
+    from src.control_plane import seed_control_plane
 
-    await seed_wizard()
+    await seed_control_plane()
 
     # Cancel any benchmark runs orphaned by a previous crash / restart
     from src.db.session import async_session
@@ -178,10 +178,10 @@ app.include_router(chat_router)
 app.include_router(chat_direct_router)
 app.include_router(models_router)
 
-# Agent Wizard — self-contained module (specs 26-33)
-from src.wizard import wizard_router  # noqa: E402
+# Agent Control Plane — protected agent registry and runtime control surface.
+from src.control_plane import control_plane_router  # noqa: E402
 
-app.include_router(wizard_router, prefix="/v1")
+app.include_router(control_plane_router, prefix="/v1")
 
 app.include_router(analytics_router, prefix="/v1")
 app.include_router(interventions_router, prefix="/v1")

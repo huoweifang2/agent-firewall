@@ -7,7 +7,7 @@ import type {
   IncidentStatus,
   TraceListResponse,
   TraceStatsResponse,
-} from '~/types/wizard'
+} from '~/types/agentControl'
 
 export const useAgentTracesList = (
   agentId: () => string,
@@ -22,7 +22,7 @@ export const useAgentTracesList = (
   },
 ) => {
   const queryKey = computed(() => [
-    'wizard-agent-traces',
+    'agent-control-traces',
     agentId(),
     filters?.page?.value ?? 1,
     filters?.perPage?.value ?? 20,
@@ -61,7 +61,7 @@ export const useAgentTracesList = (
 
 export const useAgentTracesStats = (agentId: () => string) => {
   const { data: stats, isLoading, refetch } = useQuery<TraceStatsResponse>({
-    queryKey: computed(() => ['wizard-agent-trace-stats', agentId()]),
+    queryKey: computed(() => ['agent-control-trace-stats', agentId()]),
     queryFn: () =>
       api.get<TraceStatsResponse>(`/v1/agents/${agentId()}/traces/stats`).then(r => r.data),
     staleTime: 0,
@@ -82,7 +82,7 @@ export const useAgentIncidents = (
   const queryClient = useQueryClient()
 
   const queryKey = computed(() => [
-    'wizard-agent-incidents',
+    'agent-control-incidents',
     agentId(),
     filters?.status?.value,
     filters?.severity?.value,

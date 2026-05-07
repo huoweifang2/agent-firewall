@@ -1,5 +1,8 @@
 .PHONY: setup dev dev-all lint lint-fix format test test-agent test-proxy frontend-build verify clean
 
+export UV_CACHE_DIR ?= $(CURDIR)/.uv-cache
+export DYLD_FALLBACK_LIBRARY_PATH ?= /opt/homebrew/lib:/usr/local/lib
+
 setup:
 	cd apps/proxy-service && uv sync
 	cd apps/agent && uv sync

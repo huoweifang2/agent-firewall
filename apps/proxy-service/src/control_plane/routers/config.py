@@ -1,4 +1,4 @@
-"""Config generation router (Agent Wizard — spec 28e)."""
+"""Config generation router (Agent Control Plane — spec 28e)."""
 
 from __future__ import annotations
 
@@ -12,14 +12,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.session import get_db
-from src.wizard.models import Agent
-from src.wizard.services.config_gen import (
+from src.control_plane.models import Agent
+from src.control_plane.services.config_gen import (
     generate_limits_yaml,
     generate_policy_yaml,
     generate_rbac_yaml,
 )
-from src.wizard.services.policy_packs import get_policy_pack, list_policy_packs
+from src.control_plane.services.policy_packs import get_policy_pack, list_policy_packs
+from src.db.session import get_db
 
 logger = structlog.get_logger()
 

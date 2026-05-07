@@ -1,7 +1,7 @@
 import { computed, type Ref } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { api } from '~/services/api'
-import type { AgentRuntimeSpec } from '~/types/wizard'
+import type { AgentRuntimeSpec } from '~/types/agentControl'
 
 export function useAgentRuntimeSpec(agentId: Ref<string | null | undefined>) {
   const query = useQuery<AgentRuntimeSpec>({

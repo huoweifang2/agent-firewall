@@ -15,16 +15,16 @@ import uuid
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.main import app
-from src.wizard.seed import (
+from src.control_plane.seed import (
     seed_reference_agent,
     seed_reference_tools_and_roles,
 )
-from src.wizard.services.validation_runner import (
+from src.control_plane.services.validation_runner import (
     BasicTestPack,
     ValidationTestDefinition,
     run_validation,
 )
+from src.main import app
 
 
 @pytest.fixture
@@ -40,7 +40,7 @@ _AGENT_BODY = {
     "name": f"ValTestAgent-{uuid.uuid4().hex[:8]}",
     "description": "Agent for validation runner tests",
     "team": "platform",
-    "framework": "langgraph",
+    "framework": "openclaw",
     "environment": "dev",
     "is_public_facing": True,
     "has_tools": True,

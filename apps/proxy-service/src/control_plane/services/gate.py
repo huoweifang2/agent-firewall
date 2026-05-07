@@ -9,7 +9,7 @@ Gates evaluate security checks but behaviour depends on the agent's rollout mode
 
 from __future__ import annotations
 
-from src.wizard.models import (
+from src.control_plane.models import (
     GateAction,
     GateDecision,
     GateDecisionType,
@@ -17,7 +17,7 @@ from src.wizard.models import (
 )
 
 # ── Simulated gate checks ────────────────────────────────────────────
-# Real scanners live in src/security/; these stubs let the wizard
+# Real scanners live in src/security/; these stubs let the control plane
 # evaluate rollout-mode logic without touching the real pipeline.
 
 _GATE_DENY_ACTIONS: dict[GateDecisionType, GateAction] = {

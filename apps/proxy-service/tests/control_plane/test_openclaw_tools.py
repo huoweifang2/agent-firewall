@@ -5,8 +5,8 @@ import uuid
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from src.control_plane.services.openclaw import redact_openclaw_payload
 from src.main import app
-from src.wizard.services.openclaw import redact_openclaw_payload
 
 
 @pytest.fixture
@@ -57,7 +57,7 @@ async def test_list_openclaw_skills_redacts_paths(client, monkeypatch):
             }
         ]
 
-    monkeypatch.setattr("src.wizard.routers.openclaw.list_openclaw_skills", fake_list_openclaw_skills)
+    monkeypatch.setattr("src.control_plane.routers.openclaw.list_openclaw_skills", fake_list_openclaw_skills)
 
     resp = await client.get("/v1/openclaw/skills")
 
@@ -82,7 +82,7 @@ async def test_list_openclaw_agents_redacts_details(client, monkeypatch):
             }
         ]
 
-    monkeypatch.setattr("src.wizard.routers.openclaw.list_openclaw_agents", fake_list_openclaw_agents)
+    monkeypatch.setattr("src.control_plane.routers.openclaw.list_openclaw_agents", fake_list_openclaw_agents)
 
     resp = await client.get("/v1/openclaw/agents")
 
@@ -105,7 +105,7 @@ async def test_list_openclaw_hooks(client, monkeypatch):
             }
         ]
 
-    monkeypatch.setattr("src.wizard.routers.openclaw.list_openclaw_hooks", fake_list_openclaw_hooks)
+    monkeypatch.setattr("src.control_plane.routers.openclaw.list_openclaw_hooks", fake_list_openclaw_hooks)
 
     resp = await client.get("/v1/openclaw/hooks")
 

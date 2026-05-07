@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from src.wizard.models import Agent, ProtectionLevel, RiskLevel
+from src.control_plane.models import Agent, ProtectionLevel, RiskLevel
 
 
 def compute_risk_level(agent: Agent) -> RiskLevel:
@@ -32,14 +32,14 @@ def compute_risk_level(agent: Agent) -> RiskLevel:
 def recommend_protection_level(risk_level: RiskLevel) -> ProtectionLevel:
     """Recommend protection level based on risk classification.
 
-    LOW      → proxy_only
+    LOW      → openclaw
     MEDIUM   → agent_runtime
     HIGH     → full
     CRITICAL → full
     """
     match risk_level:
         case RiskLevel.LOW:
-            return ProtectionLevel.PROXY_ONLY
+            return ProtectionLevel.OPENCLAW
         case RiskLevel.MEDIUM:
             return ProtectionLevel.AGENT_RUNTIME
         case RiskLevel.HIGH | RiskLevel.CRITICAL:

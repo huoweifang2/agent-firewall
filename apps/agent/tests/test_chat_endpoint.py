@@ -1,8 +1,10 @@
 """Tests for POST /agent/chat endpoint."""
 
+from types import SimpleNamespace
 from unittest.mock import patch
 
-_SCAN_PATCH = "src.routers.chat._scan_via_proxy"
+_SCAN_PATCH = "src.agent.nodes.llm_call._scan_via_proxy"
+_ACOMPLETION_PATCH = "src.agent.nodes.llm_call.acompletion"
 _OPENCLAW_CLIENT_PATCH = "src.routers.chat.OpenClawClient"
 
 
@@ -50,6 +52,29 @@ class FakeOpenClawClient:
         return {"response": f"OpenClaw: {message}"}
 
 
+class FakeLLM:
+    calls: list[dict] = []
+
+    @staticmethod
+    async def complete(*, model, messages, temperature, max_tokens, timeout, **kwargs):
+        FakeLLM.calls.append(
+            {
+                "model": model,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "timeout": timeout,
+                "kwargs": kwargs,
+            }
+        )
+        user_message = next((m["content"] for m in reversed(messages) if m.get("role") == "user"), "")
+        if "[USER_INPUT]" in user_message:
+            user_message = user_message.split("[USER_INPUT]", 1)[1].split("[/USER_INPUT]", 1)[0].strip()
+        message = SimpleNamespace(content=f"Protected: {user_message}", tool_calls=None)
+        usage = SimpleNamespace(prompt_tokens=10, completion_tokens=5)
+        return SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=usage)
+
+
 class TestAgentChatEndpoint:
     def test_missing_fields(self, client):
         """Should reject request without required fields."""
@@ -83,9 +108,9 @@ class TestAgentChatEndpoint:
     def test_valid_request_shape(self, client):
         """Should return proper response structure with mocked OpenClaw."""
         scan = _scan_allow(risk_score=0.05, intent="chitchat")
-        FakeOpenClawClient.calls = []
+        FakeLLM.calls = []
 
-        with patch(_SCAN_PATCH, return_value=scan), patch(_OPENCLAW_CLIENT_PATCH, FakeOpenClawClient):
+        with patch(_SCAN_PATCH, return_value=scan), patch(_ACOMPLETION_PATCH, FakeLLM.complete):
             response = client.post(
                 "/agent/chat",
                 json={
@@ -103,8 +128,8 @@ class TestAgentChatEndpoint:
         assert "tools_called" in data
         assert "agent_trace" in data
         assert "firewall_decision" in data
-        assert data["response"] == "OpenClaw: Hello"
-        assert FakeOpenClawClient.calls[0]["agent_id"] == "coder"
+        assert data["response"] == "Protected: Hello"
+        assert FakeLLM.calls[0]["model"] == "deepseek/deepseek-chat"
 
         # Check agent_trace structure
         trace = data["agent_trace"]
@@ -120,16 +145,16 @@ class TestAgentChatEndpoint:
         assert "decision" in fw
         assert "risk_score" in fw
 
-    def test_openclaw_response(self, client):
-        """Allowed requests should call OpenClaw."""
+    def test_allowed_request_calls_protected_llm(self, client):
+        """Allowed requests should call the protected runtime LLM path."""
         scan = _scan_allow(risk_score=0.1, intent="qa")
-        FakeOpenClawClient.calls = []
+        FakeLLM.calls = []
 
-        with patch(_SCAN_PATCH, return_value=scan), patch(_OPENCLAW_CLIENT_PATCH, FakeOpenClawClient):
+        with patch(_SCAN_PATCH, return_value=scan), patch(_ACOMPLETION_PATCH, FakeLLM.complete):
             response = client.post(
                 "/agent/chat",
                 json={
-                    "message": "What is your return policy?",
+                    "message": "Hey there",
                     "user_role": "customer",
                     "session_id": "test-kb",
                 },
@@ -137,16 +162,16 @@ class TestAgentChatEndpoint:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["response"] == "OpenClaw: What is your return policy?"
+        assert data["response"] == "Protected: Hey there"
         assert data["tools_called"] == []
-        assert data["agent_trace"]["intent"] == "qa"
-        assert FakeOpenClawClient.calls[0]["message"] == "What is your return policy?"
+        assert data["agent_trace"]["intent"] == "greeting"
+        assert "Hey there" in FakeLLM.calls[0]["messages"][-1]["content"]
 
-    def test_blocked_scan_skips_openclaw(self, client):
-        """Blocked requests should not call OpenClaw."""
-        FakeOpenClawClient.calls = []
+    def test_blocked_scan_skips_protected_llm(self, client):
+        """Blocked requests should not call the protected runtime LLM."""
+        FakeLLM.calls = []
 
-        with patch(_SCAN_PATCH, return_value=_scan_block()), patch(_OPENCLAW_CLIENT_PATCH, FakeOpenClawClient):
+        with patch(_SCAN_PATCH, return_value=_scan_block()), patch(_ACOMPLETION_PATCH, FakeLLM.complete):
             response = client.post(
                 "/agent/chat",
                 json={
@@ -160,7 +185,7 @@ class TestAgentChatEndpoint:
         data = response.json()
         assert data["firewall_decision"]["decision"] == "BLOCK"
         assert "Prompt injection detected" in data["response"]
-        assert FakeOpenClawClient.calls == []
+        assert FakeLLM.calls == []
 
     def test_openclaw_direct_endpoint_parses_direct_response(self, client):
         """Direct Compare path should call OpenClaw and return the raw response."""
