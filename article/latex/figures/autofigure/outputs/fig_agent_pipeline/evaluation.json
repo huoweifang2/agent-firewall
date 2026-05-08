@@ -1,0 +1,8 @@
+{
+  "figure": "fig_agent_pipeline",
+  "renderer": "fallback_matplotlib",
+  "generated_at": "2026-05-08T15:09:59.116893+00:00",
+  "reason": "AUTOFIGURE_EDIT_DIR or OPENAI_API_KEY was not configured.",
+  "style": "paper-process-flowchart: dashed frame, pastel lanes, thick gray arrows, icon panels",
+  "pdf": "figures/autofigure/pdf/fig_agent_pipeline.pdf"
+}

@@ -20,6 +20,8 @@ from __future__ import annotations
 import time
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from src.agent.trace.accumulator import TraceAccumulator
 
 # ── Unit: TraceAccumulator ────────────────────────────────────────────
@@ -336,8 +338,9 @@ class TestNodeTraceIntegration:
         assert result["trace"]["intent"] == "order_query"
         assert result["trace"]["intent_confidence"] > 0
 
-    @patch("src.agent.nodes.tools.execute_tool")
-    def test_tool_executor_records_execution(self, mock_exec):
+    @pytest.mark.asyncio
+    @patch("src.agent.nodes.tools.execute_tool_call")
+    async def test_tool_executor_records_execution(self, mock_exec):
         from src.agent.nodes.tools import tool_executor_node
 
         mock_exec.return_value = '{"status": "shipped"}'
@@ -354,7 +357,7 @@ class TestNodeTraceIntegration:
             "trace": t.data,
         }
 
-        result = tool_executor_node(state)
+        result = await tool_executor_node(state)
         execs = result["trace"]["iterations"][0]["tool_executions"]
         assert len(execs) == 1
         assert execs[0]["tool"] == "getOrderStatus"

@@ -2,6 +2,7 @@ matplotlib
 SciencePlots
 sciplot
 scipy
+cairosvg
 pymupdf
 pypdfium2
 python-docx
