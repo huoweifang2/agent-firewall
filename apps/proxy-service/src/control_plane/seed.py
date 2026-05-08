@@ -73,8 +73,8 @@ DEFAULT_SKILLS = [
             "Treat Telegram as the user entry point. Use only Agent-Firewall registered tools, "
             "skills, MCP providers, and subagents."
         ),
-        "constraints": ["Do not bypass Agent-Firewall tool gates."],
-        "output_contract": "Return concise user-visible answers suitable for Telegram.",
+        "constraints": {"rules": ["Do not bypass Agent-Firewall tool gates."]},
+        "output_contract": {"format": "Return concise user-visible answers suitable for Telegram."},
         "sort_order": 0,
     }
 ]

@@ -22,6 +22,23 @@
 
 All provider calls flow through pre-tool and post-tool gates unless the runtime spec explicitly disables a gate for that tool.
 
+The local Telegram tool validation used `provider_type=openclaw` with the `openclaw_summarize` protected tool. Trace records should show pre-tool decisions, tool execution metadata, post-tool decisions, and the final response; raw tokens and chat identifiers must not be copied into documentation or UI previews.
+
 ## Approved Replays
 
 Approved interventions call `/agent/chat` with `approved_intervention_id`. The runtime verifies the intervention with the proxy before treating the input scan/confirmation as approved. Telegram Bridge is one ingress adapter that can perform this replay, but the runtime contract is adapter-neutral.
+
+High-sensitivity tools are expected to follow this state sequence:
+
+```text
+LLM proposes tool -> pre-tool gate REQUIRE_CONFIRMATION
+  -> intervention kind=tool_confirmation status=pending
+  -> operator approves
+  -> replay with approved_intervention_id
+  -> pre-tool gate ALLOW
+  -> provider execution
+  -> post-tool gate
+  -> intervention status=completed
+```
+
+Rejected `input_block` interventions do not replay and therefore do not execute provider tools.

@@ -21,6 +21,24 @@ Message ingress adapter
 
 如果输入被拦截，或敏感工具需要确认，请求会被暂停；审批项会出现在 `localhost:3000` 的 **Approvals / Audit** 页面。审批通过后，受保护 runtime 会继续执行并通过原始入口适配器返回结果。
 
+## 已验证的 Telegram 工具流
+
+当前本地环境已经通过 allowlisted Telegram bot 做过真实工具调用联调，文档和日志中只保留脱敏事实，不记录 bot token 或 chat id。已验证链路为：
+
+```text
+Telegram Bridge -> /agent/chat -> /v1/scan -> pre-tool gate
+  -> OpenClaw provider -> post-tool gate -> Trace / Audit -> Telegram reply
+```
+
+已验证状态：
+
+- 普通 `openclaw_summarize` 请求经过 `/v1/scan`、pre-tool gate、OpenClaw provider、post-tool gate，并回到 Telegram。
+- 高敏工具会创建 `tool_confirmation` intervention，暂停执行；审批通过后携带 `approved_intervention_id` 重放并完成工具调用。
+- 工具输出会经过 post-tool 扫描；PII 或疑似敏感内容在最终回复和 trace preview 前被清洗。
+- 可疑输入会创建 `input_block` intervention；拒绝后不会重放，也不会执行工具。
+
+Telegram Bridge 的 agent 配置应使用 Control Plane agent UUID，而不是 `coder` 这类 OpenClaw runtime id，否则 `/runtime-spec` 无法定位受保护 agent 注册。
+
 ## 本地启动
 
 需要：
@@ -28,7 +46,7 @@ Message ingress adapter
 - `uv`
 - Node.js 和 npm
 - 已配置好的本机 OpenClaw CLI
-- 只有启用 Telegram Bridge 入口适配器时，才需要 `~/.openclaw/openclaw.json` 中已有 Telegram bot token
+- 只有启用 Telegram Bridge 入口适配器时，才需要 `~/.openclaw/openclaw.json` 中已有 Telegram 凭据
 
 安装依赖：
 
@@ -88,3 +106,4 @@ openclaw hooks list --json
 - 不要提交真实 API key、Telegram token、gateway token 或 `.env.local`。
 - `/agent/openclaw/direct` 只用于 Compare 对照，不是受保护运行链路。
 - OpenClaw skill、MCP 调用以及消息入口触发的 tool use 都应经过 Agent-Firewall runtime graph 和双重工具门控。
+- 旧 SQLite 中可能存在 list/string 形态的 `AgentSkill` metadata；runtime spec 会先归一化为 dict，避免 Telegram Bridge 请求时触发运行时校验失败。

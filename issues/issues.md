@@ -220,4 +220,34 @@ Once fixed, remove the `xfail` markers from `test_scenario_deterministic.py`
 
 ---
 
+### ISS-013: ~~Telegram Bridge used OpenClaw runtime id for Control Plane runtime-spec lookup~~ ✅ RESOLVED
+
+**Component:** `apps/agent/src/agent/telegram_bridge.py`, local `~/.openclaw/agent-firewall.json`
+
+**Status:** Fixed in local configuration. The Telegram Bridge must call `/agent/chat`
+with the Control Plane agent UUID. OpenClaw runtime ids such as `coder` are valid
+inside provider execution, but they are not valid ids for `/v1/agents/{id}/runtime-spec`.
+
+**Impact:** Bridge requests could fail before tool execution because the protected
+runtime could not load roles, tools, skills, or policy data.
+
+**Verification:** Real Telegram workflow now reaches `/v1/scan`, pre-tool gate,
+OpenClaw provider execution, post-tool gate, trace persistence, and Telegram reply.
+
+---
+
+### ISS-014: ~~Legacy skill metadata shape breaks runtime-spec validation~~ ✅ RESOLVED
+
+**Component:** `apps/proxy-service/src/control_plane/seed.py`,
+`apps/proxy-service/src/control_plane/services/runtime_spec.py`
+
+**Status:** Fixed. Seeded skills now store `constraints` and `output_contract` as
+dictionaries. The runtime-spec builder also normalizes old SQLite rows where
+`constraints` may be a list and `output_contract` may be a string.
+
+**Impact:** Existing local databases could return a runtime spec that failed schema
+validation, preventing Telegram Bridge and OpenClaw tool workflows from starting.
+
+**Verification:** Added a regression test for legacy metadata normalization in
+`tests/control_plane/test_openclaw_tools.py`.
 

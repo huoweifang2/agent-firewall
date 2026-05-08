@@ -31,3 +31,22 @@ logs/
 .DS_Store
 .idea/
 .vscode/
+
+# Thesis local build dependencies and QA caches
+article/docx/.thesis-venv/
+article/docx/.downloads/
+article/docx/.lo_profile*/
+article/docx/rendered_pages/
+
+# Thesis generated artifacts
+article/latex/*.pdf
+article/latex/*.xdv
+article/latex/*.synctex.gz
+article/latex/*.aux
+article/latex/*.fdb_latexmk
+article/latex/*.fls
+article/latex/*.out
+article/latex/*.toc
+article/docx/generated_figures/*.png
+article/docx/*.docx
+article/latex/figures/*.pdf

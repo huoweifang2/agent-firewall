@@ -5,7 +5,9 @@ import uuid
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from src.control_plane.models import AgentSkill, SkillScope
 from src.control_plane.services.openclaw import redact_openclaw_payload
+from src.db.session import async_session
 from src.main import app
 
 
@@ -163,6 +165,33 @@ async def test_import_openclaw_tool_and_runtime_spec(client):
     assert runtime_tool["provider_ref"] == "weather"
     assert runtime_tool["pre_gate_enabled"] is True
     assert runtime_tool["post_gate_enabled"] is True
+
+
+@pytest.mark.asyncio
+async def test_runtime_spec_normalizes_legacy_skill_metadata(client):
+    agent = await _create_agent(client)
+
+    async with async_session() as session:
+        session.add(
+            AgentSkill(
+                agent_id=uuid.UUID(agent["id"]),
+                name=f"legacy_skill_{uuid.uuid4().hex[:8]}",
+                description="Legacy skill with pre-schema metadata shapes",
+                scope=SkillScope.SHARED,
+                prompt_fragment="Keep replies short.",
+                constraints=["Do not bypass Agent-Firewall tool gates."],
+                output_contract="Return concise Telegram-safe answers.",
+                sort_order=0,
+            )
+        )
+        await session.commit()
+
+    runtime = await client.get(f"/v1/agents/{agent['id']}/runtime-spec")
+
+    assert runtime.status_code == 200, runtime.text
+    skill = runtime.json()["skills"][0]
+    assert skill["constraints"] == {"items": ["Do not bypass Agent-Firewall tool gates."]}
+    assert skill["output_contract"] == {"text": "Return concise Telegram-safe answers."}
 
 
 @pytest.mark.asyncio

@@ -1,0 +1,8 @@
+matplotlib
+SciencePlots
+sciplot
+scipy
+pymupdf
+pypdfium2
+python-docx
+lxml

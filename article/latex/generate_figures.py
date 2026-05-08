@@ -1,4 +1,4 @@
-"""Generate paper figures for artical.tex.
+"""Generate paper figures for article.tex.
 
 The script is intentionally self-contained: it does not call external APIs,
 PostgreSQL, OpenClaw, or the running web stack.  All values are copied from

@@ -22,3 +22,14 @@ The proxy owns `/v1/interventions`:
 - `PATCH /v1/interventions/{id}`: set `approved`, `rejected`, `completed`, or `failed`.
 
 The agent uses this API to pause protected-runtime requests and to continue approved replays through the originating ingress adapter.
+
+## Telegram Bridge Evidence
+
+Telegram is one ingress adapter that consumes allowlisted bot updates and maps them to protected runtime sessions. During local validation, the proxy recorded:
+
+- `input_scan` decisions for Telegram-originated messages.
+- `tool_confirmation` interventions for high-sensitivity tools.
+- `input_block` interventions for suspicious tool-forcing or bypass prompts.
+- completed intervention state after approval replay.
+
+The proxy stores the state transition and trace id, while the originating Bridge sends the user-visible pause, approval result, or blocked response back through Telegram.

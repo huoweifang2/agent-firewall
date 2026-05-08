@@ -24,6 +24,19 @@ from src.control_plane.services.permissions import resolve_permissions_for_role
 _KNOWN_PROVIDER_TYPES = {"internal", "mcp", "openclaw"}
 
 
+def _as_runtime_dict(value: object) -> dict | None:
+    """Normalize legacy skill metadata into the runtime contract."""
+    if value is None:
+        return None
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, list):
+        return {"items": value}
+    if isinstance(value, str):
+        return {"text": value}
+    return {"value": value}
+
+
 def _openclaw_agent_id(agent: Agent) -> str:
     generated = agent.generated_config or {}
     if isinstance(generated.get("openclaw_agent_id"), str) and generated["openclaw_agent_id"].strip():
@@ -217,8 +230,8 @@ async def build_agent_runtime_spec(agent_id: uuid.UUID, db: AsyncSession) -> Age
             description=skill.description,
             scope=skill.scope,
             prompt_fragment=skill.prompt_fragment,
-            constraints=skill.constraints,
-            output_contract=skill.output_contract,
+            constraints=_as_runtime_dict(skill.constraints),
+            output_contract=_as_runtime_dict(skill.output_contract),
             sort_order=skill.sort_order,
         )
         for skill in skills

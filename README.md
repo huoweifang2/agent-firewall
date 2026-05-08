@@ -21,6 +21,24 @@ Message ingress adapter
 
 If Agent-Firewall blocks an input or a sensitive tool needs approval, the request is paused and an item appears in `localhost:3000` under **Approvals / Audit**. Approving it lets the protected runtime continue and send the final reply through the originating adapter.
 
+## Verified Telegram Tool Workflow
+
+The current local workflow has been exercised through an allowlisted Telegram bot without exposing the bot token or chat identifier. The validated path is:
+
+```text
+Telegram Bridge -> /agent/chat -> /v1/scan -> pre-tool gate
+  -> OpenClaw provider -> post-tool gate -> Trace / Audit -> Telegram reply
+```
+
+Observed workflow states:
+
+- A normal `openclaw_summarize` request passes `/v1/scan`, the pre-tool gate, OpenClaw provider execution, post-tool filtering, and final Telegram reply.
+- A high-sensitivity tool creates a `tool_confirmation` intervention, pauses execution, then continues after approval by replaying with `approved_intervention_id`.
+- Tool output is scanned after execution; PII/secret-like content is redacted before the final reply and trace preview.
+- Suspicious input creates an `input_block` intervention. Rejected blocks are not replayed and do not execute tools.
+
+The Telegram Bridge must be configured with the Control Plane agent UUID, not the OpenClaw runtime id such as `coder`, so runtime-spec lookup resolves the protected agent registration.
+
 ## Local Setup
 
 Requirements:
@@ -28,7 +46,7 @@ Requirements:
 - `uv`
 - Node.js and npm
 - OpenClaw CLI configured on this machine
-- Telegram bot tokens in `~/.openclaw/openclaw.json` only if the Telegram Bridge adapter is enabled
+- Telegram Bridge credentials in `~/.openclaw/openclaw.json` only if that ingress adapter is enabled
 
 Install dependencies:
 
@@ -85,6 +103,7 @@ openclaw hooks list --json
 
 ## Security Notes
 
-- Do not commit real API keys, Telegram bot tokens, gateway tokens, or local `.env` files.
+- Do not commit real API keys, Telegram credentials, gateway tokens, or local `.env` files.
 - `/agent/openclaw/direct` exists only for Compare. It intentionally bypasses Agent-Firewall and must not be used for protected runtime traffic.
 - Normal OpenClaw skill execution, MCP calls, and message-adapter tool use should flow through the Agent-Firewall runtime graph and gates.
+- Legacy `AgentSkill` metadata may exist as older list/string values in local SQLite. Runtime specs normalize those shapes to dictionaries before serving the agent runtime, avoiding validation failures during Telegram Bridge requests.

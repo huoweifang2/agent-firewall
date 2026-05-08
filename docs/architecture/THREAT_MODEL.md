@@ -2,7 +2,7 @@
 
 ## Assets
 
-- Message ingress credentials, including Telegram bot token and allowed Telegram user IDs when the Telegram Bridge adapter is enabled.
+- Message ingress credentials, including Telegram Bridge credentials and allowed Telegram user IDs when that adapter is enabled.
 - DeepSeek/OpenClaw credentials in local config.
 - OpenClaw skills, hooks, MCP providers, and local files they can reach.
 - Agent-Firewall SQLite audit database.
@@ -24,6 +24,8 @@
 - MCP endpoint misuse or unexpected output injection.
 - Secret leakage in logs, traces, UI, or error messages.
 - Duplicate ingress consumers polling the same channel.
+- Runtime-spec confusion between a Control Plane agent UUID and an OpenClaw runtime id.
+- Legacy local database rows with incompatible skill metadata shapes causing protected runtime failures.
 
 ## Controls
 
@@ -36,7 +38,11 @@
 - Post-tool PII/secret/injection scanning.
 - Redaction in OpenClaw diagnostics and trace previews.
 - `/v1/interventions` approval queue for blocked or confirmation-gated requests.
+- Bridge account selection and webhook checks before Telegram long polling.
+- Runtime-spec normalization for legacy skill metadata before agent execution.
 
 ## Residual Risk
 
 Agent-Firewall reduces the blast radius of tool-calling agents but does not make arbitrary tools safe. High-impact OpenClaw skills and MCP providers should remain confirmation-gated and reviewed in the Approvals / Audit page.
+
+The current Telegram validation demonstrates the control flow, but it does not prove every OpenClaw skill is safe. Skills that touch files, accounts, payments, or external services should stay high-sensitivity or disabled until their argument schemas, output contracts, and audit expectations are reviewed.

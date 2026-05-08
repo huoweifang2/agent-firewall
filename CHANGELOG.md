@@ -11,4 +11,12 @@ This workspace is now maintained as an OpenClaw safety-shell Agent-Firewall proj
 - OpenClaw skills and MCP tools are imported as protected providers and pass through RBAC, argument scanning, limits, confirmation, post-tool filtering, and trace recording.
 - Legacy infrastructure and demo artifacts have been removed from the active product path.
 
+## Current Local Validation
+
+- Verified a real Telegram ingress workflow through `/agent/chat`, `/v1/scan`, pre-tool gate, OpenClaw provider execution, post-tool gate, trace persistence, and Telegram reply.
+- Verified high-sensitivity `tool_confirmation` pause, approval, `approved_intervention_id` replay, and completed intervention state.
+- Verified post-tool `REDACT` behavior for sensitive tool output and `input_block` behavior for suspicious input.
+- Fixed runtime-spec compatibility for legacy `AgentSkill` metadata shapes by normalizing list/string values to dictionaries before serving the runtime.
+- Confirmed the Telegram Bridge must reference the Control Plane agent UUID for protected runtime-spec lookup.
+
 Older generated release notes were intentionally replaced because they described a different product shape.
