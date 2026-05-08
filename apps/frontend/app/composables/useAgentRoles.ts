@@ -38,6 +38,7 @@ export const useAgentRoles = (agentId: () => string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKey.value })
       queryClient.invalidateQueries({ queryKey: matrixKey.value })
+      queryClient.invalidateQueries({ queryKey: ['agent-runtime-spec'] })
     },
   })
 
@@ -47,6 +48,7 @@ export const useAgentRoles = (agentId: () => string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKey.value })
       queryClient.invalidateQueries({ queryKey: matrixKey.value })
+      queryClient.invalidateQueries({ queryKey: ['agent-runtime-spec'] })
     },
   })
 
@@ -56,6 +58,7 @@ export const useAgentRoles = (agentId: () => string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKey.value })
       queryClient.invalidateQueries({ queryKey: matrixKey.value })
+      queryClient.invalidateQueries({ queryKey: ['agent-runtime-spec'] })
     },
   })
 
@@ -65,6 +68,7 @@ export const useAgentRoles = (agentId: () => string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKey.value })
       queryClient.invalidateQueries({ queryKey: matrixKey.value })
+      queryClient.invalidateQueries({ queryKey: ['agent-runtime-spec'] })
     },
   })
 

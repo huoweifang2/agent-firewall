@@ -140,6 +140,9 @@
                   <v-chip size="x-small" color="grey" variant="tonal" class="ml-2">Coming soon</v-chip>
                 </div>
                 <p class="text-body-2 text-medium-emphasis mb-0">{{ pack.description }}</p>
+                <p class="text-caption text-medium-emphasis mb-0 mt-1">
+                  Disabled because this local build does not ship runnable scenarios for the pack yet.
+                </p>
               </div>
             </v-card-text>
           </v-card>
@@ -381,6 +384,10 @@ const { createRun, isCreating } = useBenchmarkCreateRun()
 
 async function onRunBenchmark() {
   runError.value = null
+  if (!selectedPackInfo.value || selectedPackInfo.value.disabled || selectedPackInfo.value.scenarioCount === 0) {
+    runError.value = 'Selected pack is not runnable in this local build. Choose a pack with available attacks.'
+    return
+  }
   try {
     // Build target_config from query params + sessionStorage auth
     const targetConfig: Record<string, unknown> = {}

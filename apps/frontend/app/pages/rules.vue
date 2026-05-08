@@ -7,7 +7,7 @@
     </p>
 
     <!-- Toolbar -->
-    <div class="d-flex ga-2 mb-4">
+    <div class="d-flex flex-wrap ga-2 mb-4">
       <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreate">
         Add Rule
       </v-btn>
@@ -17,13 +17,33 @@
       <v-btn variant="outlined" prepend-icon="mdi-export" :loading="exporting" @click="doExport">
         Export
       </v-btn>
+      <v-select
+        v-model="categoryFilter"
+        :items="categoryItems"
+        label="Category"
+        variant="outlined"
+        density="compact"
+        hide-details
+        clearable
+        style="max-width: 220px"
+      />
+      <v-select
+        v-model="severityFilter"
+        :items="severityItems"
+        label="Severity"
+        variant="outlined"
+        density="compact"
+        hide-details
+        clearable
+        style="max-width: 180px"
+      />
       <v-spacer />
       <v-btn variant="text" icon="mdi-refresh" :loading="loadingRules" @click="loadRules" />
     </div>
 
     <!-- Rules table -->
     <rules-table
-      :rules="rules"
+      :rules="visibleRules"
       :loading="loadingRules"
       @edit="openEdit"
       @delete="confirmDelete"
@@ -86,6 +106,16 @@ const { listRules, createRule, updateRule, deleteRule, bulkImport, exportRules, 
 
 const rules = ref<Rule[]>([])
 const loadingRules = ref(false)
+const categoryFilter = ref<string | null>(null)
+const severityFilter = ref<string | null>(null)
+const severityItems = ['low', 'medium', 'high', 'critical']
+
+const categoryItems = computed(() => Array.from(new Set(rules.value.map(rule => rule.category))).sort())
+const visibleRules = computed(() => rules.value.filter((rule) => {
+  if (categoryFilter.value && rule.category !== categoryFilter.value) return false
+  if (severityFilter.value && rule.severity !== severityFilter.value) return false
+  return true
+}))
 
 async function loadRules() {
   loadingRules.value = true

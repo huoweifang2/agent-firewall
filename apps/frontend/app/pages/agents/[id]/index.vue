@@ -37,21 +37,6 @@
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="delegationDialog" max-width="560">
-      <v-card>
-        <v-card-title>Edit Delegation</v-card-title>
-        <v-card-text>
-          <v-textarea v-model="delegationForm.delegation_description" label="Description" variant="outlined" rows="2" />
-          <v-textarea v-model="delegationForm.when_to_delegate" label="When to delegate" variant="outlined" rows="3" />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="delegationDialog = false">Cancel</v-btn>
-          <v-btn color="primary" :loading="isUpdatingDelegation" @click="saveDelegationEdit">Save</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
     <div v-if="loading" class="text-center py-12">
       <v-progress-circular indeterminate size="48" />
     </div>
@@ -162,314 +147,91 @@
                 </div>
               </v-card>
             </v-col>
+            <v-col cols="12">
+              <v-card variant="outlined" class="pa-4">
+                <div class="d-flex align-center justify-space-between mb-3">
+                  <div>
+                    <h3 class="text-subtitle-1">Recent Runtime Trace Summary</h3>
+                    <p class="text-body-2 text-medium-emphasis mb-0">
+                      Last structured runs from this agent's real `/traces/runs` data plane.
+                    </p>
+                  </div>
+                  <v-btn size="small" variant="tonal" prepend-icon="mdi-timeline-clock-outline" @click="activeTab = 'traces'">
+                    Open Traces
+                  </v-btn>
+                </div>
+                <v-table v-if="recentTraceRuns.length" density="compact">
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Session</th>
+                      <th>Intent</th>
+                      <th>Tools</th>
+                      <th>Decision</th>
+                      <th>Latency</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="run in recentTraceRuns.slice(0, 5)" :key="run.trace_id">
+                      <td>{{ new Date(run.timestamp).toLocaleString() }}</td>
+                      <td><code class="text-caption">{{ shortId(run.session_id) }}</code></td>
+                      <td>{{ run.intent || 'unknown' }}</td>
+                      <td>{{ run.tool_calls_count }} calls · {{ run.tool_calls_blocked }} blocked</td>
+                      <td>
+                        <v-chip :color="run.firewall_blocked || run.tool_calls_blocked ? 'error' : 'success'" size="x-small" variant="tonal">
+                          {{ run.firewall_blocked || run.tool_calls_blocked ? 'blocked evidence' : 'allowed' }}
+                        </v-chip>
+                      </td>
+                      <td>{{ run.total_duration_ms }}ms</td>
+                    </tr>
+                  </tbody>
+                </v-table>
+                <v-alert v-else type="info" variant="tonal" density="compact">
+                  No structured trace runs yet. Use Playground, Compare, Telegram, or `/agent/chat` to generate one.
+                </v-alert>
+              </v-card>
+            </v-col>
           </v-row>
         </v-tabs-window-item>
 
         <!-- Agent Team -->
         <v-tabs-window-item value="team">
-          <v-card variant="outlined" class="pa-4">
-            <div class="d-flex align-center justify-space-between mb-3">
-              <div>
-                <h3 class="text-subtitle-1">Agent Team</h3>
-                <p class="text-body-2 text-medium-emphasis mb-0">
-                  Main agents delegate to active subagents through runtime tools.
-                </p>
-              </div>
-              <v-chip v-if="agent.agent_kind" variant="tonal" size="small">
-                {{ agent.agent_kind }}
-              </v-chip>
-            </div>
-
-            <template v-if="agent.agent_kind === 'main_agent'">
-              <v-list v-if="delegations.length" lines="three">
-                <v-list-item
-                  v-for="binding in delegations"
-                  :key="binding.id"
-                  :title="binding.child_agent_name || binding.child_agent_id"
-                  :subtitle="binding.when_to_delegate || binding.delegation_description || 'No delegation rule'"
-                >
-                  <template #prepend>
-                    <v-icon icon="mdi-call-split" />
-                  </template>
-                  <template #append>
-                    <div class="d-flex align-center ga-2">
-                      <v-switch
-                        :model-value="binding.is_active"
-                        color="success"
-                        density="compact"
-                        hide-details
-                        :loading="isUpdatingDelegation"
-                        @update:model-value="(v: boolean | null) => setDelegationActive(binding.id, !!v)"
-                      />
-                      <v-btn size="small" variant="text" icon="mdi-pencil" @click="openDelegationEdit(binding)" />
-                      <v-btn size="small" variant="text" icon="mdi-arrow-right" @click="navigateTo(`/agents/${binding.child_agent_id}`)" />
-                    </div>
-                  </template>
-                </v-list-item>
-              </v-list>
-              <div v-else class="text-center py-8 text-medium-emphasis">
-                No subagents are bound to this main agent.
-              </div>
-            </template>
-
-            <template v-else>
-              <v-alert type="info" variant="tonal">
-                This is a subagent. It has its own tools, roles, skills, and runtime spec.
-              </v-alert>
-            </template>
-          </v-card>
+          <agent-detail-team-tab :agent="agent" :agent-id="agentId" />
         </v-tabs-window-item>
 
         <!-- Tools -->
         <v-tabs-window-item value="tools">
-          <v-card variant="outlined">
-            <v-list v-if="tools.length" lines="two">
-              <v-list-item
-                v-for="tool in tools"
-                :key="tool.id"
-                :title="tool.name"
-                :subtitle="tool.description || 'No description'"
-              >
-                <template #prepend>
-                  <v-icon icon="mdi-wrench" />
-                </template>
-                <template #append>
-                  <v-chip :color="sensitivityColor(tool.sensitivity)" size="x-small" class="mr-2">
-                    {{ tool.sensitivity }}
-                  </v-chip>
-                  <v-chip size="x-small" variant="tonal">{{ tool.access_type }}</v-chip>
-                </template>
-              </v-list-item>
-            </v-list>
-            <div v-else class="text-center py-8 text-medium-emphasis">
-              No tools registered
-            </div>
-          </v-card>
+          <agent-detail-tools-tab :agent-id="agentId" />
         </v-tabs-window-item>
 
         <!-- Roles -->
         <v-tabs-window-item value="roles">
-          <v-card variant="outlined">
-            <v-list v-if="roles.length" lines="two">
-              <v-list-item
-                v-for="role in roles"
-                :key="role.id"
-                :title="role.name"
-                :subtitle="role.description || 'No description'"
-              >
-                <template #prepend>
-                  <v-icon icon="mdi-shield-account" />
-                </template>
-                <template #append>
-                  <v-chip size="x-small" variant="tonal">
-                    {{ effectivePermCount(role) }} tools
-                  </v-chip>
-                </template>
-              </v-list-item>
-            </v-list>
-            <div v-else class="text-center py-8 text-medium-emphasis">
-              No roles defined
-            </div>
-
-            <!-- Permission Matrix -->
-            <template v-if="permMatrix">
-              <v-divider />
-              <div class="pa-4">
-                <p class="text-subtitle-2 mb-3">Permission Matrix</p>
-                <v-table density="compact">
-                  <thead>
-                    <tr>
-                      <th>Role / Tool</th>
-                      <th v-for="tool in permMatrix.tools" :key="tool" class="text-center">{{ tool }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="role in permMatrix.roles" :key="role">
-                      <td class="font-weight-medium">{{ role }}</td>
-                      <td v-for="tool in permMatrix.tools" :key="tool" class="text-center">
-                        <v-icon
-                          :icon="permMatrix.matrix[role]?.[tool] === 'allow' ? 'mdi-check-circle' : 'mdi-close-circle'"
-                          :color="permMatrix.matrix[role]?.[tool] === 'allow' ? 'green' : 'red'"
-                          size="18"
-                        />
-                      </td>
-                    </tr>
-                  </tbody>
-                </v-table>
-              </div>
-            </template>
-          </v-card>
+          <agent-detail-roles-tab :agent-id="agentId" />
         </v-tabs-window-item>
 
         <!-- Config -->
         <v-tabs-window-item value="config">
-          <v-card variant="outlined" class="pa-4">
-            <div class="d-flex justify-space-between mb-3">
-              <h3 class="text-subtitle-1">Generated Configuration</h3>
-              <v-btn size="small" variant="tonal" prepend-icon="mdi-refresh" :loading="configGenerating" @click="regenerateConfig">
-                Re-generate
-              </v-btn>
-            </div>
-            <template v-if="config">
-              <v-tabs v-model="configTab" density="compact" class="mb-2">
-                <v-tab value="rbac">RBAC</v-tab>
-                <v-tab value="limits">Limits</v-tab>
-                <v-tab value="policy">Policy</v-tab>
-              </v-tabs>
-              <v-card variant="outlined" class="config-preview pa-3">
-                <pre class="text-caption">{{ configContent }}</pre>
-              </v-card>
-            </template>
-            <div v-else class="text-center py-8 text-medium-emphasis">
-              No configuration generated yet
-            </div>
-          </v-card>
+          <agent-detail-config-tab :agent-id="agentId" />
         </v-tabs-window-item>
 
         <!-- Integration Kit -->
         <v-tabs-window-item value="kit">
-          <v-card variant="outlined" class="pa-4">
-            <div class="d-flex justify-space-between mb-3">
-              <h3 class="text-subtitle-1">Integration Kit</h3>
-              <div class="d-flex ga-2">
-                <v-btn size="small" variant="tonal" prepend-icon="mdi-refresh" :loading="kitGenerating" @click="regenerateKit">
-                  Re-generate
-                </v-btn>
-                <v-btn v-if="kit" size="small" variant="tonal" prepend-icon="mdi-download" @click="downloadKit">
-                  Download ZIP
-                </v-btn>
-              </div>
-            </div>
-            <template v-if="kit?.files">
-              <v-tabs v-model="kitTab" density="compact" class="mb-2">
-                <v-tab v-for="fname in Object.keys(kit.files)" :key="fname" :value="fname">
-                  {{ fname }}
-                </v-tab>
-              </v-tabs>
-              <v-card variant="outlined" class="config-preview pa-3">
-                <pre class="text-caption">{{ kit.files[kitTab] ?? '' }}</pre>
-              </v-card>
-            </template>
-            <div v-else class="text-center py-8 text-medium-emphasis">
-              No integration kit generated yet
-            </div>
-          </v-card>
+          <agent-detail-kit-tab :agent-id="agentId" />
         </v-tabs-window-item>
 
         <!-- Validation -->
         <v-tabs-window-item value="validation">
-          <v-card variant="outlined" class="pa-4">
-            <div class="d-flex justify-space-between mb-3">
-              <h3 class="text-subtitle-1">Validation Results</h3>
-              <v-btn size="small" color="primary" prepend-icon="mdi-play" :loading="validationRunning" @click="runValidation">
-                {{ latestValidation ? 'Re-run' : 'Run Validation' }}
-              </v-btn>
-            </div>
-            <template v-if="latestValidation">
-              <v-card
-                :color="latestValidation.passed === latestValidation.total ? 'success' : 'error'"
-                variant="tonal"
-                class="mb-4 pa-3 text-center"
-              >
-                <div class="text-h4 font-weight-bold">{{ latestValidation.passed }}/{{ latestValidation.total }}</div>
-                <div>{{ latestValidation.passed === latestValidation.total ? 'All tests passed' : `${latestValidation.failed} failed` }}</div>
-              </v-card>
-              <v-list density="compact">
-                <v-list-item
-                  v-for="(r, i) in validationTests"
-                  :key="i"
-                >
-                  <template #prepend>
-                    <v-icon
-                      :icon="r.passed ? 'mdi-check-circle' : 'mdi-close-circle'"
-                      :color="r.passed ? 'green' : 'red'"
-                      size="18"
-                      class="mr-3"
-                    />
-                  </template>
-                  <v-list-item-title>{{ r.name }}</v-list-item-title>
-                  <v-list-item-subtitle>
-                    <span class="text-medium-emphasis">{{ r.category }}</span>
-                    <span v-if="!r.passed" class="ml-2">— expected {{ r.expected }}, got {{ r.actual }}</span>
-                    <span v-if="r.recommendation" class="ml-2 text-warning">• {{ r.recommendation }}</span>
-                  </v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
-            </template>
-            <div v-else class="text-center py-8 text-medium-emphasis">
-              No validation runs yet
-            </div>
-          </v-card>
+          <agent-detail-validation-tab :agent-id="agentId" />
         </v-tabs-window-item>
 
         <!-- Traces -->
         <v-tabs-window-item value="traces">
-          <v-card variant="outlined" class="pa-4">
-            <h3 class="text-subtitle-1 mb-3">Agent Traces</h3>
-            <v-data-table
-              v-if="traces.length"
-              :headers="traceHeaders"
-              :items="traces"
-              :items-per-page="20"
-              density="compact"
-            >
-              <template #item.decision="{ item }">
-                <v-chip
-                  :color="decisionColor(item.decision)"
-                  size="x-small"
-                  variant="tonal"
-                >
-                  {{ item.decision }}
-                </v-chip>
-              </template>
-              <template #item.gate="{ item }">
-                <v-chip size="x-small" variant="tonal">{{ item.gate }}</v-chip>
-              </template>
-              <template #item.timestamp="{ item }">
-                {{ new Date(item.timestamp).toLocaleString() }}
-              </template>
-            </v-data-table>
-            <div v-else class="text-center py-8 text-medium-emphasis">
-              No traces recorded yet
-            </div>
-          </v-card>
+          <agent-detail-traces-tab :agent-id="agentId" />
         </v-tabs-window-item>
 
         <!-- Incidents -->
         <v-tabs-window-item value="incidents">
-          <v-card variant="outlined" class="pa-4">
-            <h3 class="text-subtitle-1 mb-3">Incidents</h3>
-            <v-data-table
-              v-if="incidents.length"
-              :headers="incidentHeaders"
-              :items="incidents"
-              :items-per-page="20"
-              density="compact"
-            >
-              <template #item.severity="{ item }">
-                <v-chip :color="severityColor(item.severity)" size="x-small" variant="tonal">
-                  {{ item.severity }}
-                </v-chip>
-              </template>
-              <template #item.status="{ item }">
-                <v-select
-                  :model-value="item.status"
-                  :items="incidentStatuses"
-                  variant="plain"
-                  density="compact"
-                  hide-details
-                  style="max-width: 160px"
-                  @update:model-value="(v: string) => updateIncidentStatus(item.id, v as IncidentStatus)"
-                />
-              </template>
-              <template #item.first_seen="{ item }">
-                {{ new Date(item.first_seen).toLocaleString() }}
-              </template>
-            </v-data-table>
-            <div v-else class="text-center py-8 text-medium-emphasis">
-              No incidents recorded yet
-            </div>
-          </v-card>
+          <agent-detail-incidents-tab :agent-id="agentId" @open-traces="activeTab = 'traces'" />
         </v-tabs-window-item>
       </v-tabs-window>
     </template>
@@ -483,15 +245,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useAgents } from '~/composables/useAgents'
-import { useAgentTools } from '~/composables/useAgentTools'
-import { useAgentRoles } from '~/composables/useAgentRoles'
-import { useAgentConfig } from '~/composables/useAgentConfig'
-import { useAgentDelegations } from '~/composables/useAgentDelegations'
-import { useAgentKit } from '~/composables/useAgentKit'
-import { useAgentValidation } from '~/composables/useAgentValidation'
 import { useAgentRollout } from '~/composables/useAgentRollout'
-import { useAgentTracesList, useAgentIncidents } from '~/composables/useAgentControlTraces'
-import type { AgentRead, DelegationRead, RoleRead, RolloutMode, Sensitivity, IncidentSeverity, IncidentStatus } from '~/types/agentControl'
+import { useAgentTraceRuns } from '~/composables/useAgentTraceRuns'
+import type { AgentRead, RolloutMode } from '~/types/agentControl'
 
 definePageMeta({ title: 'Agent Detail' })
 
@@ -503,58 +259,15 @@ const agent = ref<AgentRead | null>(null)
 const error = ref(false)
 const activeTab = ref('overview')
 const showDeleteDialog = ref(false)
-const delegationDialog = ref(false)
-const editingDelegation = ref<DelegationRead | null>(null)
-const delegationForm = ref({
-  delegation_description: '',
-  when_to_delegate: '',
-})
 
 const { getAgent, deleteAgent, isDeleting } = useAgents()
-const { tools } = useAgentTools(() => agentId.value)
-const { roles, matrix: permMatrix } = useAgentRoles(() => agentId.value)
-const { delegations, updateDelegation, isUpdating: isUpdatingDelegation } = useAgentDelegations(() => agentId.value)
-const { config, generate: genConfig, isGenerating: configGenerating } = useAgentConfig(() => agentId.value)
-const { kit, generate: genKit, isGenerating: kitGenerating, download: downloadKit } = useAgentKit(() => agentId.value)
-const { latest: latestValidation, run: runVal, isRunning: validationRunning } = useAgentValidation(() => agentId.value)
 const { readiness, promote, isPromoting } = useAgentRollout(() => agentId.value)
-const { traces } = useAgentTracesList(() => agentId.value)
-const { incidents, updateIncident } = useAgentIncidents(() => agentId.value)
-
-const configTab = ref('rbac')
-const kitTab = ref('')
-
-// Count effective (direct + inherited) permissions for a role
-const effectivePermCount = (role: RoleRead) => {
-  const directIds = new Set(role.permissions.map(p => p.tool_id))
-  const inheritedIds = (role.inherited_permissions ?? []).map(p => p.tool_id)
-  for (const id of inheritedIds) directIds.add(id)
-  return directIds.size
-}
-
-// Extract test results from the validation run's results dict
-const validationTests = computed(() => {
-  if (!latestValidation.value) return []
-  const res = latestValidation.value.results
-  if (res && Array.isArray(res.tests)) return res.tests
-  return []
-})
+const { items: recentTraceRuns } = useAgentTraceRuns(() => agentId.value)
 
 const breadcrumbs = computed(() => [
   { title: 'Agents', to: '/agents' },
   { title: agent.value?.name ?? 'Agent' },
 ])
-
-const configContent = computed(() => {
-  if (!config.value) return ''
-  const c = config.value as unknown as Record<string, string>
-  const map: Record<string, string> = {
-    rbac: c.rbac_yaml ?? '',
-    limits: c.limits_yaml ?? '',
-    policy: c.policy_yaml ?? '',
-  }
-  return map[configTab.value] ?? ''
-})
 
 // Colors
 const riskColor = (level: string | null) =>
@@ -563,36 +276,6 @@ const riskColor = (level: string | null) =>
 const rolloutColor = (mode: RolloutMode) =>
   ({ observe: 'blue', warn: 'amber', enforce: 'green' })[mode] ?? 'grey'
 
-const sensitivityColor = (s: Sensitivity) =>
-  ({ low: 'green', medium: 'amber', high: 'orange', critical: 'red' })[s] ?? 'grey'
-
-const decisionColor = (d: string) =>
-  ({ ALLOW: 'green', DENY: 'red', REDACT: 'orange', WARN: 'amber' })[d] ?? 'grey'
-
-const severityColor = (s: IncidentSeverity) =>
-  ({ low: 'green', medium: 'amber', high: 'orange', critical: 'red' })[s] ?? 'grey'
-
-// Table headers
-const traceHeaders = [
-  { title: 'Gate', key: 'gate', width: '100' },
-  { title: 'Decision', key: 'decision', width: '100' },
-  { title: 'Tool', key: 'tool_name' },
-  { title: 'Role', key: 'role' },
-  { title: 'Category', key: 'category', width: '100' },
-  { title: 'Time', key: 'timestamp', width: '180' },
-]
-
-const incidentHeaders = [
-  { title: 'Title', key: 'title' },
-  { title: 'Severity', key: 'severity', width: '100' },
-  { title: 'Category', key: 'category', width: '100' },
-  { title: 'Status', key: 'status', width: '160' },
-  { title: 'Traces', key: 'trace_count', width: '80' },
-  { title: 'First Seen', key: 'first_seen', width: '180' },
-]
-
-const incidentStatuses = ['open', 'acknowledged', 'resolved', 'false_positive']
-
 const doPromote = async (mode: RolloutMode) => {
   try {
     await promote(mode)
@@ -600,18 +283,6 @@ const doPromote = async (mode: RolloutMode) => {
     agent.value = await getAgent(agentId.value)
   }
   catch { /* */ }
-}
-
-const regenerateConfig = async () => {
-  try { await genConfig() } catch { /* */ }
-}
-
-const regenerateKit = async () => {
-  try { await genKit() } catch { /* */ }
-}
-
-const runValidation = async () => {
-  try { await runVal() } catch { /* */ }
 }
 
 const doDelete = async () => {
@@ -624,33 +295,8 @@ const doDelete = async () => {
   catch { /* */ }
 }
 
-const updateIncidentStatus = async (incidentId: string, status: IncidentStatus) => {
-  try { await updateIncident({ incidentId, status }) } catch { /* */ }
-}
-
-const setDelegationActive = async (bindingId: string, isActive: boolean) => {
-  try { await updateDelegation({ bindingId, body: { is_active: isActive } }) } catch { /* */ }
-}
-
-const openDelegationEdit = (binding: DelegationRead) => {
-  editingDelegation.value = binding
-  delegationForm.value = {
-    delegation_description: binding.delegation_description,
-    when_to_delegate: binding.when_to_delegate,
-  }
-  delegationDialog.value = true
-}
-
-const saveDelegationEdit = async () => {
-  if (!editingDelegation.value) return
-  try {
-    await updateDelegation({
-      bindingId: editingDelegation.value.id,
-      body: { ...delegationForm.value },
-    })
-    delegationDialog.value = false
-  }
-  catch { /* */ }
+const shortId = (value: string) => {
+  return value.length > 16 ? `${value.slice(0, 12)}…` : value
 }
 
 // Load agent

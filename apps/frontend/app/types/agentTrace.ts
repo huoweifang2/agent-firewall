@@ -6,7 +6,7 @@ export interface AgentTraceSummary {
   session_id: string
   timestamp: string
   user_role: string
-  intent: string
+  intent: string | null
   model: string
   total_duration_ms: number
   iterations_count: number
@@ -83,15 +83,15 @@ export interface AgentTraceDetail {
   request_id?: string
   timestamp: string
   user_role: string
-  policy: string
+  policy: string | null
   model: string
-  user_message: string
-  intent: string
+  user_message: string | null
+  intent: string | null
   intent_confidence: number
   iterations: TraceIteration[]
-  final_response: string
+  final_response: string | null
   total_duration_ms: number
-  node_timings: Record<string, number>
+  node_timings: Record<string, number> | null
   counters: Record<string, number>
   limits_hit: string | null
   errors: string[]

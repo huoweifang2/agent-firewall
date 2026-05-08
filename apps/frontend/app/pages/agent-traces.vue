@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { watch } from 'vue'
 import { useAgentTraces } from '~/composables/useAgentTraces'
 import { useAgents } from '~/composables/useAgents'
 
@@ -20,6 +21,11 @@ const {
   hasActiveFilters,
   refetch,
 } = useAgentTraces(selectedAgentId)
+
+watch(agents, (items) => {
+  if (selectedAgentId.value && items.some(agent => agent.id === selectedAgentId.value)) return
+  selectedAgentId.value = items.find(agent => agent.is_reference)?.id ?? items[0]?.id ?? null
+}, { immediate: true })
 </script>
 
 <template>
@@ -60,8 +66,8 @@ const {
       </v-btn>
     </div>
 
-    <v-alert v-if="!selectedAgentId" type="info" variant="tonal" class="mb-4">
-      Select an agent above to view its traces.
+    <v-alert v-if="!selectedAgentId && !agents.length" type="info" variant="tonal" class="mb-4">
+      Create or register a Bot Agent first, then run Playground, Compare, Telegram, or `/agent/chat` to generate traces.
     </v-alert>
 
     <template v-if="selectedAgentId">

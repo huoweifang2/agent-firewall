@@ -44,6 +44,21 @@ const {
     <!-- KPI Cards -->
     <analytics-kpi-cards :summary="summary" :loading="summaryLoading" class="mb-6" />
 
+    <v-alert
+      v-if="!summaryLoading && (summary?.total_requests ?? 0) === 0"
+      type="info"
+      variant="tonal"
+      class="mb-6"
+    >
+      No analytics data yet. Run a chat in Playground or start an Attack Playground scan to populate request, policy, intent, and risk metrics.
+      <template #append>
+        <div class="d-flex ga-2">
+          <v-btn size="small" variant="tonal" to="/playground">Playground</v-btn>
+          <v-btn size="small" variant="tonal" to="/red-team">Attack Playground</v-btn>
+        </div>
+      </template>
+    </v-alert>
+
     <!-- Timeline Chart -->
     <v-card class="mb-6">
       <v-card-title class="text-subtitle-1">Request Volume</v-card-title>

@@ -227,6 +227,16 @@
       >
         View Partial Results
       </v-btn>
+      <v-btn
+        color="error"
+        variant="text"
+        prepend-icon="mdi-replay"
+        size="large"
+        :loading="isRerunning"
+        @click="rerunCurrent"
+      >
+        Re-run
+      </v-btn>
     </v-card>
 
     <!-- ═══════════════════ Completed state ═══════════════════ -->
@@ -246,6 +256,16 @@
         size="large"
       >
         View Results
+      </v-btn>
+      <v-btn
+        color="success"
+        variant="text"
+        prepend-icon="mdi-replay"
+        size="large"
+        :loading="isRerunning"
+        @click="rerunCurrent"
+      >
+        Re-run
       </v-btn>
     </v-card>
 
@@ -339,6 +359,7 @@ const elapsedSeconds = ref(0)
 const disconnected = ref(false)
 const showCancelDialog = ref(false)
 const isCancelling = ref(false)
+const isRerunning = ref(false)
 const isTerminal = ref(false)
 const isFailed = ref(false)
 const runError = ref<string | null>(null)
@@ -642,6 +663,23 @@ async function onConfirmCancel() {
     }, 2000)
   } catch {
     isCancelling.value = false
+  }
+}
+
+async function rerunCurrent() {
+  if (!runDetail.value) return
+  isRerunning.value = true
+  try {
+    const res = await api.post('/v1/benchmark/runs', {
+      target_type: runDetail.value.target_type,
+      target_config: runDetail.value.target_config ?? {},
+      pack: runDetail.value.pack,
+      policy: 'balanced',
+      source_run_id: runId.value,
+    })
+    router.push(`/red-team/run/${res.data.id}`)
+  } finally {
+    isRerunning.value = false
   }
 }
 

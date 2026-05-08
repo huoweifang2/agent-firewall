@@ -16,7 +16,7 @@ export type GateAction = 'ALLOW' | 'DENY' | 'BLOCK' | 'REDACT' | 'WARN'
 export type TraceGate = 'pre_tool' | 'post_tool' | 'pre_llm' | 'post_llm'
 export type TraceDecision = 'ALLOW' | 'DENY' | 'REDACT' | 'WARN'
 export type IncidentSeverity = 'low' | 'medium' | 'high' | 'critical'
-export type IncidentCategory = 'rbac' | 'injection' | 'pii' | 'budget' | 'policy'
+export type IncidentCategory = 'rbac' | 'injection' | 'pii' | 'budget' | 'policy' | 'rbac_violation' | 'injection_attempt' | 'pii_leak' | 'budget_exceeded'
 export type IncidentStatus = 'open' | 'acknowledged' | 'resolved' | 'false_positive'
 
 // ─── Agent ───
@@ -317,6 +317,14 @@ export interface DelegationRead {
   is_active: boolean
   created_at: string
   updated_at: string
+}
+
+export interface DelegationCreate {
+  child_agent_id: string
+  delegation_description?: string
+  when_to_delegate?: string
+  sort_order?: number
+  is_active?: boolean
 }
 
 // ─── Runtime Spec ───

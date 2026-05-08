@@ -22,6 +22,7 @@ from src.control_plane.models import (
     Agent,
     AgentIncident,
     AgentTrace,
+    AgentTraceRun,
     IncidentCategory,
     IncidentSeverity,
     IncidentStatus,
@@ -242,12 +243,17 @@ async def list_incidents(
 
     stmt = stmt.order_by(AgentIncident.last_seen.desc())
     result = await db.execute(stmt)
-    incidents = result.scalars().all()
+    incidents = list(result.scalars().all())
+    using_synthetic_incidents = False
+
+    if not incidents and status is None and severity is None and category is None:
+        incidents = await _synthetic_incidents_from_trace_runs(agent_id, db)
+        using_synthetic_incidents = bool(incidents)
 
     total_stmt = select(func.count()).select_from(
         select(AgentIncident).where(AgentIncident.agent_id == agent_id).subquery()
     )
-    if status is not None or severity is not None or category is not None:
+    if using_synthetic_incidents or status is not None or severity is not None or category is not None:
         total = len(incidents)
     else:
         total = (await db.execute(total_stmt)).scalar_one()
@@ -316,6 +322,121 @@ def _incident_to_read(incident: AgentIncident) -> IncidentRead:
         trace_count=incident.trace_count,
         details=incident.details,
     )
+
+
+async def _synthetic_incidents_from_trace_runs(agent_id: uuid.UUID, db: AsyncSession) -> list[AgentIncident]:
+    """Create incident groups from structured trace runs when gate incidents are absent."""
+    rows = (
+        await db.execute(
+            select(AgentTraceRun)
+            .where(AgentTraceRun.agent_id == agent_id)
+            .order_by(AgentTraceRun.timestamp.desc())
+            .limit(200)
+        )
+    ).scalars().all()
+
+    groups: dict[IncidentCategory, dict] = {}
+    for row in rows:
+        category = _classify_trace_run_incident(row)
+        if category is None:
+            continue
+        group = groups.setdefault(
+            category,
+            {
+                "first_seen": row.timestamp,
+                "last_seen": row.timestamp,
+                "count": 0,
+                "trace_ids": [],
+                "severity": _severity_for_trace_run(row, category),
+            },
+        )
+        group["count"] += 1
+        group["trace_ids"].append(row.trace_id)
+        if row.timestamp < group["first_seen"]:
+            group["first_seen"] = row.timestamp
+        if row.timestamp > group["last_seen"]:
+            group["last_seen"] = row.timestamp
+        group["severity"] = _max_severity(group["severity"], _severity_for_trace_run(row, category))
+
+    synthetic: list[AgentIncident] = []
+    for category, group in groups.items():
+        synthetic.append(
+            AgentIncident(
+                id=uuid.uuid5(
+                    uuid.NAMESPACE_URL,
+                    f"agent-firewall:synthetic-incident:{agent_id}:{category.value}:{group['last_seen'].isoformat()}",
+                ),
+                agent_id=agent_id,
+                severity=group["severity"],
+                category=category,
+                title=_synthetic_incident_title(category),
+                status=IncidentStatus.OPEN,
+                first_seen=group["first_seen"],
+                last_seen=group["last_seen"],
+                trace_count=group["count"],
+                details={
+                    "synthetic": True,
+                    "source": "trace_runs",
+                    "trace_ids": group["trace_ids"][:20],
+                    "message": "Structured trace runs contain blocked or redacted evidence, but no persistent gate incident has been recorded.",
+                },
+            )
+        )
+    return sorted(synthetic, key=lambda incident: incident.last_seen, reverse=True)
+
+
+def _classify_trace_run_incident(row: AgentTraceRun) -> IncidentCategory | None:
+    counters = row.counters or {}
+    if int(counters.get("tool_calls_blocked") or 0) > 0:
+        return IncidentCategory.RBAC_VIOLATION
+
+    for iteration in row.iterations or []:
+        decision = (iteration.get("firewall_decision") or {}).get("decision")
+        if decision == "BLOCK":
+            return IncidentCategory.INJECTION_ATTEMPT
+        for gate_key in ("pre_tool_decisions", "post_tool_decisions"):
+            for gate in iteration.get(gate_key) or []:
+                gate_decision = str(gate.get("decision") or "").upper()
+                if gate_decision in {"DENY", "BLOCK"}:
+                    return IncidentCategory.RBAC_VIOLATION if gate_key == "pre_tool_decisions" else IncidentCategory.INJECTION_ATTEMPT
+                if gate_decision == "REDACT":
+                    return IncidentCategory.PII_LEAK
+        if iteration.get("sanitized_results"):
+            return IncidentCategory.PII_LEAK
+
+    if row.limits_hit:
+        return IncidentCategory.BUDGET_EXCEEDED
+    return None
+
+
+def _severity_for_trace_run(row: AgentTraceRun, category: IncidentCategory) -> IncidentSeverity:
+    if row.limits_hit:
+        return IncidentSeverity.MEDIUM
+    if category == IncidentCategory.INJECTION_ATTEMPT:
+        return IncidentSeverity.HIGH
+    if category == IncidentCategory.PII_LEAK:
+        return IncidentSeverity.HIGH
+    return IncidentSeverity.MEDIUM
+
+
+def _max_severity(a: IncidentSeverity, b: IncidentSeverity) -> IncidentSeverity:
+    order = {
+        IncidentSeverity.LOW: 0,
+        IncidentSeverity.MEDIUM: 1,
+        IncidentSeverity.HIGH: 2,
+        IncidentSeverity.CRITICAL: 3,
+    }
+    return a if order[a] >= order[b] else b
+
+
+def _synthetic_incident_title(category: IncidentCategory) -> str:
+    labels = {
+        IncidentCategory.RBAC_VIOLATION: "Trace-run evidence: blocked tool call",
+        IncidentCategory.INJECTION_ATTEMPT: "Trace-run evidence: blocked firewall decision",
+        IncidentCategory.PII_LEAK: "Trace-run evidence: redacted or sanitized result",
+        IncidentCategory.BUDGET_EXCEEDED: "Trace-run evidence: limit reached",
+    }
+    return labels.get(category, "Trace-run evidence")
 
 
 def _aware_utc(value: datetime) -> datetime:

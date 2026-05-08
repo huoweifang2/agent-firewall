@@ -1,6 +1,6 @@
 // ─── Health ───
 export interface ServiceHealth {
-  status: 'ok' | 'error'
+  status: 'ok' | 'error' | 'skipped'
   detail?: string
 }
 

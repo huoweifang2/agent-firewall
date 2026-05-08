@@ -74,10 +74,15 @@
               <div class="text-medium-emphasis">{{ item.chat_id || 'chat unknown' }}</div>
             </td>
             <td class="approval-text">{{ item.reason || 'No reason recorded' }}</td>
-            <td class="approval-text">{{ item.message }}</td>
+            <td class="approval-text">{{ redactText(item.message) }}</td>
             <td>
-              <code v-if="item.trace_id" class="text-caption">{{ truncate(item.trace_id, 12) }}</code>
+              <nuxt-link v-if="item.trace_id" class="text-caption text-decoration-none" to="/agent-traces">
+                {{ truncate(item.trace_id, 12) }}
+              </nuxt-link>
               <span v-else class="text-medium-emphasis">-</span>
+              <div v-if="item.tool_payload" class="text-caption text-medium-emphasis mt-1">
+                {{ summarizePayload(item.tool_payload) }}
+              </div>
             </td>
             <td class="text-right">
               <template v-if="item.status === 'pending'">
@@ -173,6 +178,19 @@ function formatTime(iso: string) {
 
 function truncate(text: string, len: number) {
   return text.length > len ? `${text.slice(0, len)}...` : text
+}
+
+function redactText(text: string) {
+  return text
+    .replace(/\b\d{6,}\b/g, value => `${value.slice(0, 2)}...${value.slice(-2)}`)
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email]')
+    .replace(/(token|api[_-]?key|password|secret)\s*[:=]\s*\S+/gi, '$1=[redacted]')
+}
+
+function summarizePayload(payload: Record<string, unknown>) {
+  const keys = Object.keys(payload)
+  if (!keys.length) return 'No tool payload'
+  return `Payload: ${keys.slice(0, 4).join(', ')}${keys.length > 4 ? '...' : ''}`
 }
 
 function kindColor(kind: string) {

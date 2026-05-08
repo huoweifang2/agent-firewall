@@ -42,8 +42,8 @@ export function useAgentTraces(agentId: Ref<string | null>) {
       if (f.session_id) params.set('session_id', f.session_id)
       if (f.user_role) params.set('user_role', f.user_role)
       if (f.has_blocks != null) params.set('has_blocks', String(f.has_blocks))
-      if (f.date_from) params.set('date_from', f.date_from)
-      if (f.date_to) params.set('date_to', f.date_to)
+      if (f.date_from) params.set('from', f.date_from)
+      if (f.date_to) params.set('to', f.date_to)
 
       const { data: resp } = await agentTracesApi.get<AgentTraceListResponse>(
         `/v1/agents/${agentId.value}/traces/runs?${params.toString()}`,
