@@ -30,6 +30,7 @@
 \usepackage{ragged2e}
 \usepackage{indentfirst}
 \usepackage{chngcntr}
+\usepackage{etoolbox}
 
 \usetikzlibrary{arrows.meta,backgrounds,calc,fit,matrix,positioning}
 \pgfplotsset{compat=1.18}
@@ -59,8 +60,14 @@
   ItalicFont={Heiti SC},
   BoldItalicFont={Heiti SC}
 ]{Heiti SC}
+\setCJKfamilyfont{zhkai}[
+  BoldFont={STKaitiSC-Bold},
+  ItalicFont={STKaitiSC-Regular},
+  BoldItalicFont={STKaitiSC-Bold}
+]{STKaitiSC-Regular}
 \newcommand{\songti}{\CJKfamily{zhsong}}
 \newcommand{\heiti}{\CJKfamily{zhhei}}
+\newcommand{\kaitifont}{\CJKfamily{zhkai}}
 
 \hypersetup{
   colorlinks=true,
@@ -73,7 +80,7 @@
 }
 
 \linespread{1.25}
-\setlength{\parindent}{2em}
+\setlength{\parindent}{2\ccwd}
 \setlength{\parskip}{0pt}
 \setlength{\textfloatsep}{18pt plus 4pt minus 3pt}
 \setlength{\floatsep}{14pt plus 3pt minus 2pt}
@@ -102,6 +109,12 @@
 \fancyhead[C]{\zihao{-5}\songti 北京林业大学本科毕业论文}
 \fancyfoot[C]{\zihao{5}\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyhead[C]{\zihao{-5}\songti 北京林业大学本科毕业论文}
+  \fancyfoot[C]{\zihao{5}\thepage}
+  \renewcommand{\headrulewidth}{0.4pt}
+}
 
 \ctexset{
   section = {
@@ -134,12 +147,31 @@
   justification=centering,
   skip=10pt
 }
+\DeclareCaptionLabelFormat{thesis}{{\xeCJKsetup{CJKecglue={}}#1#2}}
+\captionsetup[figure]{labelformat=thesis}
+\captionsetup[table]{labelformat=thesis}
 
 \graphicspath{{figures/autofigure/pdf/}{figures/}}
 
 \renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\renewcommand{\cfttoctitlefont}{\hfill\zihao{3}\bfseries\songti}
+\renewcommand{\cftaftertoctitle}{\hfill}
+\renewcommand{\cftbeforetoctitleskip}{0.5\baselineskip}
+\renewcommand{\cftaftertoctitleskip}{0.5\baselineskip}
+\renewcommand{\cftsecfont}{\zihao{5}\songti}
+\renewcommand{\cftsubsecfont}{\zihao{5}\songti}
+\renewcommand{\cftsubsubsecfont}{\zihao{5}\songti}
+\renewcommand{\cftsecpagefont}{\zihao{5}\songti}
+\renewcommand{\cftsubsecpagefont}{\zihao{5}\songti}
+\renewcommand{\cftsubsubsecpagefont}{\zihao{5}\songti}
+\setlength{\cftbeforesecskip}{0pt}
+\setlength{\cftbeforesubsecskip}{0pt}
+\setlength{\cftbeforesubsubsecskip}{0pt}
+\setlength{\cftsecindent}{0pt}
+\setlength{\cftsubsecindent}{1\ccwd}
+\setlength{\cftsubsubsecindent}{2\ccwd}
 \setcounter{tocdepth}{3}
-\setlist[enumerate]{topsep=3pt,itemsep=2pt,parsep=0pt,partopsep=0pt}
+\setlist[enumerate]{topsep=3pt,itemsep=2pt,parsep=0pt,partopsep=0pt,leftmargin=0pt,labelindent=2\ccwd,itemindent=0pt,labelsep=0pt,listparindent=2\ccwd}
 \urlstyle{tt}
 
 \newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
@@ -149,8 +181,33 @@
 \newcommand{\decision}[1]{{\ttfamily\fontsize{6.6}{7.6}\selectfont #1}}
 \newcommand{\tightcode}[1]{{\ttfamily\fontsize{6.5}{7.5}\selectfont #1}}
 \newcommand{\bicaption}[2]{\caption{#1\\\small #2}}
+\newenvironment{cnabstract}{\kaitifont}{\par}
+\newenvironment{enabstract}{\rmfamily}{\par}
+\newcommand{\keywordspace}{\vspace{1\baselineskip}\noindent}
 \newcommand{\thesistitlecn}{面向工具调用智能体的安全防火墙Web应用系统设计与实现}
 \newcommand{\thesistitleen}{Design and Implementation of a Web-based Agent Firewall for Tool-Calling AI Systems}
+
+\makeatletter
+\patchcmd{\@startsection}{\@afterindentfalse}{\@afterindenttrue}{}{}
+\renewenvironment{thebibliography}[1]
+  {\section*{\refname}%
+   \addcontentsline{toc}{section}{\refname}%
+   \zihao{5}%
+   \list{\@biblabel{\@arabic\c@enumiv}}%
+     {\settowidth\labelwidth{\@biblabel{#1}}%
+      \leftmargin=2.02\ccwd
+      \itemindent=-2.02\ccwd
+      \labelsep=0.5\ccwd
+      \itemsep=0pt
+      \parsep=0pt
+      \usecounter{enumiv}%
+      \let\p@enumiv\@empty
+      \renewcommand\theenumiv{\@arabic\c@enumiv}}%
+   \sloppy\clubpenalty4000\widowpenalty4000%
+   \sfcode`\.=\@m}
+  {\def\@noitemerr{\@latex@warning{Empty `thebibliography' environment}}%
+   \endlist}
+\makeatother
 
 \definecolor{afblue}{HTML}{DDEEFF}
 \definecolor{afblue2}{HTML}{CFE4FF}
@@ -279,6 +336,7 @@
 \section*{摘要}
 \addcontentsline{toc}{section}{摘要}
 
+\begin{cnabstract}
 大语言模型驱动的智能体正在从文本问答系统演进为能够接收外部消息、规划工具调用、访问本地技能并长期运行的自动化执行环境。Model Context Protocol（MCP）和OpenClaw等工具生态降低了模型连接外部能力的成本，也使提示词注入、工具滥用、敏感凭据泄露、混淆代理和间接工具结果注入等风险进入真实运行链路。对个人或小团队部署的OpenClaw运行时而言，风险并不因为系统规模较小而降低：本机skill和MCP provider可能触达文件、账号凭据或第三方服务，工具返回内容又会重新进入模型上下文。仅依赖系统提示词约束模型行为，难以形成可证明的安全边界。
 
 本文基于Agent-Firewall系统实现，设计并实现了一个面向OpenClaw工具调用智能体的中间安全层Web应用系统。系统把Agent-Firewall定位为OpenClaw外侧的安全壳，而不是某个聊天入口本身：消息入口适配器（已实现Telegram Bridge）把请求送入受保护运行时；Proxy Service的\code{/v1/scan}执行确定性输入扫描；Agent Runtime顺序运行器组织模型响应、工具计划和审批状态；pre-tool gate完成RBAC、Schema、注入模式、预算和确认检查；工具执行统一分发到Internal、OpenClaw或MCP provider；post-tool gate对工具结果进行PII、密钥和间接注入清洗；Trace/Audit记录完整证据链并通过原入口返回结果。系统默认使用\code{uv}、SQLite和memory cache，本地路径不依赖Docker、PostgreSQL、Redis或Langfuse。
@@ -286,14 +344,15 @@
 实验采用“离线确定性复核+本机联调”的设计：离线复核验证Agent层前置门控、后置清洗、运行图、Control Plane runtime spec和11类Agent工具链回放案例；本机联调于2026年5月8日通过allowlisted Telegram bot、OpenClaw provider和Agent-Firewall本机服务完成脱敏验证，覆盖消息入口、Proxy扫描、工具门控、人工审批、post-tool redaction和Trace之间的闭环。本次红队场景资产共358个场景，其中Playground 216个、Agent 142个；对应pytest参数化复测得到470个通过、125个\code{xfail}和78个失败断言，用于界定本次轻量规则与扫描器组合尚未覆盖的语义伪装、凭据格式、多语言和多轮诱导边界。本机联调进一步证明，普通工具调用可被放行，高敏工具会进入\code{tool\_confirmation}审批并在批准后携带\code{approved\_intervention\_id}重放，可疑输入会生成\code{input\_block}且拒绝后不执行工具。联调结果同时表明，post-tool gate能够在工具结果进入模型上下文前清洗PII，但用户原始输入中已经出现的PII仍需要输出侧策略继续补强。
 
 研究结果表明，将消息入口、Proxy扫描、Agent工具门控、人工审批和Trace审计组合为连续边界，可以在不禁止OpenClaw/MCP工具能力的前提下，降低个人智能体运行时的外部消息和工具调用风险。系统的局限在于本次轻量检测对语义伪装、低慢多轮攻击和工具描述供应链污染覆盖不足，后续可在工具描述签名、多轮风险累计、子Agent委派策略验证和生产级认证隔离方面继续完善。
+\end{cnabstract}
 
-\vspace{0.8\baselineskip}
-\noindent\textbf{关键词：}智能体安全，工具调用，提示词注入，RBAC，OpenClaw
+\keywordspace\textbf{关键词：}智能体安全，工具调用，提示词注入，RBAC，OpenClaw
 
 \clearpage
 \section*{Abstract}
 \addcontentsline{toc}{section}{Abstract}
 
+\begin{enabstract}
 LLM-based agents are evolving from text-only assistants into long-running execution environments that receive external messages, plan tool calls, and invoke local skills. Protocols and runtimes such as the Model Context Protocol (MCP) and OpenClaw make tool integration easier, but they also expose prompt injection, tool abuse, secret leakage, confused-deputy behavior, and indirect tool-result injection to operational systems. For a personal OpenClaw runtime, the risk remains concrete: skills and MCP providers may access local files or third-party services, and tool outputs can re-enter the model context. System prompts alone cannot be treated as a reliable security boundary.
 
 This thesis designs and implements Agent-Firewall as a web-based safety shell around OpenClaw-enabled tool-calling agents. Message ingress adapters, including the currently implemented Telegram Bridge, send requests into the protected runtime. The proxy \code{/v1/scan} endpoint performs deterministic scan-only enforcement. The agent runner coordinates model responses, tool plans, and approval state. The pre-tool gate enforces RBAC, argument schemas, injection checks, budget limits, and confirmation requirements. Internal, OpenClaw, and MCP providers share the same execution hub. The post-tool gate redacts PII and secrets and blocks unsafe tool outputs before they can reach the LLM context. The default local deployment uses \code{uv}, SQLite, and an in-memory cache; Docker, PostgreSQL, Redis, and Langfuse are not required on the current local path.
@@ -301,9 +360,9 @@ This thesis designs and implements Agent-Firewall as a web-based safety shell ar
 The evaluation combines deterministic offline validation with a local Telegram-to-OpenClaw integration run on May 8, 2026. The offline validation covers pre-tool enforcement, post-tool sanitization, chat endpoint behavior, tool-role configuration, runtime-spec compatibility, and 11 agent-chain replay cases. The local validation uses an allowlisted Telegram bot, OpenClaw provider execution, high-sensitivity \code{tool\_confirmation}, approved replay with \code{approved\_intervention\_id}, post-tool redaction, trace persistence, and rejected input-block handling. The current scenario inventory contains 358 red-team cases, including 216 Playground cases and 142 Agent cases. The pytest parameterized replay produced 470 passes, 125 \code{xfail} cases, and 78 failed assertions, making the remaining gaps in semantic disguise, credential formats, multilingual attacks, and multi-turn inducement explicit. The validation also shows that post-tool redaction protects tool outputs before they re-enter the model context, while PII already present in the user input still requires stronger output-side controls.
 
 The results show that combining ingress control, proxy scanning, agent tool gates, human intervention, and structured tracing can reduce the blast radius of OpenClaw/MCP-enabled personal agents without disabling tool use entirely. Remaining limitations include semantic obfuscation, slow multi-turn attacks, tool-description supply-chain risk, and production-grade isolation. Future work should strengthen signed tool descriptors, multi-turn risk accumulation, delegated-agent policy verification, authentication, and long-term trace governance.
+\end{enabstract}
 
-\vspace{0.8\baselineskip}
-\noindent\textbf{Keywords:} AI agent security, tool calling, prompt injection, RBAC, OpenClaw
+\keywordspace\textbf{Keywords:} AI agent security, tool calling, prompt injection, RBAC, OpenClaw
 
 \clearpage
 \tableofcontents
@@ -690,7 +749,7 @@ tests/test_rbac.py tests/test_graph.py tests/test_chat_endpoint.py -q
 
 本次联调分为真实Telegram入口和HTTP运行时合同两部分。低风险工具放行由Telegram DM触发，新增Trace记录1次OpenClaw工具调用，未出现被阻断工具调用。随后临时将\code{openclaw\_summarize}提升为\code{high}敏感度，真实Telegram消息触发工具确认；审批通过后Bridge自动重放并完成，复测结束后恢复为\code{medium}。输入阻断由Telegram绕过类消息触发，生成输入阻断intervention且风险分数为1.0，拒绝后不重放、不执行工具。后置清洗案例来自HTTP运行时合同复核，使用合成联系人内容触发\decision{REDACT}后置决策，PII计数为2，不作为真实Telegram工具输出记录。复测后本机SQLite中共有19条Agent trace、25条Proxy request、6条intervention；其中\code{tool\_confirmation}均为completed，\code{input\_block}均为rejected。表\ref{tab:telegram-live}列出了四类关键工作流。
 
-\begin{table}[H]
+\begin{table}[tbp]
   \centering
   \bicaption{本机工具流与运行时合同联调结果}{Local tool-workflow and runtime-contract validation}
   \label{tab:telegram-live}
@@ -782,11 +841,9 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest tests/test_graph.py tests/t
 
 仅统计单元测试数量不足以说明工具调用智能体的安全性，因为风险不只发生在某一个函数边界，而是出现在“用户输入、工具计划、执行前门控、工具输出、执行后清洗、最终模型上下文”之间的连续状态转移中。为此，本文在现有测试之外新增离线链路回放脚本\code{scripts/evaluation/run\_agent\_chain\_cases.py}。该脚本不调用Telegram、OpenClaw、MCP、外部LLM或本机HTTP服务，而是直接复用\code{pre\_tool\_gate\_node}、\code{post\_tool\_gate\_node}和\code{TraceAccumulator}，在pre-tool gate之后注入脱敏合成工具结果，再观察post-tool gate与Trace证据是否符合预期。
 
-自动化回放共覆盖11类链式案例：普通多工具连续调用、同一计划内部分放行与部分拦截、参数注入、上下文外泄、重复阻断升级、critical工具确认、审批后重放、PII清洗、间接工具结果注入阻断、长参数\decision{MODIFY}路径和runtime spec委派工具清洗。严格模式输出为\code{Agent chain replay: 11/11 passed}，并生成\code{article/latex/generated/agent\_chain\_cases.json}和表\ref{tab:agent-chain-cases}所用的LaTeX片段。由于该表需要同时呈现工具计划、前置决策、后置决策和Trace证据，正文采用横向页展示以保持字号清晰。
+自动化回放共覆盖11类链式案例：普通多工具连续调用、同一计划内部分放行与部分拦截、参数注入、上下文外泄、重复阻断升级、critical工具确认、审批后重放、PII清洗、间接工具结果注入阻断、长参数\decision{MODIFY}路径和runtime spec委派工具清洗。严格模式输出为\code{Agent chain replay: 11/11 passed}，并生成\code{article/latex/generated/agent\_chain\_cases.json}和表\ref{tab:agent-chain-cases}所用的LaTeX片段。由于该表需要同时呈现工具计划、前置决策、后置决策和Trace证据，正文采用竖向长表展示，并通过压缩列距与自动换行保持可读性。
 
-\begin{landscape}
 \input{generated/agent_chain_cases_table.tex}
-\end{landscape}
 
 表\ref{tab:agent-chain-cases}体现了三个比单点用例更重要的链路性质。第一，模型计划中的工具不会被整体盲目执行：在CHAIN-02中，订单查询继续执行，而越权密钥读取被RBAC拦截，说明系统支持同一计划内的最小必要执行。第二，审批不是文字提示，而是状态机的一部分：CHAIN-06在\decision{REQUIRE\_CONFIRMATION}处暂停，CHAIN-07只有在模拟已批准intervention后才允许critical工具继续执行，并在post-tool gate中清洗密钥。第三，工具执行成功并不代表结果可以进入模型上下文：CHAIN-08清洗PII，CHAIN-09把恶意知识库返回整体替换为阻断占位符，CHAIN-11说明runtime spec中的子Agent委派也不会绕过后置清洗。
 
@@ -828,7 +885,6 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest tests/test_graph.py tests/t
 
 \clearpage
 \begin{thebibliography}{99}
-\addcontentsline{toc}{section}{参考文献}
 
 \bibitem{anthropic_mcp} Model Context Protocol. Model Context Protocol Specification[EB/OL]. [2026-05-08]. \url{https://modelcontextprotocol.io/specification}.
 

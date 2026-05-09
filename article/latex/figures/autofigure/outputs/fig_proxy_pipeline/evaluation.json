@@ -1,7 +1,7 @@
 {
   "figure": "fig_proxy_pipeline",
   "renderer": "researcher_style_matplotlib",
-  "generated_at": "2026-05-09T01:28:11.462142+00:00",
+  "generated_at": "2026-05-09T02:23:11.881543+00:00",
   "reason": "Deterministic local renderer used; external AutoFigure-Edit is optional.",
   "style": "Researcher/CycleResearcher-inspired academic process art: warm paper, dashed frames, pastel panels, thick arrows, original vector icons",
   "pdf": "figures/autofigure/pdf/fig_proxy_pipeline.pdf"

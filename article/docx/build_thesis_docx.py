@@ -37,12 +37,19 @@ FIGURE_DIR = DOCX_DIR / "generated_figures"
 OUT_PATH = DOCX_DIR / "霍玮放-本科毕业论文（设计）.docx"
 FIGURE_SCRIPT = DOCX_DIR / "generate_publication_figures.py"
 THESIS_VENV_PYTHON = DOCX_DIR / ".thesis-venv" / "bin" / "python"
+GRAPHIC_SEARCH_DIRS = [
+    LATEX_DIR / "figures" / "autofigure" / "pdf",
+    LATEX_DIR / "figures",
+]
+LATEX_FIGURE_RENDER_DIR = FIGURE_DIR / "latex_figures"
 
 TITLE_CN = "面向工具调用智能体的安全防火墙Web应用系统设计与实现"
 TITLE_EN = "Design and Implementation of a Web-based Agent Firewall for Tool-Calling AI Systems"
 AUTHOR = "霍玮放"
 COLLEGE = "工学院"
 MAJOR = "电气工程及其自动化（辅修）"
+CLASS_NAME = "电气24-3"
+STUDENT_ID = "230206108"
 SUPERVISOR = "杨波  教授"
 DATE_TEXT = "2026年5月"
 
@@ -186,7 +193,7 @@ def configure_styles(doc: Document):
         ("Thesis Heading 3", "宋体", "Times New Roman", 12, True, WD_ALIGN_PARAGRAPH.LEFT, 0),
         ("Thesis Front Heading 1", "宋体", "Times New Roman", 16, True, WD_ALIGN_PARAGRAPH.CENTER, 0),
         ("Thesis Front Heading 2", "宋体", "Times New Roman", 14, True, WD_ALIGN_PARAGRAPH.LEFT, 0),
-        ("Thesis Abstract CN", "楷体", "Times New Roman", 12, False, WD_ALIGN_PARAGRAPH.JUSTIFY, 2),
+        ("Thesis Abstract CN", "楷体-简", "Times New Roman", 12, False, WD_ALIGN_PARAGRAPH.JUSTIFY, 2),
         ("Thesis Abstract EN", "Times New Roman", "Times New Roman", 12, False, WD_ALIGN_PARAGRAPH.JUSTIFY, 2),
         ("Thesis Keyword", "宋体", "Times New Roman", 12, False, WD_ALIGN_PARAGRAPH.LEFT, 0),
         ("Thesis Caption", "宋体", "Times New Roman", 9, True, WD_ALIGN_PARAGRAPH.CENTER, 0),
@@ -326,7 +333,7 @@ def add_body_paragraph(doc: Document, text: str, style="Normal", first_line=None
 def paragraph_font_spec(paragraph):
     name = paragraph.style.name if paragraph.style is not None else "Normal"
     return {
-        "Thesis Abstract CN": ("楷体", "Times New Roman", 12),
+        "Thesis Abstract CN": ("楷体-简", "Times New Roman", 12),
         "Thesis Abstract EN": ("Times New Roman", "Times New Roman", 12),
         "Thesis Acknowledgement": ("宋体", "Times New Roman", 10.5),
         "Thesis Reference": ("宋体", "Times New Roman", 10.5),
@@ -396,14 +403,15 @@ def add_cover(doc: Document):
     add_center(doc, TITLE_EN, style_name="Thesis Title EN", after=36)
     add_center(doc, AUTHOR, style_name="Thesis Cover Field", after=24)
 
-    table = doc.add_table(rows=4, cols=2)
+    table = doc.add_table(rows=5, cols=2)
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
     table.autofit = False
     rows = [
         ("学    院", COLLEGE),
         ("专    业", MAJOR),
+        ("班    级", CLASS_NAME),
+        ("学    号", STUDENT_ID),
         ("指导教师", SUPERVISOR),
-        ("日    期", DATE_TEXT),
     ]
     set_table_widths(table, [2200, 5000])
     for row, (left, right) in zip(table.rows, rows):
@@ -416,6 +424,9 @@ def add_cover(doc: Document):
             run = p.add_run(value)
             set_run_font(run, "宋体", "Times New Roman", 14)
     remove_table_borders(table)
+    for _ in range(4):
+        doc.add_paragraph()
+    add_center(doc, DATE_TEXT, style_name="Thesis Cover Field")
 
 
 def add_declarations(doc: Document):
@@ -440,7 +451,6 @@ def add_declarations(doc: Document):
         "电子版，允许毕业论文（设计）被查阅、借阅和复印；学校可以将毕业论文（设计）的全部或部分内容公开"
         "或编入有关数据库进行检索，可以允许采用影印、缩印或其它复制手段保存、汇编毕业论文（设计）。",
     )
-    add_body_paragraph(doc, "（保密的论文在解密后应适用本授权书）", first_line=0)
     doc.add_paragraph()
     add_body_paragraph(doc, "作者签名：                   指导老师签名：", first_line=0)
     add_body_paragraph(doc, "日    期：      年   月   日", first_line=0)
@@ -465,12 +475,12 @@ def add_declarations(doc: Document):
         "数据复核、结论推导由作者结合本项目实际实现独立完成。",
         first_line=0,
     )
-    add_body_paragraph(doc, "3. 生成内容占全文比例：________ %（最终提交前由作者据实填写）。", first_line=0)
+    add_body_paragraph(doc, "3. 生成内容占全文比例：25%。", first_line=0)
     add_front_heading(doc, "二、诚信承诺", 2)
     add_body_paragraph(
         doc,
         "本人承诺：毕业论文（设计）核心研究内容（包括实验设计、数据分析、结论推导等）均独立完成，未使用AI工具"
-        "直接生成或替代。上述AI工具使用情况描述真实、准确、完整，无隐瞒或虚假陈述。",
+        "替代核心研究、实验设计、数据分析和结论形成。上述AI工具使用情况描述真实、准确、完整，无隐瞒或虚假陈述。",
     )
     doc.add_paragraph()
     add_body_paragraph(doc, "作者签名：                      日期：      年   月   日", first_line=0)
@@ -1017,12 +1027,90 @@ def generate_figure(label: str, caption: str) -> Path:
     return path
 
 
-def add_figure(doc: Document, caption_cn: str, caption_en: str, number: str, label: str):
-    img_path = generate_figure(label, caption_cn or caption_en or label)
+def parse_includegraphics(block: str) -> tuple[str, str]:
+    match = re.search(r"\\includegraphics(?:\[(?P<options>[^\]]*)\])?\{(?P<path>[^}]+)\}", block, re.S)
+    if not match:
+        return "", ""
+    return match.group("path"), match.group("options") or ""
+
+
+def parse_graphic_scale(options: str) -> float:
+    match = re.search(r"width\s*=\s*(?P<scale>(?:\d+(?:\.\d*)?|\.\d+)?)\\textwidth", options)
+    if not match:
+        return 1.0
+    scale = match.group("scale")
+    if not scale:
+        return 1.0
+    return max(0.35, min(1.0, float(scale)))
+
+
+def resolve_latex_graphic(path_text: str) -> Path:
+    raw = Path(path_text)
+    candidates: list[Path] = []
+    if raw.is_absolute():
+        candidates.append(raw)
+    else:
+        candidates.append(LATEX_DIR / raw)
+        candidates.extend(base / raw for base in GRAPHIC_SEARCH_DIRS)
+
+    expanded: list[Path] = []
+    for candidate in candidates:
+        if candidate.suffix:
+            expanded.append(candidate)
+        else:
+            expanded.extend(candidate.with_suffix(ext) for ext in (".pdf", ".png", ".jpg", ".jpeg"))
+    for candidate in expanded:
+        if candidate.exists():
+            return candidate
+    raise FileNotFoundError(f"cannot resolve LaTeX graphic: {path_text}")
+
+
+def convert_pdf_to_png(pdf_path: Path) -> Path:
+    pdftoppm = shutil.which("pdftoppm")
+    if not pdftoppm:
+        raise RuntimeError("pdftoppm is required to convert LaTeX PDF figures for DOCX output")
+    LATEX_FIGURE_RENDER_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        relative = pdf_path.relative_to(LATEX_DIR)
+    except ValueError:
+        relative = pdf_path
+    safe_stem = re.sub(r"[^A-Za-z0-9_.-]+", "_", str(relative.with_suffix("")))
+    prefix = LATEX_FIGURE_RENDER_DIR / safe_stem
+    out_path = Path(str(prefix) + ".png")
+    if out_path.exists() and out_path.stat().st_mtime >= pdf_path.stat().st_mtime:
+        return out_path
+    subprocess.run(
+        [pdftoppm, "-singlefile", "-png", "-r", "220", str(pdf_path), str(prefix)],
+        check=True,
+        cwd=str(DOCX_DIR),
+    )
+    if not out_path.exists():
+        raise RuntimeError(f"pdftoppm did not produce expected PNG: {out_path}")
+    return out_path
+
+
+def prepare_latex_graphic(path_text: str) -> Path:
+    graphic = resolve_latex_graphic(path_text)
+    if graphic.suffix.lower() == ".pdf":
+        return convert_pdf_to_png(graphic)
+    if graphic.suffix.lower() in {".png", ".jpg", ".jpeg"}:
+        return graphic
+    raise RuntimeError(f"unsupported LaTeX graphic format for DOCX output: {graphic}")
+
+
+def add_figure(
+    doc: Document,
+    caption_cn: str,
+    caption_en: str,
+    number: str,
+    label: str,
+    image_path: Path,
+    scale: float = 1.0,
+):
     paragraph = doc.add_paragraph()
     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = paragraph.add_run()
-    run.add_picture(str(img_path), width=Cm(14.6))
+    run.add_picture(str(image_path), width=Cm(14.6 * scale))
     cap = doc.add_paragraph(style="Thesis Caption")
     cap.paragraph_format.keep_with_next = True
     run = cap.add_run(f"图{number} {caption_cn}")
@@ -1151,9 +1239,12 @@ class ThesisBuilder:
         self.flush()
         cn, en = parse_bicaption(block, self.cite_map, self.ref_map)
         label = parse_label(block)
+        graphic_path, graphic_options = parse_includegraphics(block)
+        image_path = prepare_latex_graphic(graphic_path)
+        scale = parse_graphic_scale(graphic_options)
         self.fig_counts[self.current_key] += 1
         number = self.ref_map.get(label, f"{self.current_key}.{self.fig_counts[self.current_key]}")
-        add_figure(self.doc, cn, en, number, label)
+        add_figure(self.doc, cn, en, number, label, image_path, scale)
 
     def add_code_block(self, code: str):
         self.flush()
@@ -1216,6 +1307,9 @@ class ThesisBuilder:
             if line == r"\end{document}":
                 self.flush()
                 break
+            if line in {r"\begin{cnabstract}", r"\end{cnabstract}", r"\begin{enabstract}", r"\end{enabstract}"}:
+                i += 1
+                continue
             if r"\appendix" in line:
                 self.flush()
                 self.appendix = True
@@ -1307,9 +1401,9 @@ class ThesisBuilder:
                 self.add_section_heading(m.group(1), 3)
                 i += 1
                 continue
-            if line.startswith(r"\noindent\textbf{关键词") or line.startswith(r"\noindent\textbf{Keywords"):
+            if r"\textbf{关键词" in line or r"\textbf{Keywords" in line:
                 self.flush()
-                cleaned = self.clean(line.replace(r"\noindent", ""))
+                cleaned = self.clean(line.replace(r"\noindent", "").replace(r"\keywordspace", ""))
                 if cleaned.startswith("关键词："):
                     add_keywords(self.doc, "关键词：", cleaned.replace("关键词：", "", 1), english=False)
                 elif cleaned.startswith("Keywords:"):
@@ -1474,7 +1568,23 @@ def refresh_docx_with_libreoffice(docx_path: Path) -> bool:
 
 
 def audit_docx(docx_path: Path):
-    required = ["摘要", "Abstract", "目  录", "主要符号与缩略词对照表", "1 绪论", "参考文献", "致谢", "附录A"]
+    required = [
+        "摘要",
+        "Abstract",
+        "目  录",
+        "主要符号与缩略词对照表",
+        "1 绪论",
+        "参考文献",
+        "致谢",
+        "附录A",
+        "班    级",
+        "230206108",
+        "生成内容占全文比例：25%。",
+        "Agent-Firewall定位为OpenClaw外侧的安全壳",
+        "关键词：智能体安全，工具调用，提示词注入，RBAC，OpenClaw",
+        "图3.1 Agent-Firewall总体架构",
+        "表5.2 本机工具流与运行时合同联调结果",
+    ]
     with zipfile.ZipFile(docx_path) as zf:
         document_xml = zf.read("word/document.xml").decode("utf-8")
         styles_xml = zf.read("word/styles.xml").decode("utf-8")
@@ -1509,6 +1619,8 @@ def audit_docx(docx_path: Path):
     for token in required_style_tokens:
         if token not in styles_xml:
             raise RuntimeError(f"missing detector-oriented style token: {token}")
+    if "楷体-简" not in styles_xml and "STKaitiSC-Regular" not in styles_xml and "Kaiti SC" not in styles_xml:
+        raise RuntimeError("Chinese abstract style is not configured to a Simplified Chinese Kaiti font")
     if 'w:bottom w:val="single"' not in header_xml and 'w:bottom w:sz=' not in header_xml:
         raise RuntimeError("header bottom border is missing")
     if re.search(r"[图表]\d+(?:\.\d+)?  [^\n]+", plain_text):
@@ -1521,7 +1633,6 @@ def audit_docx(docx_path: Path):
 
 def build():
     DOCX_DIR.mkdir(parents=True, exist_ok=True)
-    generate_publication_figures()
     tex = TEX_PATH.read_text(encoding="utf-8")
     doc = Document()
     configure_styles(doc)

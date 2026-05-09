@@ -254,6 +254,7 @@ def _rf_canvas(spec: FigureSpec, *, title_size: float = 12.8):
     fig, ax = plt.subplots(figsize=(spec.width, spec.height), facecolor=PAPER)
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
+    ax._rf_xscale = spec.height / spec.width  # compensate circle geometry in wide figure canvases
     ax.axis("off")
     ax.add_patch(Rectangle((0, 0), 1, 1, fc=PAPER, ec="none", zorder=-10))
     ax.text(0.5, 0.950, spec.title, fontsize=title_size, fontweight="bold", ha="center", va="top", color=INK)
@@ -270,6 +271,14 @@ def _rf_canvas(spec: FigureSpec, *, title_size: float = 12.8):
         )
     )
     return fig, ax
+
+
+def _rf_xscale(ax) -> float:
+    return float(getattr(ax, "_rf_xscale", 1.0))
+
+
+def _rf_circle(ax, cx: float, cy: float, r: float, **kwargs) -> None:
+    ax.add_patch(Ellipse((cx, cy), 2 * r * _rf_xscale(ax), 2 * r, **kwargs))
 
 
 def _rf_text(ax, x: float, y: float, text: str, size: float = 8.0, weight: str = "normal", color: str = INK, **kwargs) -> None:
@@ -349,15 +358,15 @@ def _draw_database(ax, x: float, y: float, w: float, h: float, *, fc: str = "#ea
     ax.add_patch(Rectangle((x, y + h * 0.16), w, h * 0.64, fc=fc, ec=PAPER_EDGE, lw=1.0))
     ax.add_patch(Ellipse((x + w / 2, y + h * 0.80), w, h * 0.26, fc=fc, ec=PAPER_EDGE, lw=1.0))
     ax.add_patch(Ellipse((x + w / 2, y + h * 0.16), w, h * 0.26, fc="#f4e5d2", ec=PAPER_EDGE, lw=1.0))
-    ax.add_patch(Circle((x + w * 0.78, y + h * 0.18), w * 0.16, fc="#f8fafc", ec=PAPER_EDGE, lw=0.9))
+    _rf_circle(ax, x + w * 0.78, y + h * 0.18, w * 0.16, fc="#f8fafc", ec=PAPER_EDGE, lw=0.9)
     ax.plot([x + w * 0.88, x + w * 1.02], [y + h * 0.08, y - h * 0.04], color=PAPER_EDGE, lw=1.3)
 
 
 def _draw_robot(ax, x: float, y: float, w: float, h: float, *, accent: str = "#8bd3dd", tool: str = "laptop") -> None:
-    ax.add_patch(Circle((x + w * 0.34, y + h * 0.58), w * 0.19, fc="#edf2f7", ec=LINE, lw=1.0))
+    _rf_circle(ax, x + w * 0.34, y + h * 0.58, w * 0.19, fc="#edf2f7", ec=LINE, lw=1.0)
     ax.add_patch(FancyBboxPatch((x + w * 0.23, y + h * 0.52), w * 0.22, h * 0.09, boxstyle="round,pad=0.002,rounding_size=0.018", fc="#253043", ec=LINE, lw=0.7))
-    ax.add_patch(Circle((x + w * 0.29, y + h * 0.565), w * 0.027, fc=accent, ec="none"))
-    ax.add_patch(Circle((x + w * 0.39, y + h * 0.565), w * 0.027, fc=accent, ec="none"))
+    _rf_circle(ax, x + w * 0.29, y + h * 0.565, w * 0.027, fc=accent, ec="none")
+    _rf_circle(ax, x + w * 0.39, y + h * 0.565, w * 0.027, fc=accent, ec="none")
     ax.add_patch(Rectangle((x + w * 0.24, y + h * 0.20), w * 0.22, h * 0.21, fc="#f8fafc", ec=LINE, lw=0.9))
     ax.add_patch(Rectangle((x + w * 0.18, y + h * 0.14), w * 0.34, h * 0.055, fc=BROWN, ec=LINE, lw=0.65))
     if tool == "laptop":
@@ -378,7 +387,7 @@ def _draw_shield(ax, x: float, y: float, w: float, h: float, *, fc: str = "#fff3
 
 
 def _draw_stop(ax, x: float, y: float, w: float, h: float) -> None:
-    ax.add_patch(Circle((x + w / 2, y + h / 2), min(w, h) * 0.38, fc="#ffd5d0", ec="#bf2e2e", lw=1.0))
+    _rf_circle(ax, x + w / 2, y + h / 2, min(w, h) * 0.38, fc="#ffd5d0", ec="#bf2e2e", lw=1.0)
     ax.plot([x + w * 0.34, x + w * 0.66], [y + h * 0.34, y + h * 0.66], color="#bf2e2e", lw=1.5)
     ax.plot([x + w * 0.66, x + w * 0.34], [y + h * 0.34, y + h * 0.66], color="#bf2e2e", lw=1.5)
 
@@ -392,7 +401,7 @@ def _draw_folder(ax, x: float, y: float, w: float, h: float) -> None:
 def _draw_tool(ax, x: float, y: float, w: float, h: float) -> None:
     _draw_folder(ax, x, y + h * 0.08, w * 0.70, h * 0.70)
     ax.plot([x + w * 0.68, x + w * 0.92], [y + h * 0.20, y + h * 0.78], color=LINE, lw=2.0)
-    ax.add_patch(Circle((x + w * 0.92, y + h * 0.80), w * 0.08, fc="#e2e8f0", ec=LINE, lw=0.8))
+    _rf_circle(ax, x + w * 0.92, y + h * 0.80, w * 0.08, fc="#e2e8f0", ec=LINE, lw=0.8)
 
 
 def _draw_chart(ax, x: float, y: float, w: float, h: float) -> None:
@@ -419,9 +428,9 @@ def _draw_score(ax, x: float, y: float, w: float, h: float) -> None:
 
 
 def _draw_brain(ax, x: float, y: float, w: float, h: float) -> None:
-    ax.add_patch(Circle((x + w * 0.42, y + h * 0.58), w * 0.18, fc="#fed7aa", ec=LINE, lw=0.8))
-    ax.add_patch(Circle((x + w * 0.58, y + h * 0.58), w * 0.18, fc="#fed7aa", ec=LINE, lw=0.8))
-    ax.add_patch(Circle((x + w * 0.50, y + h * 0.40), w * 0.20, fc="#fdba74", ec=LINE, lw=0.8))
+    _rf_circle(ax, x + w * 0.42, y + h * 0.58, w * 0.18, fc="#fed7aa", ec=LINE, lw=0.8)
+    _rf_circle(ax, x + w * 0.58, y + h * 0.58, w * 0.18, fc="#fed7aa", ec=LINE, lw=0.8)
+    _rf_circle(ax, x + w * 0.50, y + h * 0.40, w * 0.20, fc="#fdba74", ec=LINE, lw=0.8)
     for dx in [0.35, 0.50, 0.65]:
         ax.plot([x + w * dx, x + w * dx], [y + h * 0.12, y + h * 0.25], color=LINE, lw=0.8)
 
@@ -471,8 +480,8 @@ def _rf_lane(ax, y: float, h: float, title: str, color: str, role_label: str, ro
 
     n = len(nodes)
     x0, x1 = 0.245, 0.920
-    gap = 0.013 if n >= 6 else 0.020
-    node_w = min(0.112, (x1 - x0 - gap * (n - 1)) / n)
+    gap = 0.022 if n >= 6 else 0.030
+    node_w = min(0.098 if n >= 6 else 0.112, (x1 - x0 - gap * (n - 1)) / n)
     total = node_w * n + gap * (n - 1)
     start = x0 + (x1 - x0 - total) / 2
     node_h = h * 0.45
@@ -1079,8 +1088,7 @@ def _render_architecture_researcher(spec: FigureSpec, output_dir: Path) -> None:
     _rf_arrow(ax, (0.640, 0.346), (0.672, 0.346), color=GOLD, lw=2.9)
     _rf_arrow(ax, (0.782, 0.346), (0.815, 0.346), color=GOLD, lw=2.9)
     _rf_arrow(ax, (0.754, 0.625), (0.590, 0.392), color="#9b9b9b", lw=3.0, rad=0.05)
-    _rf_arrow(ax, (0.868, 0.300), (0.855, 0.230), color="#9b9b9b", lw=2.8)
-    _rf_arrow(ax, (0.855, 0.230), (0.420, 0.300), color="#9b9b9b", lw=2.8)
+    _rf_arrow(ax, (0.855, 0.300), (0.420, 0.330), color="#9b9b9b", lw=2.8, rad=-0.18)
 
     _rf_panel(ax, 0.530, 0.800, 0.340, 0.065, fc="#fffdf8", ec=PAPER_EDGE, lw=0.9, dashed=False, radius=0.008)
     _draw_chart(ax, 0.548, 0.812, 0.050, 0.038)

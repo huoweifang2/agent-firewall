@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-05-08T14:54:57.713994+00:00",
+    "generated_at": "2026-05-09T02:23:10.332565+00:00",
     "runner": "scripts/evaluation/run_agent_chain_cases.py",
     "mode": "offline-synthetic",
     "total": 11,
