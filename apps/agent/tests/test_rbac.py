@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from src.agent.rbac.service import RBACService, get_rbac_service, reset_rbac_service
+from agent_runtime.domain.rbac.service import RBACService, get_rbac_service, reset_rbac_service
 
 # ── Helpers ───────────────────────────────────────────────────────────
 

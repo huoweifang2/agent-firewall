@@ -6,8 +6,8 @@ import json
 
 import pytest
 
-from src.red_team.engine.adapters import SimpleNormalizer
-from src.red_team.engine.protocols import HttpResponse
+from proxy_service.domain.red_team.engine.protocols import HttpResponse
+from proxy_service.infrastructure.red_team.adapters import SimpleNormalizer
 
 # ---------------------------------------------------------------------------
 # SimpleNormalizer with response_text_paths

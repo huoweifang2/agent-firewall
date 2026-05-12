@@ -7,12 +7,12 @@ short/long signal strength, composable checks.
 
 from __future__ import annotations
 
-from src.red_team.evaluators.detectors import (
+from proxy_service.domain.red_team.evaluators.detectors import (
     _HEURISTIC_CHECKS,
     heuristic_detector,
 )
-from src.red_team.schemas.dataclasses import RawTargetResponse
-from src.red_team.schemas.models import HeuristicConfig
+from proxy_service.domain.red_team.schemas.dataclasses import RawTargetResponse
+from proxy_service.domain.red_team.schemas.models import HeuristicConfig
 
 
 def _make_response(body: str) -> RawTargetResponse:

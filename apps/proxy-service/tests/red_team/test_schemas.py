@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from src.red_team.schemas import (
+from proxy_service.domain.red_team.schemas import (
     AgentType,
     Category,
     DetectorType,

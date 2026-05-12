@@ -9,10 +9,10 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select
 
-from src.db.session import async_session
-from src.main import app
-from src.models.policy import Policy
-from src.models.request import Request
+from proxy_service.bootstrap.main import app
+from proxy_service.infrastructure.persistence.models.policy import Policy
+from proxy_service.infrastructure.persistence.models.request import Request
+from proxy_service.infrastructure.persistence.session import async_session
 
 
 @pytest.fixture

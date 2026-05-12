@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.main import app
+from proxy_service.bootstrap.main import app
 
 
 @pytest.mark.asyncio
@@ -24,7 +24,7 @@ async def test_direct_returns_response():
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        with patch("src.routers.direct.llm_completion", new_callable=AsyncMock) as mock_llm:
+        with patch("proxy_service.interfaces.http.routers.direct.llm_completion", new_callable=AsyncMock) as mock_llm:
             mock_llm.return_value = mock_llm_resp
 
             resp = await client.post(
@@ -70,7 +70,7 @@ async def test_direct_streaming():
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        with patch("src.routers.direct.llm_completion", new_callable=AsyncMock) as mock_llm:
+        with patch("proxy_service.interfaces.http.routers.direct.llm_completion", new_callable=AsyncMock) as mock_llm:
             mock_llm.return_value = mock_stream()
 
             resp = await client.post(
@@ -94,7 +94,7 @@ async def test_direct_disabled():
     """POST /v1/chat/direct returns 403 when disabled."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        with patch("src.routers.direct.get_settings") as mock_settings:
+        with patch("proxy_service.interfaces.http.routers.direct.get_settings") as mock_settings:
             s = MagicMock()
             s.enable_direct_endpoint = False
             mock_settings.return_value = s

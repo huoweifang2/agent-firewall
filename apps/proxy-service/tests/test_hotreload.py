@@ -1,6 +1,6 @@
 """Prove ISS-001 fix: LLM Guard scanners rebuild when thresholds change."""
 
-from src.pipeline.nodes.llm_guard import get_scanners, reset_scanners
+from proxy_service.domain.firewall.pipeline.nodes.llm_guard import get_scanners, reset_scanners
 
 
 class TestHotReload:

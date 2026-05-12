@@ -47,7 +47,7 @@ def main() -> None:
     print("\nWarming up NeMo Guardrails...")
     t0 = time.perf_counter()
     try:
-        from src.pipeline.nodes.nemo_guardrails import get_rails
+        from proxy_service.domain.firewall.pipeline.nodes.nemo_guardrails import get_rails
 
         get_rails()
         elapsed = (time.perf_counter() - t0) * 1000

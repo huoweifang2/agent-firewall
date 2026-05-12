@@ -9,11 +9,11 @@ import pytest
 async def test_llm_completion_uses_deepseek_env_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-env-fallback")
 
-    from src.config import get_settings
+    from proxy_service.infrastructure.config import get_settings
 
     get_settings.cache_clear()
 
-    import src.llm.client as client_mod
+    import proxy_service.infrastructure.llm.client as client_mod
 
     captured: dict = {}
 

@@ -12,7 +12,7 @@ from __future__ import annotations
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from src.red_team.persistence.models import BenchmarkRun, BenchmarkScenarioResult
+from proxy_service.infrastructure.persistence.red_team.models import BenchmarkRun, BenchmarkScenarioResult
 
 # Only the red_team tables — NOT the whole Base.metadata
 _RED_TEAM_TABLES = [BenchmarkRun.__table__, BenchmarkScenarioResult.__table__]

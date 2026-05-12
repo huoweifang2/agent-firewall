@@ -12,10 +12,10 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from src.red_team.api import StructuredError, StructuredErrorResponse
-from src.red_team.api.routes import router
+from proxy_service.interfaces.http.routers.benchmark import router
+from proxy_service.interfaces.http.schemas.benchmark import StructuredError, StructuredErrorResponse
 
-_PATCH_TARGET = "src.red_team.api.routes._httpx.AsyncClient"
+_PATCH_TARGET = "proxy_service.interfaces.http.routers.benchmark._httpx.AsyncClient"
 
 
 # ---------------------------------------------------------------------------
@@ -168,7 +168,9 @@ async def test_ok_no_error_code(client: AsyncClient):
 
 async def test_run_not_found_404(client: AsyncClient):
     """GET /runs/:id returns 404 for unknown run."""
-    with patch("src.red_team.api.service.BenchmarkService.get_run_safe", new_callable=AsyncMock) as mock_get:
+    with patch(
+        "proxy_service.application.red_team.service.BenchmarkService.get_run_safe", new_callable=AsyncMock
+    ) as mock_get:
         mock_get.return_value = None
         resp = await client.get("/v1/benchmark/runs/00000000-0000-0000-0000-000000000001")
     assert resp.status_code == 404

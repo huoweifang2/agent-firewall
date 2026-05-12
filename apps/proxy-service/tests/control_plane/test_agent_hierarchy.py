@@ -7,10 +7,10 @@ import uuid
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.control_plane.schema_compat import ensure_agent_hierarchy_columns
-from src.control_plane.services.runtime_spec import build_agent_runtime_spec
-from src.db.session import async_session, engine
-from src.main import app
+from proxy_service.application.control_plane.runtime_spec import build_agent_runtime_spec
+from proxy_service.bootstrap.main import app
+from proxy_service.infrastructure.persistence.schema_compat import ensure_agent_hierarchy_columns
+from proxy_service.infrastructure.persistence.session import async_session, engine
 
 
 @pytest.fixture

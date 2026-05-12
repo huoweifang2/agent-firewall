@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.pipeline.nodes.llm_guard import (
+from proxy_service.domain.firewall.pipeline.nodes.llm_guard import (
     get_scanners,
     llm_guard_node,
     reset_scanners,
@@ -61,7 +61,7 @@ class TestCleanPrompt:
     """Clean prompt → all scanners valid, no risk flags added."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.llm_guard.get_scanners")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_guard.get_scanners")
     async def test_clean_no_flags(self, mock_get):
         mock_get.return_value = [
             _mock_scanner("PromptInjection"),
@@ -80,7 +80,7 @@ class TestCleanPrompt:
             assert data["is_valid"] is True
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.llm_guard.get_scanners")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_guard.get_scanners")
     async def test_records_timing(self, mock_get):
         mock_get.return_value = [_mock_scanner("PromptInjection")]
         state = _base_state()
@@ -92,7 +92,7 @@ class TestInjectionDetection:
     """Prompt injection → promptinjection flag set."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.llm_guard.get_scanners")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_guard.get_scanners")
     async def test_injection_flagged(self, mock_get):
         mock_get.return_value = [
             _mock_scanner("PromptInjection", is_valid=False, score=0.92),
@@ -108,7 +108,7 @@ class TestInjectionDetection:
         assert lg["PromptInjection"]["score"] == 0.92
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.llm_guard.get_scanners")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_guard.get_scanners")
     async def test_injection_preserves_existing_flags(self, mock_get):
         mock_get.return_value = [
             _mock_scanner("PromptInjection", is_valid=False, score=0.8),
@@ -124,7 +124,7 @@ class TestToxicity:
     """Toxic content → toxicity flag set."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.llm_guard.get_scanners")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_guard.get_scanners")
     async def test_toxic_flagged(self, mock_get):
         mock_get.return_value = [
             _mock_scanner("Toxicity", is_valid=False, score=0.85),
@@ -140,7 +140,7 @@ class TestSecrets:
     """API key in prompt → secrets flag set."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.llm_guard.get_scanners")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_guard.get_scanners")
     async def test_secrets_flagged(self, mock_get):
         mock_get.return_value = [
             _mock_scanner("Secrets", is_valid=False, score=0.95),
@@ -156,7 +156,7 @@ class TestInvisibleText:
     """Invisible Unicode chars → invisibletext flag set."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.llm_guard.get_scanners")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_guard.get_scanners")
     async def test_invisible_flagged(self, mock_get):
         mock_get.return_value = [
             _mock_scanner("InvisibleText", is_valid=False, score=1.0),
@@ -172,7 +172,7 @@ class TestBanSubstrings:
     """Banned substring → bansubstrings flag set."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.llm_guard.get_scanners")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_guard.get_scanners")
     async def test_banned_substring_flagged(self, mock_get):
         mock_get.return_value = [
             _mock_scanner("BanSubstrings", is_valid=False, score=1.0),
@@ -187,7 +187,7 @@ class TestErrorHandling:
     """Scanner errors → logged, no crash, pipeline continues."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.llm_guard.get_scanners")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_guard.get_scanners")
     async def test_scanner_exception_logged(self, mock_get):
         mock_get.return_value = [
             _mock_scanner_error("PromptInjection", RuntimeError("model load failed")),
@@ -206,7 +206,7 @@ class TestErrorHandling:
         assert any("PromptInjection" in e for e in result["errors"])
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.llm_guard.get_scanners")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_guard.get_scanners")
     async def test_all_scanners_fail_gracefully(self, mock_get):
         mock_get.return_value = [
             _mock_scanner_error("PromptInjection", RuntimeError("fail")),
@@ -223,7 +223,7 @@ class TestDisabled:
     """LLM Guard disabled → no scanners run."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.llm_guard.get_settings")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_guard.get_settings")
     async def test_disabled_skips(self, mock_settings):
         mock_settings.return_value = MagicMock(enable_llm_guard=False, scanner_timeout=30)
         state = _base_state()
@@ -232,7 +232,7 @@ class TestDisabled:
         assert result.get("scanner_results", {}).get("llm_guard") is None
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.llm_guard.get_scanners")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_guard.get_scanners")
     async def test_empty_message_skips(self, mock_get):
         state = _base_state(user_message="")
         await llm_guard_node(state)
@@ -244,7 +244,7 @@ class TestMultipleFlags:
     """Multiple scanners fail → all flags set."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.llm_guard.get_scanners")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_guard.get_scanners")
     async def test_multiple_flags(self, mock_get):
         mock_get.return_value = [
             _mock_scanner("PromptInjection", is_valid=False, score=0.9),
@@ -262,7 +262,7 @@ class TestMultipleFlags:
 class TestScannerInit:
     """Test lazy scanner initialization."""
 
-    @patch("src.pipeline.nodes.llm_guard._build_scanners")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_guard._build_scanners")
     def test_get_scanners_caches(self, mock_build):
         mock_build.return_value = [_mock_scanner("Fake")]
         s1 = get_scanners({})
@@ -270,7 +270,7 @@ class TestScannerInit:
         assert s1 is s2
         mock_build.assert_called_once()
 
-    @patch("src.pipeline.nodes.llm_guard._build_scanners")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_guard._build_scanners")
     def test_reset_clears_cache(self, mock_build):
         mock_build.return_value = [_mock_scanner("Fake")]
         get_scanners({})
@@ -283,7 +283,7 @@ class TestScannerResults:
     """Verify scanner_results structure and merging."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.llm_guard.get_scanners")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_guard.get_scanners")
     async def test_results_structure(self, mock_get):
         mock_get.return_value = [
             _mock_scanner("PromptInjection"),
@@ -297,7 +297,7 @@ class TestScannerResults:
         assert "score" in lg["PromptInjection"]
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.llm_guard.get_scanners")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_guard.get_scanners")
     async def test_preserves_existing_scanner_results(self, mock_get):
         mock_get.return_value = [_mock_scanner("PromptInjection")]
 

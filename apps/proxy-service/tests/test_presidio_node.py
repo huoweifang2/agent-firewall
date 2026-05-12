@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.pipeline.nodes.presidio import (
+from proxy_service.domain.firewall.pipeline.nodes.presidio import (
     get_analyzer,
     mask_pii_in_messages,
     presidio_node,
@@ -78,7 +78,7 @@ class TestEmailDetection:
     """Email address → pii=[EMAIL_ADDRESS]."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_analyzer")
     async def test_email_detected(self, mock_get):
         mock_get.return_value = _mock_analyzer(
             [
@@ -100,7 +100,7 @@ class TestPhoneDetection:
     """Phone number → pii=[PHONE_NUMBER]."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_analyzer")
     async def test_phone_detected(self, mock_get):
         mock_get.return_value = _mock_analyzer(
             [
@@ -118,7 +118,7 @@ class TestSSNDetection:
     """SSN → pii=[US_SSN]."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_analyzer")
     async def test_ssn_detected(self, mock_get):
         mock_get.return_value = _mock_analyzer(
             [
@@ -136,7 +136,7 @@ class TestNoPII:
     """No PII present → no risk flags added."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_analyzer")
     async def test_no_pii_clean(self, mock_get):
         mock_get.return_value = _mock_analyzer([])
         state = _base_state("Hello, how are you?")
@@ -152,7 +152,7 @@ class TestMultiplePII:
     """Multiple PII entities detected."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_analyzer")
     async def test_multiple_entities(self, mock_get):
         mock_get.return_value = _mock_analyzer(
             [
@@ -177,8 +177,8 @@ class TestMaskAction:
     """pii_action=mask → modified_messages with anonymized text."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_anonymizer")
-    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_anonymizer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_analyzer")
     async def test_mask_produces_modified_messages(self, mock_analyzer, mock_anonymizer):
         mock_analyzer.return_value = _mock_analyzer(
             [
@@ -195,8 +195,8 @@ class TestMaskAction:
         assert user_msg["content"] == "My email is <EMAIL_ADDRESS>"
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_anonymizer")
-    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_anonymizer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_analyzer")
     async def test_mask_does_not_mutate_original(self, mock_analyzer, mock_anonymizer):
         mock_analyzer.return_value = _mock_analyzer(
             [
@@ -217,7 +217,7 @@ class TestMaskAction:
         assert original_messages[0]["content"] == "My email is john@example.com"
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_analyzer")
     async def test_flag_no_modified_messages(self, mock_get):
         mock_get.return_value = _mock_analyzer(
             [
@@ -234,7 +234,7 @@ class TestMaskPiiHelper:
     """Direct tests for mask_pii_in_messages()."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_anonymizer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_anonymizer")
     async def test_masks_correct_message(self, mock_get):
         mock_get.return_value = _mock_anonymizer("Hi, I'm <PERSON>")
         messages = [
@@ -255,7 +255,7 @@ class TestErrorHandling:
     """Analyzer errors → logged, not raised."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_analyzer")
     async def test_analyzer_exception_handled(self, mock_get):
         mock_get.side_effect = RuntimeError("spaCy model not found")
         state = _base_state("My email is john@example.com")
@@ -266,8 +266,8 @@ class TestErrorHandling:
         assert any("presidio" in e for e in result["errors"])
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_anonymizer")
-    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_anonymizer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_analyzer")
     async def test_masking_error_handled(self, mock_analyzer, mock_anonymizer):
         mock_analyzer.return_value = _mock_analyzer(
             [
@@ -294,7 +294,7 @@ class TestDisabled:
     """Presidio disabled → no analysis."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_settings")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_settings")
     async def test_disabled_skips(self, mock_settings):
         mock_settings.return_value = MagicMock(enable_presidio=False)
         state = _base_state()
@@ -303,7 +303,7 @@ class TestDisabled:
         assert result.get("scanner_results", {}).get("presidio") is None
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_analyzer")
     async def test_empty_message_skips(self, mock_get):
         state = _base_state(user_message="")
         state["messages"] = [{"role": "user", "content": ""}]
@@ -319,7 +319,7 @@ class TestPreservesExisting:
     """Presidio node preserves existing risk_flags and scanner_results."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_analyzer")
     async def test_preserves_existing_flags(self, mock_get):
         mock_get.return_value = _mock_analyzer(
             [
@@ -336,7 +336,7 @@ class TestPreservesExisting:
         assert result["risk_flags"]["pii"] == ["EMAIL_ADDRESS"]
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_analyzer")
     async def test_preserves_existing_scanner_results(self, mock_get):
         mock_get.return_value = _mock_analyzer([])
         state = _base_state()
@@ -354,7 +354,7 @@ class TestTiming:
     """Node records execution time."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_analyzer")
     async def test_records_timing(self, mock_get):
         mock_get.return_value = _mock_analyzer([])
         state = _base_state()
@@ -369,13 +369,13 @@ class TestTiming:
 class TestLazyInit:
     """Test lazy engine initialization."""
 
-    @patch("src.pipeline.nodes.presidio.get_settings")
-    @patch("src.pipeline.nodes.presidio.AnalyzerEngine", create=True)
-    @patch("src.pipeline.nodes.presidio.NlpEngineProvider", create=True)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_settings")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.AnalyzerEngine", create=True)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.NlpEngineProvider", create=True)
     def test_get_analyzer_caches(self, _mock_provider_cls, _mock_engine_cls, mock_settings):
         """get_analyzer() should return same instance on repeated calls."""
         # For caching test we directly inject a mock
-        import src.pipeline.nodes.presidio as mod
+        import proxy_service.domain.firewall.pipeline.nodes.presidio as mod
 
         fake = MagicMock()
         mod._analyzer = fake
@@ -383,14 +383,14 @@ class TestLazyInit:
         assert result is fake
 
     def test_reset_clears_analyzer(self):
-        import src.pipeline.nodes.presidio as mod
+        import proxy_service.domain.firewall.pipeline.nodes.presidio as mod
 
         mod._analyzer = MagicMock()
         reset_analyzer()
         assert mod._analyzer is None
 
     def test_reset_clears_anonymizer(self):
-        import src.pipeline.nodes.presidio as mod
+        import proxy_service.domain.firewall.pipeline.nodes.presidio as mod
 
         mod._anonymizer = MagicMock()
         reset_anonymizer()

@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import pytest
-from src.llm.mock_provider import (
+
+from proxy_service.infrastructure.llm.mock_provider import (
     FALLBACK_RESPONSE,
     MOCK_MODEL_ID,
     MOCK_RESPONSES,
@@ -121,11 +122,11 @@ class TestModeRouting:
         monkeypatch.setenv("MODE", "demo")
 
         # Clear cached settings
-        from src.config import get_settings
+        from proxy_service.infrastructure.config import get_settings
 
         get_settings.cache_clear()
 
-        from src.llm.client import llm_completion
+        from proxy_service.infrastructure.llm.client import llm_completion
 
         resp = await llm_completion(
             messages=[{"role": "user", "content": "hi"}],
@@ -140,14 +141,14 @@ class TestModeRouting:
         """MODE=demo + api_key → real provider (LiteLLM)."""
         monkeypatch.setenv("MODE", "demo")
 
-        from src.config import get_settings
+        from proxy_service.infrastructure.config import get_settings
 
         get_settings.cache_clear()
 
-        from src.llm.client import llm_completion
+        from proxy_service.infrastructure.llm.client import llm_completion
 
         # Should NOT use mock — should try real provider and fail on auth
-        from src.llm.exceptions import LLMError
+        from proxy_service.infrastructure.llm.exceptions import LLMError
 
         with pytest.raises((LLMError, Exception)):
             await llm_completion(
@@ -163,11 +164,11 @@ class TestModeRouting:
         """MODE=demo + stream=True → returns async generator from MockProvider."""
         monkeypatch.setenv("MODE", "demo")
 
-        from src.config import get_settings
+        from proxy_service.infrastructure.config import get_settings
 
         get_settings.cache_clear()
 
-        from src.llm.client import llm_completion
+        from proxy_service.infrastructure.llm.client import llm_completion
 
         result = await llm_completion(
             messages=[{"role": "user", "content": "hi"}],

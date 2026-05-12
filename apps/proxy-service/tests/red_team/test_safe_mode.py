@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.red_team.packs.loader import TargetConfig, clear_cache, filter_pack, load_pack
+from proxy_service.domain.red_team.packs.loader import TargetConfig, clear_cache, filter_pack, load_pack
 
 # ---------------------------------------------------------------------------
 # Fixtures

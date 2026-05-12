@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.pipeline.utils.memory_hygiene import (
+from proxy_service.domain.firewall.pipeline.utils.memory_hygiene import (
     DEFAULT_MAX_CHARS_PER_MESSAGE,
     DEFAULT_MAX_TURNS,
     _enforce_total_limit,
@@ -67,8 +67,8 @@ class TestShortConversation:
     """Short conversations pass through without modification."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_analyzer")
-    @patch("src.pipeline.nodes.presidio.get_anonymizer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_analyzer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_anonymizer")
     async def test_short_conv_no_changes(self, mock_anon, mock_get):
         mock_get.return_value = _mock_analyzer()
         msgs = [
@@ -126,8 +126,8 @@ class TestPIIRedaction:
     """PII in user/assistant messages is redacted via Presidio."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_anonymizer")
-    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_anonymizer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_analyzer")
     async def test_email_redacted(self, mock_get, mock_anon_get):
         mock_get.return_value = _mock_analyzer(
             [
@@ -240,8 +240,8 @@ class TestMixedRedaction:
     """Both PII and secrets in the same message are redacted."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.presidio.get_anonymizer")
-    @patch("src.pipeline.nodes.presidio.get_analyzer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_anonymizer")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.presidio.get_analyzer")
     async def test_mixed(self, mock_get, mock_anon_get):
         key = "sk-" + "c" * 30
         mock_get.return_value = _mock_analyzer(

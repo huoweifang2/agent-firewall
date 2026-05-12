@@ -1,8 +1,8 @@
 """Tests for agent tools: KB, orders, secrets."""
 
-from src.agent.tools.kb import search_knowledge_base
-from src.agent.tools.orders import get_order_status
-from src.agent.tools.secrets import get_internal_secrets
+from agent_runtime.infrastructure.tools.kb import search_knowledge_base
+from agent_runtime.infrastructure.tools.orders import get_order_status
+from agent_runtime.infrastructure.tools.secrets import get_internal_secrets
 
 
 class TestSearchKnowledgeBase:

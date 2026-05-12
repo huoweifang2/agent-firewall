@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.llm.providers import detect_provider, format_litellm_model
+from proxy_service.infrastructure.llm.providers import detect_provider, format_litellm_model
 
 # ── detect_provider ──────────────────────────────────────────────
 

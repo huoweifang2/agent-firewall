@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from src.pipeline.nodes.decision import calculate_risk_score, decision_node
-from src.pipeline.state import PipelineState
+from proxy_service.domain.firewall.pipeline.nodes.decision import calculate_risk_score, decision_node
+from proxy_service.domain.firewall.pipeline.state import PipelineState
 
 # ── calculate_risk_score with scanner weights ────────────────────────
 

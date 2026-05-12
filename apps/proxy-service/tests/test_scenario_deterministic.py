@@ -32,8 +32,8 @@ from pathlib import Path
 
 import pytest
 
-from src.db.seed import DEFAULT_POLICIES
-from src.pipeline.runner import _build_pre_llm_pipeline, get_policy_config
+from proxy_service.application.firewall.runner import _build_pre_llm_pipeline, get_policy_config
+from proxy_service.infrastructure.persistence.seed import DEFAULT_POLICIES
 
 # ── Constants ─────────────────────────────────────────────────────────
 

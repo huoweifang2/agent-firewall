@@ -18,16 +18,16 @@ import pytest
 import yaml
 from httpx import ASGITransport, AsyncClient
 
-from src.control_plane.seed import (
+from proxy_service.application.control_plane.policy_packs import (
+    get_policy_pack,
+    list_policy_packs,
+)
+from proxy_service.bootstrap.main import app
+from proxy_service.infrastructure.persistence.control_plane_seed import (
     REFERENCE_AGENT,
     seed_reference_agent,
     seed_reference_tools_and_roles,
 )
-from src.control_plane.services.policy_packs import (
-    get_policy_pack,
-    list_policy_packs,
-)
-from src.main import app
 
 
 @pytest.fixture
@@ -219,7 +219,7 @@ async def test_rbac_circular_inheritance_error(client):
     # so we test the function directly
     from unittest.mock import MagicMock
 
-    from src.control_plane.services.config_gen import _sort_roles_by_depth
+    from proxy_service.application.control_plane.config_gen import _sort_roles_by_depth
 
     role_a = MagicMock()
     role_a.id = uuid.uuid4()
@@ -276,8 +276,8 @@ async def test_limits_defaults_from_pack(client):
 @pytest.mark.asyncio
 async def test_limits_override_single_value(client):
     """Override max_cost_usd via generate_limits_yaml → only that changes."""
-    from src.control_plane.services.config_gen import generate_limits_yaml
-    from src.db.session import get_db
+    from proxy_service.application.control_plane.config_gen import generate_limits_yaml
+    from proxy_service.infrastructure.persistence.session import get_db
 
     ref = await _seed_ref_agent(client)
     async for db in get_db():
@@ -469,8 +469,8 @@ async def test_policy_values_from_pack(client):
 @pytest.mark.asyncio
 async def test_policy_override_single_value(client):
     """Override toxicity_threshold → only that changes."""
-    from src.control_plane.services.config_gen import generate_policy_yaml
-    from src.db.session import get_db
+    from proxy_service.application.control_plane.config_gen import generate_policy_yaml
+    from proxy_service.infrastructure.persistence.session import get_db
 
     ref = await _seed_ref_agent(client)
     async for db in get_db():

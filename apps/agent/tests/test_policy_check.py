@@ -1,7 +1,7 @@
 """Tests for PolicyCheckNode — RBAC tool filtering."""
 
-from src.agent.nodes.policy import policy_check_node
-from src.agent.tools.registry import get_allowed_tools
+from agent_runtime.application.runtime.nodes.policy import policy_check_node
+from agent_runtime.infrastructure.tools.registry import get_allowed_tools
 
 
 class TestGetAllowedTools:

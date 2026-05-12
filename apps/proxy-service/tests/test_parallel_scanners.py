@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.pipeline.nodes.scanners import parallel_scanners_node
+from proxy_service.domain.firewall.pipeline.nodes.scanners import parallel_scanners_node
 
 
 def _base_state(
@@ -34,8 +34,8 @@ class TestParallelExecution:
     """Both scanners run concurrently."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.scanners.presidio_node", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.presidio_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
     async def test_both_scanners_run(self, mock_llm_guard, mock_presidio):
         mock_llm_guard.return_value = {
             "risk_flags": {"promptinjection": 0.9},
@@ -59,8 +59,8 @@ class TestParallelExecution:
         assert "presidio" in result["scanner_results"]
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.scanners.presidio_node", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.presidio_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
     async def test_records_timing(self, mock_llm_guard, mock_presidio):
         mock_llm_guard.return_value = {"risk_flags": {}, "scanner_results": {}, "errors": []}
         mock_presidio.return_value = {"risk_flags": {}, "scanner_results": {}, "errors": []}
@@ -77,8 +77,8 @@ class TestPolicySelection:
     """Scanner selection driven by policy config."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.scanners.presidio_node", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.presidio_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
     async def test_fast_policy_no_scanners(self, mock_llm_guard, mock_presidio):
         state = _base_state(nodes=[])
         result = await parallel_scanners_node(state)
@@ -88,8 +88,8 @@ class TestPolicySelection:
         assert result["risk_flags"] == {}
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.scanners.presidio_node", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.presidio_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
     async def test_balanced_only_llm_guard(self, mock_llm_guard, mock_presidio):
         mock_llm_guard.return_value = {
             "risk_flags": {},
@@ -105,8 +105,8 @@ class TestPolicySelection:
         assert "llm_guard" in result["scanner_results"]
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.scanners.presidio_node", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.presidio_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
     async def test_no_nodes_key_skips(self, mock_llm_guard, mock_presidio):
         """Missing 'nodes' key in policy_config → no scanners."""
         state = _base_state()
@@ -124,8 +124,8 @@ class TestScannerErrors:
     """One scanner fails, other succeeds → merged results correct."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.scanners.presidio_node", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.presidio_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
     async def test_one_fails_other_succeeds(self, mock_llm_guard, mock_presidio):
         mock_llm_guard.side_effect = RuntimeError("model load failed")
         mock_presidio.return_value = {
@@ -144,8 +144,8 @@ class TestScannerErrors:
         assert any("llm_guard" in e for e in result["errors"])
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.scanners.presidio_node", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.presidio_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
     async def test_both_fail_gracefully(self, mock_llm_guard, mock_presidio):
         mock_llm_guard.side_effect = RuntimeError("fail")
         mock_presidio.side_effect = RuntimeError("fail")
@@ -164,7 +164,7 @@ class TestMerging:
     """Results from multiple scanners are properly merged."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
     async def test_preserves_existing_flags(self, mock_llm_guard):
         mock_llm_guard.return_value = {
             "risk_flags": {"promptinjection": 0.8},
@@ -182,8 +182,8 @@ class TestMerging:
         assert result["risk_flags"]["promptinjection"] == 0.8
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.scanners.presidio_node", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.presidio_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
     async def test_merges_errors_from_both(self, mock_llm_guard, mock_presidio):
         mock_llm_guard.return_value = {
             "risk_flags": {},
@@ -202,7 +202,7 @@ class TestMerging:
         assert len(result["errors"]) == 2
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.scanners.presidio_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.presidio_node", new_callable=AsyncMock)
     async def test_modified_messages_propagated(self, mock_presidio):
         mock_presidio.return_value = {
             "risk_flags": {"pii": ["EMAIL_ADDRESS"], "pii_count": 1},

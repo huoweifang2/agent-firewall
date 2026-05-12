@@ -23,8 +23,8 @@ from pathlib import Path
 
 import pytest
 
-from src.pipeline.nodes.decision import decision_node
-from src.pipeline.nodes.intent import classify_intent
+from proxy_service.domain.firewall.pipeline.nodes.decision import decision_node
+from proxy_service.domain.firewall.pipeline.nodes.intent import classify_intent
 
 # ── Load scenario data ────────────────────────────────────────────────
 

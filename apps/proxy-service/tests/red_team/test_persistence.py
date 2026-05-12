@@ -11,10 +11,9 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.red_team.persistence import (
-    BenchmarkRun,
+from proxy_service.infrastructure.persistence.red_team.models import BenchmarkRun, BenchmarkScenarioResult
+from proxy_service.infrastructure.persistence.red_team.repository import (
     BenchmarkRunRepository,
-    BenchmarkScenarioResult,
     BenchmarkScenarioResultRepository,
     RunCounts,
     purge_expired_responses,

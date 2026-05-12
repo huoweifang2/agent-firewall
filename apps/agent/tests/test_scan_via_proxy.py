@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import pytest
 
-from src.agent.nodes.llm_call import _scan_via_proxy
-from src.config import get_settings
+from agent_runtime.application.runtime.nodes.llm_call import _scan_via_proxy
+from agent_runtime.infrastructure.config import get_settings
 
 # ── Helpers ──────────────────────────────────────────────────
 

@@ -22,12 +22,12 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.agent.graph import get_agent_graph
+from agent_runtime.application.runtime.graph import get_agent_graph
 
 # ── Helpers ──────────────────────────────────────────────────
 
-_SCAN_PATCH = "src.agent.nodes.llm_call._scan_via_proxy"
-_LLM_PATCH = "src.agent.nodes.llm_call.acompletion"
+_SCAN_PATCH = "agent_runtime.application.runtime.nodes.llm_call._scan_via_proxy"
+_LLM_PATCH = "agent_runtime.application.runtime.nodes.llm_call.acompletion"
 
 
 def _mock_scan_allow(
@@ -402,7 +402,7 @@ class TestScenario9SessionIsolation:
             )
 
         # Session A should have no history from B and vice versa
-        from src.session import session_store
+        from agent_runtime.infrastructure.session import session_store
 
         history_a = session_store.get_history("session-A")
         history_b = session_store.get_history("session-B")

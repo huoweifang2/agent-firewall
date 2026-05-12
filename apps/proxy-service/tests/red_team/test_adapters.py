@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 
-from src.red_team.engine.adapters import _MAX_RESPONSE_BODY_BYTES, SimpleNormalizer
-from src.red_team.engine.protocols import HttpResponse
+from proxy_service.domain.red_team.engine.protocols import HttpResponse
+from proxy_service.infrastructure.red_team.adapters import _MAX_RESPONSE_BODY_BYTES, SimpleNormalizer
 
 # ===========================================================================
 # SSE frame stripping

@@ -15,16 +15,16 @@ import uuid
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.control_plane.seed import (
-    seed_reference_agent,
-    seed_reference_tools_and_roles,
-)
-from src.control_plane.services.validation_runner import (
+from proxy_service.application.control_plane.validation_runner import (
     BasicTestPack,
     ValidationTestDefinition,
     run_validation,
 )
-from src.main import app
+from proxy_service.bootstrap.main import app
+from proxy_service.infrastructure.persistence.control_plane_seed import (
+    seed_reference_agent,
+    seed_reference_tools_and_roles,
+)
 
 
 @pytest.fixture
@@ -160,7 +160,7 @@ class Test30aTestPackDefinition:
     async def test_basic_pack_has_12_tests(self, client: AsyncClient) -> None:
         """BasicTestPack generates exactly 12 test definitions."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             tests = await BasicTestPack.generate(uuid.UUID(agent["id"]), db)
@@ -170,7 +170,7 @@ class Test30aTestPackDefinition:
     async def test_pack_3_rbac_tests(self, client: AsyncClient) -> None:
         """Exactly 3 tests with category='rbac'."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             tests = await BasicTestPack.generate(uuid.UUID(agent["id"]), db)
@@ -181,7 +181,7 @@ class Test30aTestPackDefinition:
     async def test_pack_3_injection_tests(self, client: AsyncClient) -> None:
         """Exactly 3 tests with category='injection'."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             tests = await BasicTestPack.generate(uuid.UUID(agent["id"]), db)
@@ -192,7 +192,7 @@ class Test30aTestPackDefinition:
     async def test_pack_3_pii_tests(self, client: AsyncClient) -> None:
         """Exactly 3 tests with category='pii'."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             tests = await BasicTestPack.generate(uuid.UUID(agent["id"]), db)
@@ -203,7 +203,7 @@ class Test30aTestPackDefinition:
     async def test_pack_3_budget_tests(self, client: AsyncClient) -> None:
         """Exactly 3 tests with category='budget'."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             tests = await BasicTestPack.generate(uuid.UUID(agent["id"]), db)
@@ -214,7 +214,7 @@ class Test30aTestPackDefinition:
     async def test_rbac_test_uses_agent_roles(self, client: AsyncClient) -> None:
         """Test 1 input.role = agent's lowest role."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             tests = await BasicTestPack.generate(uuid.UUID(agent["id"]), db)
@@ -225,7 +225,7 @@ class Test30aTestPackDefinition:
     async def test_rbac_test_uses_agent_tools(self, client: AsyncClient) -> None:
         """Test 1 input.tool = agent's highest-sensitivity tool."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             tests = await BasicTestPack.generate(uuid.UUID(agent["id"]), db)
@@ -236,7 +236,7 @@ class Test30aTestPackDefinition:
     async def test_injection_test_uses_agent_args(self, client: AsyncClient) -> None:
         """Test 4 uses injection payload in tool's arg names."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             tests = await BasicTestPack.generate(uuid.UUID(agent["id"]), db)
@@ -249,7 +249,7 @@ class Test30aTestPackDefinition:
     async def test_pii_test_uses_agent_tools(self, client: AsyncClient) -> None:
         """Test 7 uses agent's tool names."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             tests = await BasicTestPack.generate(uuid.UUID(agent["id"]), db)
@@ -260,7 +260,7 @@ class Test30aTestPackDefinition:
     async def test_budget_test_uses_agent_limits(self, client: AsyncClient) -> None:
         """Test 10 threshold = agent's rate_limit + 1 (or max_tool_calls + 1)."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             tests = await BasicTestPack.generate(uuid.UUID(agent["id"]), db)
@@ -272,7 +272,7 @@ class Test30aTestPackDefinition:
     async def test_each_test_is_dataclass(self, client: AsyncClient) -> None:
         """Every test has: name, category, description, input, expected_decision."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             tests = await BasicTestPack.generate(uuid.UUID(agent["id"]), db)
@@ -294,7 +294,7 @@ class Test30aTestPackDefinition:
         resp = await client.post(f"/v1/agents/{agent['id']}/generate-config")
         assert resp.status_code == 200
 
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             tests = await BasicTestPack.generate(uuid.UUID(agent["id"]), db)
@@ -312,7 +312,7 @@ class Test30aTestPackDefinition:
         resp = await client.post(f"/v1/agents/{agent['id']}/generate-config")
         assert resp.status_code == 200
 
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             tests = await BasicTestPack.generate(uuid.UUID(agent["id"]), db)
@@ -340,7 +340,7 @@ class Test30bValidationEngine:
     async def test_run_validation_demo_agent_12_pass(self, client: AsyncClient) -> None:
         """Demo agent with proper config → 12/12 pass."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             result = await run_validation(uuid.UUID(agent["id"]), db)
@@ -353,7 +353,7 @@ class Test30bValidationEngine:
     async def test_result_structure(self, client: AsyncClient) -> None:
         """Result has total, passed, failed, tests[]."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             result = await run_validation(uuid.UUID(agent["id"]), db)
@@ -368,7 +368,7 @@ class Test30bValidationEngine:
     async def test_per_test_detail(self, client: AsyncClient) -> None:
         """Each test detail has: name, category, expected, actual, passed, duration_ms."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             result = await run_validation(uuid.UUID(agent["id"]), db)
@@ -389,7 +389,7 @@ class Test30bValidationEngine:
         resp = await client.post(f"/v1/agents/{agent['id']}/generate-config")
         assert resp.status_code == 200
 
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             result = await run_validation(uuid.UUID(agent["id"]), db)
@@ -405,7 +405,7 @@ class Test30bValidationEngine:
     async def test_rbac_deny_detected(self, client: AsyncClient) -> None:
         """Lowest role → highest tool → actual=DENY."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             result = await run_validation(uuid.UUID(agent["id"]), db)
@@ -417,7 +417,7 @@ class Test30bValidationEngine:
     async def test_rbac_allow_detected(self, client: AsyncClient) -> None:
         """Admin → admin tool → actual=ALLOW."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             result = await run_validation(uuid.UUID(agent["id"]), db)
@@ -429,7 +429,7 @@ class Test30bValidationEngine:
     async def test_injection_blocked(self, client: AsyncClient) -> None:
         """SQL injection input → actual=BLOCKED."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             result = await run_validation(uuid.UUID(agent["id"]), db)
@@ -441,7 +441,7 @@ class Test30bValidationEngine:
     async def test_pii_redacted(self, client: AsyncClient) -> None:
         """Email in output → actual=REDACTED."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             result = await run_validation(uuid.UUID(agent["id"]), db)
@@ -453,7 +453,7 @@ class Test30bValidationEngine:
     async def test_budget_over_limit(self, client: AsyncClient) -> None:
         """Exceed rate limit → actual=BLOCKED."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             result = await run_validation(uuid.UUID(agent["id"]), db)
@@ -471,7 +471,7 @@ class Test30bValidationEngine:
         assert data["generated_config"] is not None
         assert "rbac_yaml" in data["generated_config"]
 
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             result = await run_validation(uuid.UUID(agent["id"]), db)
@@ -482,7 +482,7 @@ class Test30bValidationEngine:
         """Agent without generated config → error (not crash)."""
         agent = await _create_agent(client)
 
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             with pytest.raises(ValueError, match="no generated config"):
@@ -492,7 +492,7 @@ class Test30bValidationEngine:
     async def test_engine_duration_ms(self, client: AsyncClient) -> None:
         """Each test duration_ms > 0."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             result = await run_validation(uuid.UUID(agent["id"]), db)
@@ -664,7 +664,7 @@ class Test30dValidationProperties:
     async def test_deterministic_same_config(self, client: AsyncClient) -> None:
         """Same config, 3 runs → 3 identical results."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         scores = []
         for _ in range(3):
@@ -677,7 +677,7 @@ class Test30dValidationProperties:
     async def test_versioned_tests(self, client: AsyncClient) -> None:
         """Each test in result has version field."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             result = await run_validation(uuid.UUID(agent["id"]), db)
@@ -689,7 +689,7 @@ class Test30dValidationProperties:
     async def test_pack_version_in_result(self, client: AsyncClient) -> None:
         """Result includes pack_version."""
         agent = await _setup_full_agent(client)
-        from src.db.session import async_session
+        from proxy_service.infrastructure.persistence.session import async_session
 
         async with async_session() as db:
             result = await run_validation(uuid.UUID(agent["id"]), db)
@@ -707,7 +707,7 @@ class Test30dValidationProperties:
 
         try:
             agent = await _setup_full_agent(client)
-            from src.db.session import async_session
+            from proxy_service.infrastructure.persistence.session import async_session
 
             async with async_session() as db:
                 result = await run_validation(uuid.UUID(agent["id"]), db)

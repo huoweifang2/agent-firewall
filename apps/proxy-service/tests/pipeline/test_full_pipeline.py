@@ -7,9 +7,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.pipeline.graph import build_pipeline
-from src.pipeline.state import PipelineState
-from src.services.denylist import DenylistHit
+from proxy_service.application.services.denylist import DenylistHit
+from proxy_service.domain.firewall.pipeline.graph import build_pipeline
+from proxy_service.domain.firewall.pipeline.state import PipelineState
 
 # ── Helpers ───────────────────────────────────────────────────────────
 
@@ -51,12 +51,12 @@ def _fake_llm_response(content: str = "Sure, here you go!") -> SimpleNamespace:
 
 
 # Common patches for all tests — mock DB logging + Langfuse
-_PATCH_LOG = "src.pipeline.nodes.logging_node.log_request_from_state"
-_PATCH_TRACE = "src.pipeline.nodes.logging_node.create_trace"
-_PATCH_SPANS = "src.pipeline.nodes.logging_node.add_pipeline_spans"
-_PATCH_LLM = "src.pipeline.nodes.llm_call.llm_completion"
-_PATCH_DENYLIST = "src.pipeline.nodes.rules.check_denylist"
-_PATCH_INTENT_DENYLIST = "src.pipeline.nodes.intent.check_denylist"
+_PATCH_LOG = "proxy_service.domain.firewall.pipeline.nodes.logging_node.log_request_from_state"
+_PATCH_TRACE = "proxy_service.domain.firewall.pipeline.nodes.logging_node.create_trace"
+_PATCH_SPANS = "proxy_service.domain.firewall.pipeline.nodes.logging_node.add_pipeline_spans"
+_PATCH_LLM = "proxy_service.domain.firewall.pipeline.nodes.llm_call.llm_completion"
+_PATCH_DENYLIST = "proxy_service.domain.firewall.pipeline.nodes.rules.check_denylist"
+_PATCH_INTENT_DENYLIST = "proxy_service.domain.firewall.pipeline.nodes.intent.check_denylist"
 
 
 # ── Test 1: Clean request ALLOW path ─────────────────────────────────

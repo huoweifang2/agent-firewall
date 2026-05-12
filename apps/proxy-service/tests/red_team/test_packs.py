@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from src.red_team.packs import (
+from proxy_service.domain.red_team.packs import (
     PackInfo,
     PackLoadError,
     TargetConfig,
@@ -15,15 +15,17 @@ from src.red_team.packs import (
     list_packs,
     load_pack,
 )
-from src.red_team.packs.loader import clear_cache
-from src.red_team.schemas import Pack
-from src.red_team.schemas.enums import AgentType, DetectorType
+from proxy_service.domain.red_team.packs.loader import clear_cache
+from proxy_service.domain.red_team.schemas import Pack
+from proxy_service.domain.red_team.schemas.enums import AgentType, DetectorType
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-_DATA_DIR = Path(__file__).resolve().parent.parent.parent / "src" / "red_team" / "packs" / "data"
+_DATA_DIR = (
+    Path(__file__).resolve().parent.parent.parent / "src" / "proxy_service" / "domain" / "red_team" / "packs" / "data"
+)
 
 
 def _make_scenario(**overrides: object) -> dict:

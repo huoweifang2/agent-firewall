@@ -56,10 +56,10 @@ echo "[start-local] Starting local application services..."
 echo "[start-local] SQLite:   ${SQLITE_PATH}"
 echo "[start-local] Cache:    ${CACHE_BACKEND}"
 echo "[start-local] Langfuse: ${ENABLE_LANGFUSE}"
-(cd apps/proxy-service && uv run python -m uvicorn src.main:app --reload --host 127.0.0.1 --port 8000) &
+(cd apps/proxy-service && uv run python -m uvicorn proxy_service.bootstrap.main:app --reload --host 127.0.0.1 --port 8000) &
 PROXY_PID=$!
 
-(cd apps/agent && uv run python -m uvicorn src.main:app --reload --host 127.0.0.1 --port 8002) &
+(cd apps/agent && uv run python -m uvicorn agent_runtime.bootstrap.main:app --reload --host 127.0.0.1 --port 8002) &
 AGENT_PID=$!
 
 (cd apps/frontend && npm run dev) &

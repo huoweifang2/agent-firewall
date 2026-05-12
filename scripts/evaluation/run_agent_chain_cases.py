@@ -23,11 +23,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from src.agent.nodes.post_tool_gate import post_tool_gate_node
-from src.agent.nodes.pre_tool_gate import pre_tool_gate_node
-from src.agent.runtime_access import delegation_tool_name
-from src.agent.tools.registry import get_allowed_tools
-from src.agent.trace.accumulator import TraceAccumulator
+from agent_runtime.application.runtime.nodes.post_tool_gate import post_tool_gate_node
+from agent_runtime.application.runtime.nodes.pre_tool_gate import pre_tool_gate_node
+from agent_runtime.application.runtime_access import delegation_tool_name
+from agent_runtime.infrastructure.tools.registry import get_allowed_tools
+from agent_runtime.domain.trace.accumulator import TraceAccumulator
 
 
 @dataclass(frozen=True)

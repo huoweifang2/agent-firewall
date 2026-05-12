@@ -16,13 +16,13 @@ import time
 
 import pytest
 
-from src.agent.limits.config import (
+from agent_runtime.domain.limits.config import (
     DEFAULT_LIMITS,
     ROLE_LIMITS,
     LimitsConfig,
     get_limits_for_role,
 )
-from src.agent.limits.service import (
+from agent_runtime.domain.limits.service import (
     LIMIT_EXCEEDED_MESSAGE,
     LIMIT_OK,
     RATE_LIMIT_MESSAGE,
@@ -415,14 +415,14 @@ class TestInputNodeLimits:
 
     def setup_method(self):
         # Reset limits service singleton
-        import src.agent.limits.service as svc_mod
+        import agent_runtime.domain.limits.service as svc_mod
 
         svc_mod._service = LimitsService()
         self.svc = svc_mod._service
 
     def test_normal_request_passes(self):
-        from src.agent.nodes.input import input_node
-        from src.session import session_store
+        from agent_runtime.application.runtime.nodes.input import input_node
+        from agent_runtime.infrastructure.session import session_store
 
         session_store._sessions.clear()
         state = {
@@ -435,8 +435,8 @@ class TestInputNodeLimits:
         assert "final_response" not in result or result.get("final_response") is None
 
     def test_rate_limited_request_blocked(self):
-        from src.agent.nodes.input import input_node
-        from src.session import session_store
+        from agent_runtime.application.runtime.nodes.input import input_node
+        from agent_runtime.infrastructure.session import session_store
 
         session_store._sessions.clear()
         # Exhaust per-minute rate limit for customer (10/min)
@@ -461,8 +461,8 @@ class TestInputNodeLimits:
         assert result["final_response"] == RATE_LIMIT_MESSAGE
 
     def test_admin_higher_rate_limit(self):
-        from src.agent.nodes.input import input_node
-        from src.session import session_store
+        from agent_runtime.application.runtime.nodes.input import input_node
+        from agent_runtime.infrastructure.session import session_store
 
         session_store._sessions.clear()
         # Admin has 40/min, send 11 requests (customer limit is 10)
@@ -479,8 +479,8 @@ class TestInputNodeLimits:
         assert result.get("limit_exceeded") is None
 
     def test_session_counters_in_state(self):
-        from src.agent.nodes.input import input_node
-        from src.session import session_store
+        from agent_runtime.application.runtime.nodes.input import input_node
+        from agent_runtime.infrastructure.session import session_store
 
         session_store._sessions.clear()
         state = {
@@ -506,13 +506,13 @@ class TestPreToolGateLimits:
     """Test that pre_tool_gate enforces tool call limits."""
 
     def setup_method(self):
-        import src.agent.limits.service as svc_mod
+        import agent_runtime.domain.limits.service as svc_mod
 
         svc_mod._service = LimitsService()
         self.svc = svc_mod._service
 
     def test_tool_calls_within_limit(self):
-        from src.agent.nodes.pre_tool_gate import pre_tool_gate_node
+        from agent_runtime.application.runtime.nodes.pre_tool_gate import pre_tool_gate_node
 
         state = {
             "session_id": "gate-ok",
@@ -531,7 +531,7 @@ class TestPreToolGateLimits:
         assert decisions[0]["decision"] in ("ALLOW", "MODIFY")
 
     def test_session_tool_limit_blocks(self):
-        from src.agent.nodes.pre_tool_gate import pre_tool_gate_node
+        from agent_runtime.application.runtime.nodes.pre_tool_gate import pre_tool_gate_node
 
         # Exhaust session tool limit (customer: 20)
         self.svc.increment_tool_calls("gate-limit", 20)
@@ -553,7 +553,7 @@ class TestPreToolGateLimits:
         assert "max_tool_calls_per_session" in decisions[0]["reason"]
 
     def test_admin_higher_tool_limit(self):
-        from src.agent.nodes.pre_tool_gate import pre_tool_gate_node
+        from agent_runtime.application.runtime.nodes.pre_tool_gate import pre_tool_gate_node
 
         # Admin can do 100 tool calls; 20 is fine
         self.svc.increment_tool_calls("gate-admin", 20)
@@ -575,7 +575,7 @@ class TestPreToolGateLimits:
         assert all(c["passed"] for c in limits_checks)
 
     def test_token_budget_blocks_tool(self):
-        from src.agent.nodes.pre_tool_gate import pre_tool_gate_node
+        from agent_runtime.application.runtime.nodes.pre_tool_gate import pre_tool_gate_node
 
         # Exhaust token budget (customer: 20K)
         self.svc.track_token_usage("gate-tokens", 15_000, 6_000, "default")
@@ -597,7 +597,7 @@ class TestPreToolGateLimits:
 
     def test_tool_calls_incremented_on_allow(self):
         """Allowed tool calls should be tracked in limits service."""
-        from src.agent.nodes.pre_tool_gate import pre_tool_gate_node
+        from agent_runtime.application.runtime.nodes.pre_tool_gate import pre_tool_gate_node
 
         state = {
             "session_id": "gate-track",
@@ -623,31 +623,31 @@ class TestGraphLimitRouting:
     """Test that graph routes correctly when limits are exceeded."""
 
     def test_after_input_routes_to_memory_on_limit(self):
-        from src.agent.graph import _after_input
+        from agent_runtime.application.runtime.graph import _after_input
 
         state = {"limit_exceeded": "max_requests_per_minute", "final_response": "limit msg"}
         assert _after_input(state) == "memory"
 
     def test_after_input_routes_to_intent_normally(self):
-        from src.agent.graph import _after_input
+        from agent_runtime.application.runtime.graph import _after_input
 
         state = {"limit_exceeded": None}
         assert _after_input(state) == "intent"
 
     def test_after_input_routes_to_intent_when_missing(self):
-        from src.agent.graph import _after_input
+        from agent_runtime.application.runtime.graph import _after_input
 
         state = {}
         assert _after_input(state) == "intent"
 
     def test_check_blocked_routes_on_limit_exceeded(self):
-        from src.agent.graph import _check_blocked
+        from agent_runtime.application.runtime.graph import _check_blocked
 
         state = {"limit_exceeded": "max_tokens_per_session", "firewall_decision": {"decision": "ALLOW"}}
         assert _check_blocked(state) == "memory"
 
     def test_check_blocked_normal(self):
-        from src.agent.graph import _check_blocked
+        from agent_runtime.application.runtime.graph import _check_blocked
 
         state = {"limit_exceeded": None, "firewall_decision": {"decision": "ALLOW"}}
         assert _check_blocked(state) == "response"
@@ -690,7 +690,7 @@ class TestEdgeCases:
         assert self.svc.check_token_budget("s2", config).allowed is True
 
     def test_singleton_returns_same_instance(self):
-        import src.agent.limits.service as svc_mod
+        import agent_runtime.domain.limits.service as svc_mod
 
         svc_mod._service = None
         s1 = get_limits_service()

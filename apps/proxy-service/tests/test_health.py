@@ -3,7 +3,7 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.main import app
+from proxy_service.bootstrap.main import app
 
 
 @pytest.fixture

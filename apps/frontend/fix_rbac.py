@@ -1,6 +1,6 @@
 import yaml
 
-with open("apps/agent/src/agent/rbac/rbac_config.yaml", "r") as f:
+with open("apps/agent/src/agent_runtime/domain/rbac/rbac_config.yaml", "r") as f:
     config = yaml.safe_load(f)
 
 config["roles"]["customer"]["tools"]["WEB_SEARCH"] = {
@@ -8,5 +8,5 @@ config["roles"]["customer"]["tools"]["WEB_SEARCH"] = {
     "sensitivity": "low"
 }
 
-with open("apps/agent/src/agent/rbac/rbac_config.yaml", "w") as f:
+with open("apps/agent/src/agent_runtime/domain/rbac/rbac_config.yaml", "w") as f:
     yaml.dump(config, f)

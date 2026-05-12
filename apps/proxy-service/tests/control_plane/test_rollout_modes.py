@@ -16,14 +16,14 @@ from datetime import UTC, datetime
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.control_plane.models import (
+from proxy_service.bootstrap.main import app
+from proxy_service.domain.control_plane.models import (
     Agent,
     RolloutMode,
     ValidationRun,
 )
-from src.control_plane.schemas import AgentRead
-from src.db.session import async_session
-from src.main import app
+from proxy_service.infrastructure.persistence.session import async_session
+from proxy_service.interfaces.http.schemas.control_plane import AgentRead
 
 
 @pytest.fixture

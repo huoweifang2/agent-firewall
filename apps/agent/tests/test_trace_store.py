@@ -17,7 +17,7 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-from src.agent.trace.store import TraceStore, get_trace_store
+from agent_runtime.domain.trace.store import TraceStore, get_trace_store
 
 # ── Helpers ───────────────────────────────────────────────────────────
 
@@ -223,7 +223,7 @@ class TestTraceStoreFilter:
 
 @pytest.fixture
 def client():
-    from src.main import app
+    from agent_runtime.bootstrap.main import app
 
     return TestClient(app)
 
@@ -339,8 +339,8 @@ class TestTracesEndpoints:
 class TestLangfuseIntegration:
     def test_send_disabled_by_default(self):
         # Reset module state
-        import src.agent.trace.langfuse as lf_mod
-        from src.agent.trace.langfuse import send_trace_to_langfuse
+        import agent_runtime.domain.trace.langfuse as lf_mod
+        from agent_runtime.domain.trace.langfuse import send_trace_to_langfuse
 
         lf_mod._langfuse_available = None
         lf_mod._langfuse_client = None
@@ -349,9 +349,9 @@ class TestLangfuseIntegration:
         assert result is False
 
     @patch.dict("os.environ", {"AGENT_LANGFUSE_ENABLED": "true"})
-    @patch("src.agent.trace.langfuse.Langfuse", create=True)
+    @patch("agent_runtime.domain.trace.langfuse.Langfuse", create=True)
     def test_send_with_mock_langfuse(self, mock_langfuse_cls):
-        import src.agent.trace.langfuse as lf_mod
+        import agent_runtime.domain.trace.langfuse as lf_mod
 
         lf_mod._langfuse_available = None
         lf_mod._langfuse_client = None
@@ -373,7 +373,7 @@ class TestLangfuseIntegration:
         mock_client.flush.assert_called_once()
 
     def test_send_handles_exception(self):
-        import src.agent.trace.langfuse as lf_mod
+        import agent_runtime.domain.trace.langfuse as lf_mod
 
         lf_mod._langfuse_available = None
         lf_mod._langfuse_client = None
@@ -392,8 +392,8 @@ class TestLangfuseIntegration:
 
 class TestMemoryNodePersistence:
     def test_memory_node_saves_to_store(self):
-        from src.agent.nodes.memory import memory_node
-        from src.agent.trace.accumulator import TraceAccumulator
+        from agent_runtime.application.runtime.nodes.memory import memory_node
+        from agent_runtime.domain.trace.accumulator import TraceAccumulator
 
         store = get_trace_store()
         store.clear()
@@ -413,8 +413,8 @@ class TestMemoryNodePersistence:
             "trace": t.data,
         }
 
-        with patch("src.agent.nodes.memory.session_store"):
-            with patch("src.agent.nodes.memory.send_trace_to_langfuse"):
+        with patch("agent_runtime.application.runtime.nodes.memory.session_store"):
+            with patch("agent_runtime.application.runtime.nodes.memory.send_trace_to_langfuse"):
                 result = memory_node(state)
 
         # Should be in store

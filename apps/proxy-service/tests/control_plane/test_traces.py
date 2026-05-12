@@ -17,7 +17,9 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.control_plane.models import (
+from proxy_service.application.control_plane.trace_recorder import TraceRecorder, compute_severity
+from proxy_service.bootstrap.main import app
+from proxy_service.domain.control_plane.models import (
     AgentIncident,
     AgentTrace,
     IncidentCategory,
@@ -27,9 +29,7 @@ from src.control_plane.models import (
     TraceDecision,
     TraceGate,
 )
-from src.control_plane.services.trace_recorder import TraceRecorder, compute_severity
-from src.db.session import async_session
-from src.main import app
+from proxy_service.infrastructure.persistence.session import async_session
 
 
 @pytest.fixture

@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.agent.nodes.llm_call import _PROVIDER_RULES, _resolve_api_key, _resolve_direct_llm
+from agent_runtime.application.runtime.nodes.llm_call import _PROVIDER_RULES, _resolve_api_key, _resolve_direct_llm
 
 # ── Helpers ──────────────────────────────────────────────────
 

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-from src.agent.telegram_bridge import load_telegram_bridge_config
+from agent_runtime.infrastructure.telegram_bridge import load_telegram_bridge_config
 
 
 def _settings(**overrides):

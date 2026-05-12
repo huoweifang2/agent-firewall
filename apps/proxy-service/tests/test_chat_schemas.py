@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from src.schemas.chat import (
+from proxy_service.interfaces.http.schemas.chat import (
     ChatChoice,
     ChatCompletionRequest,
     ChatCompletionResponse,

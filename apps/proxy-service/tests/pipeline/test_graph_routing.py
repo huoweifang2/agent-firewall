@@ -7,9 +7,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.pipeline.graph import build_pipeline
-from src.pipeline.state import PipelineState
-from src.services.denylist import DenylistHit
+from proxy_service.application.services.denylist import DenylistHit
+from proxy_service.domain.firewall.pipeline.graph import build_pipeline
+from proxy_service.domain.firewall.pipeline.state import PipelineState
 
 
 def _initial_state(
@@ -47,11 +47,17 @@ class TestBlockRoute:
     """BLOCK → logging → END (no llm_call, no output_filter)."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
-    @patch("src.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[])
-    @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.logging_node.create_trace",
+        new_callable=AsyncMock,
+        return_value=None,
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[]
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_block_skips_llm_and_output_filter(
         self, mock_denylist, mock_intent_deny, mock_llm, mock_trace, mock_log
     ):
@@ -79,11 +85,17 @@ class TestSuspiciousBlockRoute:
     """Suspicious intent → BLOCK → logging → END (no LLM call)."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
-    @patch("src.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[])
-    @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.logging_node.create_trace",
+        new_callable=AsyncMock,
+        return_value=None,
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[]
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_suspicious_intent_blocks(self, mock_denylist, mock_intent_deny, mock_llm, mock_trace, mock_log):
         mock_denylist.return_value = []
         mock_llm.return_value = _fake_llm_response()
@@ -103,11 +115,17 @@ class TestAllowRoute:
     """ALLOW → llm_call → output_filter → logging → END."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
-    @patch("src.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[])
-    @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.logging_node.create_trace",
+        new_callable=AsyncMock,
+        return_value=None,
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[]
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_allow_goes_through_output_pipeline(
         self, mock_denylist, mock_intent_deny, mock_llm, mock_trace, mock_log
     ):

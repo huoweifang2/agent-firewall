@@ -3,9 +3,9 @@
 from types import SimpleNamespace
 from unittest.mock import patch
 
-_SCAN_PATCH = "src.agent.nodes.llm_call._scan_via_proxy"
-_ACOMPLETION_PATCH = "src.agent.nodes.llm_call.acompletion"
-_OPENCLAW_CLIENT_PATCH = "src.routers.chat.OpenClawClient"
+_SCAN_PATCH = "agent_runtime.application.runtime.nodes.llm_call._scan_via_proxy"
+_ACOMPLETION_PATCH = "agent_runtime.application.runtime.nodes.llm_call.acompletion"
+_OPENCLAW_CLIENT_PATCH = "agent_runtime.interfaces.http.routers.chat.OpenClawClient"
 
 
 def _scan_allow(risk_score: float = 0.1, intent: str = "qa") -> dict:
@@ -189,6 +189,7 @@ class TestAgentChatEndpoint:
 
     def test_openclaw_direct_endpoint_parses_direct_response(self, client):
         """Direct Compare path should call OpenClaw and return the raw response."""
+
         class FakeDirectOpenClawClient(FakeOpenClawClient):
             async def agent_message(self, *, message, session_id, agent_id, timeout_seconds):
                 assert message == "hello"

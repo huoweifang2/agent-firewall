@@ -19,11 +19,14 @@ os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{_TEST_DB_PATH}"
 os.environ["CACHE_BACKEND"] = "memory"
 os.environ["REDIS_URL"] = ""
 os.environ["ENABLE_LANGFUSE"] = "false"
+os.environ["ENABLE_LLM_GUARD"] = "true"
+os.environ["ENABLE_NEMO_GUARDRAILS"] = "true"
+os.environ["ENABLE_PRESIDIO"] = "true"
 
-from src.db.seed import seed_denylist, seed_policies
-from src.db.session import engine
-from src.models import Base  # noqa: F401 — triggers model registration
-from src.control_plane.schema_compat import ensure_agent_hierarchy_columns
+from proxy_service.infrastructure.persistence.seed import seed_denylist, seed_policies
+from proxy_service.infrastructure.persistence.session import engine
+from proxy_service.infrastructure.persistence.models import Base  # noqa: F401 — triggers model registration
+from proxy_service.infrastructure.persistence.schema_compat import ensure_agent_hierarchy_columns
 
 _db_seeded = False
 

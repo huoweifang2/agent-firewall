@@ -39,8 +39,18 @@ requires = ["setuptools>=75.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["src*"]
+where = ["src"]
+include = ["proxy_service*"]
+namespaces = true
+
+[tool.setuptools.package-data]
+proxy_service = [
+    "domain/firewall/pipeline/rails/*.co",
+    "domain/firewall/pipeline/rails/*.yml",
+    "domain/red_team/packs/data/*.yaml",
+    "infrastructure/templates/control_plane/kit/*.j2",
+    "infrastructure/templates/red_team/*.html",
+]
 
 [tool.ruff]
 line-length = 120

@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.pipeline.nodes.logging_node import (
+from proxy_service.domain.firewall.pipeline.nodes.logging_node import (
     _build_tags,
     _safe_response_preview,
     _scanner_summary,
@@ -68,8 +68,12 @@ class TestAllowPath:
     """ALLOW state logs to Postgres and Langfuse."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
-    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.logging_node.create_trace",
+        new_callable=AsyncMock,
+        return_value=None,
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
     async def test_allow_logged(self, mock_log, mock_trace):
         state = _base_state(decision="ALLOW")
         result = await logging_node(state)
@@ -87,8 +91,12 @@ class TestBlockPath:
     """BLOCK state logs with blocked_reason."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
-    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.logging_node.create_trace",
+        new_callable=AsyncMock,
+        return_value=None,
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
     async def test_block_logged(self, mock_log, mock_trace):
         state = _base_state(decision="BLOCK", blocked_reason="injection detected", response_content=None)
         await logging_node(state)
@@ -106,8 +114,12 @@ class TestModifyPath:
     """MODIFY state logs with response_masked=True."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
-    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.logging_node.create_trace",
+        new_callable=AsyncMock,
+        return_value=None,
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
     async def test_modify_logged(self, mock_log, mock_trace):
         state = _base_state(decision="MODIFY")
         await logging_node(state)
@@ -123,8 +135,12 @@ class TestScannerResults:
     """Scanner results are passed to the logger."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
-    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.logging_node.create_trace",
+        new_callable=AsyncMock,
+        return_value=None,
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
     async def test_scanner_results_logged(self, mock_log, mock_trace):
         state = _base_state(scanner_results={"llm_guard": {"is_valid": True, "score": 0.9}})
         await logging_node(state)
@@ -140,8 +156,12 @@ class TestOutputFilterResults:
     """Output filter results are passed to the logger."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
-    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.logging_node.create_trace",
+        new_callable=AsyncMock,
+        return_value=None,
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
     async def test_output_filter_results_logged(self, mock_log, mock_trace):
         state = _base_state(output_filter_results={"pii_redacted": 2, "secrets_redacted": 1, "system_leak": False})
         await logging_node(state)
@@ -157,8 +177,12 @@ class TestNodeTimings:
     """Node timings are passed to the logger."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
-    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.logging_node.create_trace",
+        new_callable=AsyncMock,
+        return_value=None,
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
     async def test_timings_logged(self, mock_log, mock_trace):
         state = _base_state()
         await logging_node(state)
@@ -174,9 +198,13 @@ class TestLoggingFailure:
     """Postgres failure is swallowed — state is still returned."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
     @patch(
-        "src.pipeline.nodes.logging_node.log_request_from_state",
+        "proxy_service.domain.firewall.pipeline.nodes.logging_node.create_trace",
+        new_callable=AsyncMock,
+        return_value=None,
+    )
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.logging_node.log_request_from_state",
         new_callable=AsyncMock,
         side_effect=Exception("db down"),
     )
@@ -195,8 +223,12 @@ class TestStateUnmodified:
     """logging_node returns the exact same state object."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
-    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.logging_node.create_trace",
+        new_callable=AsyncMock,
+        return_value=None,
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
     async def test_state_identity(self, mock_log, mock_trace):
         state = _base_state()
         result = await logging_node(state)
@@ -213,9 +245,9 @@ class TestLangfuseTrace:
     """logging_node creates Langfuse trace with spans."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.logging_node.add_pipeline_spans", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.logging_node.add_pipeline_spans", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
     async def test_trace_created_with_spans(self, mock_log, mock_trace, mock_spans):
         mock_trace_obj = MagicMock()
         mock_trace.return_value = mock_trace_obj
@@ -283,8 +315,12 @@ class TestTimingRecorded:
     """The timed_node decorator records execution time."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
-    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.logging_node.create_trace",
+        new_callable=AsyncMock,
+        return_value=None,
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
     async def test_timing_present(self, mock_log, mock_trace):
         state = _base_state()
         result = await logging_node(state)

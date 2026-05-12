@@ -1,6 +1,6 @@
 # Agent Runtime Pipeline
 
-`apps/agent/src/agent/graph.py` runs the protected runtime graph.
+`apps/agent/src/agent_runtime/application/runtime/graph.py` runs the protected runtime graph.
 
 ## Steps
 

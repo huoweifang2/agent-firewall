@@ -7,9 +7,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.pipeline.graph import build_pipeline, route_after_decision
-from src.pipeline.state import PipelineState
-from src.services.denylist import DenylistHit
+from proxy_service.application.services.denylist import DenylistHit
+from proxy_service.domain.firewall.pipeline.graph import build_pipeline, route_after_decision
+from proxy_service.domain.firewall.pipeline.state import PipelineState
 
 
 def _initial_state(
@@ -64,11 +64,17 @@ class TestFullGraphClean:
     """Clean prompt → ALLOW → LLM called → response."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
-    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[])
-    @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.logging_node.create_trace",
+        new_callable=AsyncMock,
+        return_value=None,
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[]
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_clean_prompt_allow(self, mock_denylist, mock_intent_deny, mock_llm, mock_log, mock_trace):
         mock_denylist.return_value = []
         mock_llm.return_value = _fake_llm_response()
@@ -86,11 +92,17 @@ class TestFullGraphBlock:
     """Injection prompt → BLOCK → LLM never called."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
-    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[])
-    @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.logging_node.create_trace",
+        new_callable=AsyncMock,
+        return_value=None,
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[]
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_denylist_hit_blocks(self, mock_denylist, mock_intent_deny, mock_llm, mock_log, mock_trace):
         mock_denylist.return_value = [
             DenylistHit(
@@ -113,11 +125,17 @@ class TestFullGraphBlock:
         mock_llm.assert_not_called()
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
-    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[])
-    @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.logging_node.create_trace",
+        new_callable=AsyncMock,
+        return_value=None,
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[]
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_high_risk_injection_blocks(self, mock_denylist, mock_intent_deny, mock_llm, mock_log, mock_trace):
         """Jailbreak intent + encoded content → risk > 0.7 → BLOCK."""
         mock_denylist.return_value = []
@@ -141,11 +159,17 @@ class TestFullGraphSuspiciousBlock:
     """Suspicious but below threshold → MODIFY → transformed messages."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.logging_node.create_trace", new_callable=AsyncMock, return_value=None)
-    @patch("src.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[])
-    @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.logging_node.create_trace",
+        new_callable=AsyncMock,
+        return_value=None,
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.logging_node.log_request_from_state", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[]
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_suspicious_intent_blocks(self, mock_denylist, mock_intent_deny, mock_llm, mock_log, mock_trace):
         mock_denylist.return_value = []
         mock_llm.return_value = _fake_llm_response()
@@ -165,10 +189,12 @@ class TestPreLlmPipeline:
     """Test the pre-LLM sub-graph used for streaming."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[])
-    @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[]
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_pre_llm_returns_decision_no_llm(self, mock_denylist, mock_intent_deny):
-        from src.pipeline.runner import _build_pre_llm_pipeline
+        from proxy_service.application.firewall.runner import _build_pre_llm_pipeline
 
         mock_denylist.return_value = []
         pre_graph = _build_pre_llm_pipeline()
@@ -178,10 +204,12 @@ class TestPreLlmPipeline:
         assert "llm_response" not in result or result.get("llm_response") is None
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[])
-    @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
+    @patch(
+        "proxy_service.domain.firewall.pipeline.nodes.intent.check_denylist", new_callable=AsyncMock, return_value=[]
+    )
+    @patch("proxy_service.domain.firewall.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_pre_llm_block_on_denylist(self, mock_denylist, mock_intent_deny):
-        from src.pipeline.runner import _build_pre_llm_pipeline
+        from proxy_service.application.firewall.runner import _build_pre_llm_pipeline
 
         mock_denylist.return_value = [
             DenylistHit(

@@ -1,4 +1,4 @@
-"""Tests for src.config — Settings parsing and version fallback."""
+"""Tests for proxy_service.infrastructure.config — Settings parsing and version fallback."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from src.config import Settings, _get_package_version
+from proxy_service.infrastructure.config import Settings, _get_package_version
 
 # ── Version fallback ──────────────────────────────────────────────────
 

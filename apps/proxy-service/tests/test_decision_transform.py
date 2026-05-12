@@ -6,11 +6,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.pipeline.graph import route_after_decision
-from src.pipeline.nodes.decision import calculate_risk_score, decision_node
-from src.pipeline.nodes.llm_call import llm_call_node
-from src.pipeline.nodes.transform import SAFETY_PREFIX, transform_node
-from src.pipeline.state import PipelineState
+from proxy_service.domain.firewall.pipeline.graph import route_after_decision
+from proxy_service.domain.firewall.pipeline.nodes.decision import calculate_risk_score, decision_node
+from proxy_service.domain.firewall.pipeline.nodes.llm_call import llm_call_node
+from proxy_service.domain.firewall.pipeline.nodes.transform import SAFETY_PREFIX, transform_node
+from proxy_service.domain.firewall.pipeline.state import PipelineState
 
 # ── calculate_risk_score ─────────────────────────────────────────────
 
@@ -217,7 +217,7 @@ class TestTransformNode:
 
 
 class TestLLMCallNode:
-    @patch("src.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
     async def test_calls_llm_with_original_messages(self, mock_llm: AsyncMock) -> None:
         usage = MagicMock(prompt_tokens=10, completion_tokens=20)
         mock_llm.return_value = MagicMock(usage=usage)
@@ -233,7 +233,7 @@ class TestLLMCallNode:
         assert result["tokens_out"] == 20
         assert result["llm_response"] is not None
 
-    @patch("src.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
     async def test_uses_modified_messages(self, mock_llm: AsyncMock) -> None:
         mock_llm.return_value = MagicMock(usage=None)
         modified = [{"role": "system", "content": "safe"}, {"role": "user", "content": "hi"}]
@@ -248,7 +248,7 @@ class TestLLMCallNode:
         call_args = mock_llm.call_args
         assert call_args.kwargs["messages"] == modified
 
-    @patch("src.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
     async def test_no_usage(self, mock_llm: AsyncMock) -> None:
         mock_llm.return_value = MagicMock(usage=None)
         state: PipelineState = {
@@ -260,7 +260,7 @@ class TestLLMCallNode:
         assert result["tokens_in"] is None
         assert result["tokens_out"] is None
 
-    @patch("src.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.llm_call.llm_completion", new_callable=AsyncMock)
     async def test_records_timing(self, mock_llm: AsyncMock) -> None:
         mock_llm.return_value = MagicMock(usage=None)
         state: PipelineState = {

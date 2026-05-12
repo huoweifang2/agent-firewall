@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.main import app
+from proxy_service.bootstrap.main import app
 
 
 @pytest.fixture
@@ -118,9 +118,9 @@ async def _fake_stream_response():
 CHAT_BODY = {"messages": [{"role": "user", "content": "Say hello"}]}
 
 # Patch targets
-_PATCH_RUN = "src.routers.chat.run_pipeline"
-_PATCH_PRE = "src.routers.chat.run_pre_llm_pipeline"
-_PATCH_LLM = "src.routers.chat.llm_completion"
+_PATCH_RUN = "proxy_service.interfaces.http.routers.chat.run_pipeline"
+_PATCH_PRE = "proxy_service.interfaces.http.routers.chat.run_pre_llm_pipeline"
+_PATCH_LLM = "proxy_service.interfaces.http.routers.chat.llm_completion"
 
 
 class TestNonStreaming:
@@ -259,7 +259,7 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     @patch(_PATCH_RUN, new_callable=AsyncMock)
     async def test_upstream_error_returns_502(self, mock_run, client: AsyncClient):
-        from src.llm.exceptions import LLMUpstreamError
+        from proxy_service.infrastructure.llm.exceptions import LLMUpstreamError
 
         mock_run.side_effect = LLMUpstreamError("Upstream is down")
 
@@ -272,7 +272,7 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     @patch(_PATCH_RUN, new_callable=AsyncMock)
     async def test_model_not_found_returns_404(self, mock_run, client: AsyncClient):
-        from src.llm.exceptions import LLMModelNotFoundError
+        from proxy_service.infrastructure.llm.exceptions import LLMModelNotFoundError
 
         mock_run.side_effect = LLMModelNotFoundError("no such model")
 

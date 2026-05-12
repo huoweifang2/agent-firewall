@@ -4,10 +4,10 @@ import types
 
 import pytest
 
-from src.agent.nodes.llm_call import _build_runtime_tool_schemas
-from src.agent.openclaw_client import OpenClawClient, extract_json_payload
-from src.agent.tools.hub import execute_tool_call
-from src.agent.tools.providers import openclaw
+from agent_runtime.application.runtime.nodes.llm_call import _build_runtime_tool_schemas
+from agent_runtime.infrastructure.openclaw_client import OpenClawClient, extract_json_payload
+from agent_runtime.infrastructure.tools.hub import execute_tool_call
+from agent_runtime.infrastructure.tools.providers import openclaw
 
 
 class FakeProcess:
@@ -59,7 +59,7 @@ async def test_agent_message_tolerates_plugin_logs_and_sets_stage_dir(monkeypatc
         seen_env.update(env or {})
         return FakeProcess(stdout=b'[plugins] installed deps\n{"response":"ok"}')
 
-    import src.agent.openclaw_client as client_mod
+    import agent_runtime.infrastructure.openclaw_client as client_mod
 
     monkeypatch.delenv("OPENCLAW_PLUGIN_STAGE_DIR", raising=False)
     monkeypatch.setattr(client_mod.asyncio, "create_subprocess_exec", fake_exec)
@@ -188,7 +188,7 @@ async def test_execute_builds_openclaw_agent_command(monkeypatch):
         return FakeProcess(stdout=b'{"response":"Sunny"}')
 
     monkeypatch.setattr(openclaw, "get_settings", lambda: _settings(openclaw_agent_local=True))
-    import src.agent.openclaw_client as client_mod
+    import agent_runtime.infrastructure.openclaw_client as client_mod
 
     monkeypatch.setattr(client_mod.asyncio, "create_subprocess_exec", fake_exec)
 
@@ -219,7 +219,7 @@ async def test_execute_reports_nonzero_exit(monkeypatch):
         return FakeProcess(stderr=b"gateway unavailable", returncode=1)
 
     monkeypatch.setattr(openclaw, "get_settings", lambda: _settings())
-    import src.agent.openclaw_client as client_mod
+    import agent_runtime.infrastructure.openclaw_client as client_mod
 
     monkeypatch.setattr(client_mod.asyncio, "create_subprocess_exec", fake_exec)
 
@@ -241,7 +241,7 @@ async def test_execute_reports_timeout(monkeypatch):
         raise TimeoutError
 
     monkeypatch.setattr(openclaw, "get_settings", lambda: _settings(openclaw_timeout_seconds=1))
-    import src.agent.openclaw_client as client_mod
+    import agent_runtime.infrastructure.openclaw_client as client_mod
 
     monkeypatch.setattr(client_mod.asyncio, "create_subprocess_exec", fake_exec)
     monkeypatch.setattr(client_mod.asyncio, "wait_for", fake_wait_for)

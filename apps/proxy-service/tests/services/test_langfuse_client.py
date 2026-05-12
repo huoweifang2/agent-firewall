@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.services.langfuse_client import (
+from proxy_service.application.services.langfuse_client import (
     add_pipeline_spans,
     create_trace,
     get_langfuse,
@@ -28,7 +28,7 @@ def _reset():
 class TestGetLangfuse:
     """get_langfuse() returns a Langfuse client when configured."""
 
-    @patch("src.services.langfuse_client.get_settings")
+    @patch("proxy_service.application.services.langfuse_client.get_settings")
     def test_returns_client(self, mock_settings):
         mock_settings.return_value = MagicMock(
             enable_langfuse=True,
@@ -36,9 +36,9 @@ class TestGetLangfuse:
             langfuse_secret_key="sk-test",
             langfuse_host="http://localhost:3001",
         )
-        with patch("src.services.langfuse_client.Langfuse", create=True) as _MockLF:  # noqa: F841
+        with patch("proxy_service.application.services.langfuse_client.Langfuse", create=True) as _MockLF:  # noqa: F841
             # Patch the import inside the function
-            import src.services.langfuse_client as mod
+            import proxy_service.application.services.langfuse_client as mod
 
             with patch.dict("sys.modules", {"langfuse": MagicMock()}):
                 # Re-import to pick up the mock
@@ -65,7 +65,7 @@ class TestCreateTrace:
     @pytest.mark.asyncio
     async def test_create_trace_with_none_client(self):
         """When get_langfuse() returns None, create_trace returns None."""
-        with patch("src.services.langfuse_client.get_langfuse", return_value=None):
+        with patch("proxy_service.application.services.langfuse_client.get_langfuse", return_value=None):
             result = await create_trace(
                 trace_id="test-123",
                 input_data={"messages": []},
@@ -80,7 +80,7 @@ class TestCreateTrace:
         mock_trace = MagicMock()
         mock_client.trace.return_value = mock_trace
 
-        with patch("src.services.langfuse_client.get_langfuse", return_value=mock_client):
+        with patch("proxy_service.application.services.langfuse_client.get_langfuse", return_value=mock_client):
             result = await create_trace(
                 trace_id="test-456",
                 input_data={"messages": [{"role": "user", "content": "hi"}]},
@@ -104,7 +104,7 @@ class TestCreateTraceFailure:
         mock_client = MagicMock()
         mock_client.trace.side_effect = Exception("connection refused")
 
-        with patch("src.services.langfuse_client.get_langfuse", return_value=mock_client):
+        with patch("proxy_service.application.services.langfuse_client.get_langfuse", return_value=mock_client):
             result = await create_trace(
                 trace_id="test-err",
                 input_data={"messages": []},
@@ -143,7 +143,7 @@ class TestDisabledLangfuse:
     """get_langfuse() returns None when disabled."""
 
     def test_disabled_returns_none(self):
-        with patch("src.services.langfuse_client.get_settings") as mock_settings:
+        with patch("proxy_service.application.services.langfuse_client.get_settings") as mock_settings:
             mock_settings.return_value = MagicMock(enable_langfuse=False)
             result = get_langfuse()
             assert result is None

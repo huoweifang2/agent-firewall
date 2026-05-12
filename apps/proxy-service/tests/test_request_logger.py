@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.services.request_logger import (
+from proxy_service.application.services.request_logger import (
     _prompt_hash,
     _prompt_preview,
     log_request,
@@ -71,8 +71,8 @@ class TestLogRequest:
     """Verify log_request writes to DB and handles failures gracefully."""
 
     @pytest.mark.asyncio
-    @patch("src.services.request_logger._resolve_policy_id", new_callable=AsyncMock)
-    @patch("src.services.request_logger.async_session")
+    @patch("proxy_service.application.services.request_logger._resolve_policy_id", new_callable=AsyncMock)
+    @patch("proxy_service.application.services.request_logger.async_session")
     async def test_inserts_request_row(self, mock_session_maker, mock_resolve):
         policy_id = uuid.uuid4()
         mock_resolve.return_value = policy_id
@@ -107,8 +107,8 @@ class TestLogRequest:
         assert len(row.prompt_hash) == 64
 
     @pytest.mark.asyncio
-    @patch("src.services.request_logger._resolve_policy_id", new_callable=AsyncMock)
-    @patch("src.services.request_logger.async_session")
+    @patch("proxy_service.application.services.request_logger._resolve_policy_id", new_callable=AsyncMock)
+    @patch("proxy_service.application.services.request_logger.async_session")
     async def test_default_client_id(self, mock_session_maker, mock_resolve):
         mock_resolve.return_value = uuid.uuid4()
 
@@ -128,7 +128,7 @@ class TestLogRequest:
         assert row.client_id == "anonymous"
 
     @pytest.mark.asyncio
-    @patch("src.services.request_logger._resolve_policy_id", new_callable=AsyncMock)
+    @patch("proxy_service.application.services.request_logger._resolve_policy_id", new_callable=AsyncMock)
     async def test_unknown_policy_does_not_raise(self, mock_resolve):
         mock_resolve.return_value = None
 
@@ -141,8 +141,8 @@ class TestLogRequest:
         )
 
     @pytest.mark.asyncio
-    @patch("src.services.request_logger._resolve_policy_id", new_callable=AsyncMock)
-    @patch("src.services.request_logger.async_session")
+    @patch("proxy_service.application.services.request_logger._resolve_policy_id", new_callable=AsyncMock)
+    @patch("proxy_service.application.services.request_logger.async_session")
     async def test_commit_failure_does_not_raise(self, mock_session_maker, mock_resolve):
         mock_resolve.return_value = uuid.uuid4()
 
@@ -192,8 +192,8 @@ class TestLogRequestFromState:
     """Tests for the pipeline-integrated logger."""
 
     @pytest.mark.asyncio
-    @patch("src.services.request_logger._resolve_policy_id", new_callable=AsyncMock)
-    @patch("src.services.request_logger.async_session")
+    @patch("proxy_service.application.services.request_logger._resolve_policy_id", new_callable=AsyncMock)
+    @patch("proxy_service.application.services.request_logger.async_session")
     async def test_writes_row(self, mock_session_maker, mock_resolve):
         """log_request_from_state inserts a full row with JSONB columns."""
         policy_id = uuid.uuid4()
@@ -217,8 +217,8 @@ class TestLogRequestFromState:
         assert row.node_timings == {"parse": 1.0, "intent": 2.0}
 
     @pytest.mark.asyncio
-    @patch("src.services.request_logger._resolve_policy_id", new_callable=AsyncMock)
-    @patch("src.services.request_logger.async_session")
+    @patch("proxy_service.application.services.request_logger._resolve_policy_id", new_callable=AsyncMock)
+    @patch("proxy_service.application.services.request_logger.async_session")
     async def test_old_log_request_still_works(self, mock_session_maker, mock_resolve):
         """Old log_request still functions for backward compat."""
         mock_resolve.return_value = uuid.uuid4()
@@ -239,7 +239,7 @@ class TestLogRequestFromState:
         assert row.client_id == "legacy"
 
     @pytest.mark.asyncio
-    @patch("src.services.request_logger._resolve_policy_id", new_callable=AsyncMock)
+    @patch("proxy_service.application.services.request_logger._resolve_policy_id", new_callable=AsyncMock)
     async def test_unknown_policy_warning(self, mock_resolve):
         """log_request_from_state handles unknown policy name gracefully."""
         mock_resolve.return_value = None

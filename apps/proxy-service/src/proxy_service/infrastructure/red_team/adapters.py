@@ -1,0 +1,518 @@
+"""Adapters bridging engine protocols to real implementations.
+
+These classes satisfy the Protocol interfaces defined in ``protocols.py``
+and delegate to real infrastructure: httpx for HTTP, SQLAlchemy ORM for
+persistence, and the in-memory ``ProgressEmitter`` for SSE events.
+"""
+
+from __future__ import annotations
+
+import json
+import time
+import uuid
+from datetime import datetime
+from typing import TYPE_CHECKING, Any
+
+import httpx
+
+from proxy_service.domain.red_team.engine.protocols import HttpResponse
+from proxy_service.domain.red_team.net import rewrite_localhost_for_docker
+from proxy_service.domain.red_team.progress.events import (
+    RunCancelledEvent,
+    RunCompleteEvent,
+    RunFailedEvent,
+    ScenarioCompleteEvent,
+    ScenarioSkippedEvent,
+    ScenarioStartEvent,
+)
+from proxy_service.domain.red_team.schemas.dataclasses import RawTargetResponse
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from proxy_service.domain.red_team.progress.emitter import ProgressEmitter
+
+# ---------------------------------------------------------------------------
+# Default endpoints
+# ---------------------------------------------------------------------------
+
+_AGENT_URL = "http://agent:8002/agent/chat"
+
+# Maximum response body size to keep in memory (512 KB). Anything longer
+# is truncated before normalisation and DB storage to prevent OOM / bloat.
+_MAX_RESPONSE_BODY_BYTES = 512 * 1024
+
+
+# ---------------------------------------------------------------------------
+# HTTP Client
+# ---------------------------------------------------------------------------
+
+
+class RealHttpClient:
+    """Send prompts to target endpoints via httpx.
+
+    For local agent targets the chat payload includes ``role`` and ``session_id``
+    required by the agent runtime.
+    """
+
+    async def send_prompt(self, prompt: str, target_config: dict[str, Any]) -> HttpResponse:
+        endpoint_url = rewrite_localhost_for_docker(target_config.get("endpoint_url") or _AGENT_URL)
+        timeout_s: int = target_config.get("timeout_s", 30)
+
+        headers: dict[str, str] = {"Content-Type": "application/json"}
+        # Apply custom headers (new format) or legacy single auth
+        decrypted_headers: dict[str, str] | None = target_config.get("_decrypted_headers")
+        if decrypted_headers:
+            headers.update(decrypted_headers)
+        elif auth_header := target_config.get("_decrypted_auth"):
+            headers["Authorization"] = auth_header
+
+        # Payload shape: template > local agent runtime > OpenAI fallback
+        request_template: str | None = target_config.get("request_template")
+        if request_template:
+            escaped_prompt = json.dumps(prompt)[1:-1]  # JSON-safe string (no wrapping quotes)
+            rendered = request_template.replace("{{PROMPT}}", escaped_prompt)
+            rendered = rendered.replace("{{ATTACK_PROMPT}}", escaped_prompt)
+            system_prompt = target_config.get("_system_prompt") or ""
+            escaped_sys = json.dumps(system_prompt)[1:-1]
+            rendered = rendered.replace("{{SYSTEM_PROMPT}}", escaped_sys)
+            try:
+                payload = json.loads(rendered)
+            except (json.JSONDecodeError, ValueError) as exc:
+                raise ValueError(f"request_template produced invalid JSON: {exc}") from exc
+        elif "/agent/chat" in endpoint_url:
+            payload: dict[str, Any] = {
+                "message": prompt,
+                "role": target_config.get("benchmark_role", "customer"),
+                "session_id": f"benchmark-{uuid.uuid4().hex[:8]}",
+            }
+        else:
+            # OpenAI-style messages array — the industry standard for chat APIs
+            messages: list[dict[str, str]] = []
+            system_prompt = target_config.get("_system_prompt")
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": prompt})
+            payload = {"messages": messages}
+
+        start = time.monotonic()
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(
+                    endpoint_url,
+                    json=payload,
+                    headers=headers,
+                    timeout=timeout_s,
+                )
+        except httpx.TimeoutException as exc:
+            raise TimeoutError(f"Target did not respond within {timeout_s}s") from exc
+        except (httpx.ConnectError, httpx.NetworkError) as exc:
+            raise ConnectionError(f"Cannot reach target at {endpoint_url}") from exc
+
+        latency_ms = (time.monotonic() - start) * 1000
+
+        body = resp.text
+        if len(body) > _MAX_RESPONSE_BODY_BYTES:
+            body = body[:_MAX_RESPONSE_BODY_BYTES]
+
+        return HttpResponse(
+            status_code=resp.status_code,
+            body=body,
+            headers={k.lower(): v for k, v in resp.headers.items()},
+            latency_ms=latency_ms,
+        )
+
+
+class ProtectedHttpClient:
+    """Wrap :class:`RealHttpClient` with the Agent-Firewall firewall pipeline.
+
+    Before forwarding each prompt to the target, runs it through the
+    pre-LLM pipeline (intent → rules → scanners → decision).
+    If the pipeline returns BLOCK the prompt never reaches the target.
+    """
+
+    def __init__(self, inner: RealHttpClient, policy: str = "balanced") -> None:
+        self._inner = inner
+        self._policy = policy
+
+    async def send_prompt(self, prompt: str, target_config: dict[str, Any]) -> HttpResponse:
+        from proxy_service.application.firewall.runner import run_pre_llm_pipeline
+
+        request_id = f"bench-{uuid.uuid4().hex[:12]}"
+        messages = [{"role": "user", "content": prompt}]
+
+        start = time.monotonic()
+        result = await run_pre_llm_pipeline(
+            request_id=request_id,
+            client_id="benchmark",
+            policy_name=self._policy,
+            model="benchmark-target",
+            messages=messages,
+            temperature=0.0,
+            max_tokens=1024,
+            stream=False,
+            api_key=None,
+        )
+        pipeline_ms = (time.monotonic() - start) * 1000
+
+        if result.get("decision") == "BLOCK":
+            body = json.dumps(
+                {
+                    "error": "blocked",
+                    "reason": result.get("blocked_reason", ""),
+                }
+            )
+            return HttpResponse(
+                status_code=403,
+                body=body,
+                headers={
+                    "content-type": "application/json",
+                    "x-decision": "BLOCK",
+                    "x-risk-score": str(result.get("risk_score", 0)),
+                    "x-intent": result.get("intent", ""),
+                },
+                latency_ms=pipeline_ms,
+            )
+
+        # ALLOW / MODIFY — forward to the real target
+        return await self._inner.send_prompt(prompt, target_config)
+
+
+class SimpleNormalizer:
+    """Parse HTTP response bodies into ``RawTargetResponse``.
+
+    Resolution order for ``body_text``:
+    1. Configured ``response_text_paths`` (from ``target_config``) —
+       walks the JSON tree along dot-notation paths.
+    2. Heuristic — first non-empty value from well-known keys.
+    3. Raw body — fallback when nothing else matched.
+    """
+
+    # Well-known keys tried in order when no explicit paths are configured.
+    _HEURISTIC_KEYS = ("response", "output_text", "message", "content", "text", "output")
+
+    # Deep path patterns for common AI provider formats (tried before flat keys).
+    _DEEP_HEURISTIC_PATHS: tuple[tuple[str, ...], ...] = (
+        # OpenAI / Azure OpenAI
+        ("choices", "message", "content"),
+        # Anthropic Messages API
+        ("content", "text"),
+        # Google Vertex / Gemini
+        ("candidates", "content", "parts", "text"),
+        # AWS Bedrock (Titan, Claude)
+        ("results", "outputText"),
+        # Cohere
+        ("generations", "text"),
+    )
+
+    def normalize(self, http_response: HttpResponse, target_config: dict[str, Any]) -> RawTargetResponse:
+        from proxy_service.domain.red_team.engine.json_text_extractor import extract_text
+
+        body = http_response.body
+        parsed_json = None
+        body_text = ""
+        provider_format = "plain_text"
+
+        # SSE frame stripping — reassemble text from `data: {...}\n\n` lines
+        content_type = http_response.headers.get("content-type", "")
+        if "text/event-stream" in content_type or body.lstrip().startswith("data: "):
+            body = self._strip_sse_frames(body)
+            provider_format = "sse"
+
+        try:
+            parsed_json = json.loads(body)
+            provider_format = "generic_json" if provider_format != "sse" else "sse_json"
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+        # 1) Configured paths
+        response_paths: list[str] | None = target_config.get("response_text_paths")
+        if parsed_json is not None and response_paths:
+            body_text = extract_text(parsed_json, response_paths)
+
+        # 2) Deep heuristic — common AI provider patterns
+        if not body_text and isinstance(parsed_json, dict):
+            body_text = self._try_deep_heuristic(parsed_json)
+
+        # 3) Flat heuristic — well-known top-level keys
+        if not body_text and isinstance(parsed_json, dict):
+            for key in self._HEURISTIC_KEYS:
+                val = parsed_json.get(key)
+                if val:
+                    body_text = str(val)
+                    break
+
+        # 4) Fallback — raw body
+        if not body_text:
+            body_text = body
+
+        return RawTargetResponse(
+            body_text=str(body_text),
+            parsed_json=parsed_json,
+            tool_calls=None,
+            status_code=http_response.status_code,
+            latency_ms=http_response.latency_ms,
+            raw_body=body,
+            provider_format=provider_format,
+        )
+
+    @classmethod
+    def _try_deep_heuristic(cls, data: dict) -> str:
+        """Walk common AI provider response structures to extract body text.
+
+        Tries each pattern in ``_DEEP_HEURISTIC_PATHS``.  For arrays,
+        descends into the first element (index 0).  Returns the first
+        non-empty string found, or ``""`` if nothing matches.
+        """
+        for path in cls._DEEP_HEURISTIC_PATHS:
+            node: Any = data
+            for segment in path:
+                if isinstance(node, dict) and segment in node:
+                    node = node[segment]
+                elif isinstance(node, list) and node:
+                    # Descend into first element, then look for the segment
+                    first = node[0]
+                    if isinstance(first, dict) and segment in first:
+                        node = first[segment]
+                    else:
+                        node = None
+                        break
+                else:
+                    node = None
+                    break
+            if isinstance(node, str) and node:
+                return node
+            # Handle Anthropic-style content array: content[0].text
+            if isinstance(node, list) and node:
+                first = node[0]
+                if isinstance(first, str) and first:
+                    return first
+        return ""
+
+    @staticmethod
+    def _strip_sse_frames(raw: str) -> str:
+        """Reassemble text content from SSE-formatted body.
+
+        Parses ``data: <json>`` lines.  For each line, tries to extract
+        text from JSON chunks (OpenAI streaming: ``choices[0].delta.content``).
+        Falls back to concatenating raw ``data:`` payloads.
+        """
+        fragments: list[str] = []
+        for line in raw.splitlines():
+            line = line.strip()
+            if not line.startswith("data:"):
+                continue
+            payload = line[5:].strip()
+            if payload == "[DONE]":
+                continue
+            # Try JSON chunk (OpenAI streaming format)
+            try:
+                chunk = json.loads(payload)
+                # OpenAI: choices[0].delta.content
+                choices = chunk.get("choices") or []
+                if choices:
+                    delta = choices[0].get("delta") or {}
+                    content = delta.get("content")
+                    if content:
+                        fragments.append(content)
+                        continue
+                # Anthropic streaming: delta.text
+                delta_block = chunk.get("delta") or {}
+                text = delta_block.get("text")
+                if text:
+                    fragments.append(text)
+                    continue
+            except (json.JSONDecodeError, ValueError, KeyError, IndexError):
+                pass
+            # Raw data line fallback
+            if payload:
+                fragments.append(payload)
+        return "".join(fragments) if fragments else raw
+
+
+# ---------------------------------------------------------------------------
+# DB Persistence
+# ---------------------------------------------------------------------------
+
+
+class DbPersistenceAdapter:
+    """Adapt :class:`PersistenceProtocol` to SQLAlchemy ORM repositories."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        from proxy_service.infrastructure.persistence.red_team.models import BenchmarkScenarioResult
+        from proxy_service.infrastructure.persistence.red_team.repository import (
+            BenchmarkRunRepository,
+            BenchmarkScenarioResultRepository,
+        )
+
+        self._session = session
+        self._run_repo = BenchmarkRunRepository(session)
+        self._result_repo = BenchmarkScenarioResultRepository(session)
+        self._ScenarioResultModel = BenchmarkScenarioResult
+
+    # -- PersistenceProtocol --
+
+    async def create_run(self, run_data: dict[str, Any]) -> str:
+        # Not used — run is created by the service layer before engine starts.
+        return run_data["id"]
+
+    async def update_run(self, run_id: str, updates: dict[str, Any]) -> None:
+        run = await self._run_repo.get(uuid.UUID(run_id))
+        if not run:
+            return
+
+        field_map = {"state": "status"}  # engine uses "state", ORM uses "status"
+        for key, value in updates.items():
+            attr = field_map.get(key, key)
+            if attr in ("started_at", "completed_at") and isinstance(value, str):
+                value = datetime.fromisoformat(value)
+            if hasattr(run, attr):
+                setattr(run, attr, value)
+
+        await self._session.commit()
+
+    @staticmethod
+    def _derive_actual(expected: str, outcome_passed: bool) -> str:
+        if outcome_passed:
+            return expected  # Model did what was expected
+        return "ALLOW" if expected == "BLOCK" else "BLOCK"
+
+    async def persist_result(self, run_id: str, result_data: dict[str, Any]) -> None:
+        run_uuid = uuid.UUID(run_id)
+
+        result = self._ScenarioResultModel(
+            run_id=run_uuid,
+            scenario_id=result_data["scenario_id"],
+            category=result_data.get("category", "unknown"),
+            severity=result_data.get("severity", "medium"),
+            prompt=result_data.get("prompt", ""),
+            expected=result_data.get("expected", "BLOCK"),
+            actual=self._derive_actual(
+                result_data.get("expected", "BLOCK"),
+                result_data.get("outcome") == "passed",
+            ),
+            passed=result_data.get("outcome") == "passed",
+            skipped=result_data.get("outcome") == "skipped",
+            skipped_reason=result_data.get("skip_reason"),
+            latency_ms=int(result_data.get("latency_ms", 0)),
+            raw_response_body=result_data.get("raw_response_body"),
+            detector_type=result_data.get("detector_type"),
+            detector_detail=result_data.get("detector_detail"),
+        )
+        self._session.add(result)
+
+        # Update run counters
+        run = await self._run_repo.get(run_uuid)
+        if run:
+            outcome = result_data.get("outcome", "")
+            run.executed = (run.executed or 0) + 1
+            if outcome == "passed":
+                run.passed = (run.passed or 0) + 1
+            elif outcome == "failed":
+                run.failed = (run.failed or 0) + 1
+
+        await self._session.commit()
+
+    async def get_run(self, run_id: str) -> dict[str, Any] | None:
+        run = await self._run_repo.get(uuid.UUID(run_id))
+        if not run:
+            return None
+        # Strip sensitive fields even for internal engine reads (defence-in-depth)
+        cfg = dict(run.target_config or {})
+        cfg.pop("auth_secret_ref", None)
+        cfg.pop("_decrypted_headers", None)
+        cfg.pop("_decrypted_auth", None)
+        return {
+            "id": str(run.id),
+            "config": {
+                "target_type": run.target_type,
+                "target_config": cfg,
+                "pack": run.pack,
+                "policy": run.policy,
+            },
+            "state": run.status,
+            "target_fingerprint": run.target_fingerprint,
+            "total_in_pack": run.total_in_pack,
+            "total_applicable": run.total_applicable,
+            "created_at": run.created_at.isoformat() if run.created_at else None,
+        }
+
+    async def find_active_run(self, target_fingerprint: str) -> dict[str, Any] | None:
+        run = await self._run_repo.find_running_for_target(target_fingerprint)
+        if not run:
+            return None
+        return {"id": str(run.id)}
+
+    async def find_by_idempotency_key(self, key: str) -> dict[str, Any] | None:
+        run = await self._run_repo.find_by_idempotency_key(uuid.UUID(key))
+        if not run:
+            return None
+        return {"id": str(run.id)}
+
+
+# ---------------------------------------------------------------------------
+# Progress Bridge
+# ---------------------------------------------------------------------------
+
+
+class ProgressBridge:
+    """Convert engine dict events → typed :class:`ProgressEvent` for SSE."""
+
+    def __init__(self, emitter: ProgressEmitter) -> None:
+        self._emitter = emitter
+
+    async def emit(self, run_id: str, event: dict[str, Any]) -> None:
+        run_uuid = uuid.UUID(run_id)
+        typed = self._to_typed(event)
+        if typed is not None:
+            await self._emitter.emit(run_uuid, typed)
+
+    @staticmethod
+    def _to_typed(data: dict[str, Any]) -> Any | None:  # noqa: ANN401
+        t = data.get("type", "")
+
+        if t == "scenario_start":
+            return ScenarioStartEvent(
+                scenario_id=data["scenario_id"],
+                index=data.get("index", 0),
+                total_applicable=data.get("total", 0),
+                title=data.get("title", "") or data.get("scenario_title", ""),
+            )
+        if t == "scenario_complete":
+            passed = data.get("outcome") == "passed"
+            return ScenarioCompleteEvent(
+                scenario_id=data["scenario_id"],
+                passed=passed,
+                actual="BLOCK" if passed else "ALLOW",
+                latency_ms=int(data.get("latency_ms", 0)),
+                title=data.get("title", ""),
+            )
+        if t == "scenario_skipped":
+            return ScenarioSkippedEvent(
+                scenario_id=data["scenario_id"],
+                reason=data.get("reason", "unknown"),
+                title=data.get("title", ""),
+            )
+        if t == "run_complete":
+            return RunCompleteEvent(
+                score_simple=data.get("score_simple", 0),
+                score_weighted=data.get("score_weighted", 0),
+                total_in_pack=data.get("total_in_pack", 0),
+                total_applicable=data.get("total_applicable", 0),
+                executed=data.get("executed", 0),
+                passed=data.get("passed", 0),
+                failed=data.get("failed", 0),
+                skipped=data.get("skipped", 0),
+                skipped_reasons=data.get("skipped_reasons", {}),
+            )
+        if t == "run_failed":
+            return RunFailedEvent(
+                error=data.get("error", "Unknown error"),
+                completed_scenarios=data.get("completed_scenarios", 0),
+            )
+        if t == "run_cancelled":
+            return RunCancelledEvent(
+                completed_scenarios=data.get("completed_scenarios", 0),
+                partial_score=data.get("partial_score"),
+            )
+        return None

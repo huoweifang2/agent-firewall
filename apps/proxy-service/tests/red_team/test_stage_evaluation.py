@@ -15,23 +15,25 @@ from typing import Any
 
 import pytest
 
-from src.red_team.engine import RunConfig, RunEngine, RunState
-from src.red_team.engine.protocols import HttpResponse
-from src.red_team.engine.run_engine import (
+from proxy_service.domain.red_team.engine import RunConfig, RunEngine, RunState
+from proxy_service.domain.red_team.engine.protocols import HttpResponse
+from proxy_service.domain.red_team.engine.run_engine import (
     _has_proxy_fingerprint,
     _is_proxy_block_response,
     _substitute_canary_in_scenario,
 )
-from src.red_team.packs import filter_pack, load_pack
-from src.red_team.packs.loader import TargetConfig, clear_cache
-from src.red_team.schemas import Scenario
-from src.red_team.schemas.dataclasses import RawTargetResponse
-from src.red_team.schemas.enums import ScenarioStage
+from proxy_service.domain.red_team.packs import filter_pack, load_pack
+from proxy_service.domain.red_team.packs.loader import TargetConfig, clear_cache
+from proxy_service.domain.red_team.schemas import Scenario
+from proxy_service.domain.red_team.schemas.dataclasses import RawTargetResponse
+from proxy_service.domain.red_team.schemas.enums import ScenarioStage
 
 # ---------------------------------------------------------------------------
 # Path to real pack data
 # ---------------------------------------------------------------------------
-_DATA_DIR = Path(__file__).resolve().parent.parent.parent / "src" / "red_team" / "packs" / "data"
+_DATA_DIR = (
+    Path(__file__).resolve().parent.parent.parent / "src" / "proxy_service" / "domain" / "red_team" / "packs" / "data"
+)
 
 
 @pytest.fixture(autouse=True)
@@ -547,7 +549,7 @@ class TestIngressRedactInEngine:
         # We need to test _execute_scenario directly
         from datetime import UTC, datetime
 
-        from src.red_team.engine.run_engine import BenchmarkRun
+        from proxy_service.domain.red_team.engine.run_engine import BenchmarkRun
 
         pack = load_pack("core_verified", packs_dir=_DATA_DIR)
         config = TargetConfig(agent_type="chatbot_api", safe_mode=False)
@@ -596,7 +598,7 @@ class TestIngressRedactInEngine:
 
         from datetime import UTC, datetime
 
-        from src.red_team.engine.run_engine import BenchmarkRun
+        from proxy_service.domain.red_team.engine.run_engine import BenchmarkRun
 
         pack = load_pack("core_verified", packs_dir=_DATA_DIR)
         config = TargetConfig(agent_type="chatbot_api", safe_mode=False)

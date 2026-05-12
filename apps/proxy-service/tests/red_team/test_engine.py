@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from src.red_team.engine import (
+from proxy_service.domain.red_team.engine import (
     ConcurrencyConflictError,
     ConfigValidationError,
     HttpResponse,
@@ -18,11 +18,13 @@ from src.red_team.engine import (
     RunState,
     compute_target_fingerprint,
 )
-from src.red_team.packs.loader import clear_cache
-from src.red_team.schemas.dataclasses import RawTargetResponse
+from proxy_service.domain.red_team.packs.loader import clear_cache
+from proxy_service.domain.red_team.schemas.dataclasses import RawTargetResponse
 
 # Path to the real pack data for integration tests
-_DATA_DIR = Path(__file__).resolve().parent.parent.parent / "src" / "red_team" / "packs" / "data"
+_DATA_DIR = (
+    Path(__file__).resolve().parent.parent.parent / "src" / "proxy_service" / "domain" / "red_team" / "packs" / "data"
+)
 
 
 # ---------------------------------------------------------------------------

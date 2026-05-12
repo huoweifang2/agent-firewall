@@ -28,7 +28,7 @@ import pytest
 import yaml
 from httpx import ASGITransport, AsyncClient
 
-from src.main import app
+from proxy_service.bootstrap.main import app
 
 
 @pytest.fixture
@@ -682,8 +682,8 @@ class TestVariantRolloutModes:
     @pytest.mark.asyncio
     async def test_promoted_mode_in_env(self, client):
         """After observe→warn promotion, kit reflects warn mode."""
-        from src.control_plane.models import Agent, RolloutMode
-        from src.db.session import async_session
+        from proxy_service.domain.control_plane.models import Agent, RolloutMode
+        from proxy_service.infrastructure.persistence.session import async_session
 
         agent = await _create_agent(client, policy_pack="customer_support")
         aid = agent["id"]

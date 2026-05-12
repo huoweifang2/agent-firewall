@@ -9,9 +9,9 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from src.red_team.api.routes import router
+from proxy_service.interfaces.http.routers.benchmark import router
 
-_PATCH_TARGET = "src.red_team.api.routes._httpx.AsyncClient"
+_PATCH_TARGET = "proxy_service.interfaces.http.routers.benchmark._httpx.AsyncClient"
 
 # ---------------------------------------------------------------------------
 # Fixtures

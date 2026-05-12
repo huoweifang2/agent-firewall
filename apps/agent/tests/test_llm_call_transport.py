@@ -20,11 +20,11 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.agent.nodes.llm_call import llm_call_node
+from agent_runtime.application.runtime.nodes.llm_call import llm_call_node
 
 # ── Helpers ──────────────────────────────────────────────────
 
-_ACOMPLETION_PATCH = "src.agent.nodes.llm_call.acompletion"
+_ACOMPLETION_PATCH = "agent_runtime.application.runtime.nodes.llm_call.acompletion"
 
 
 def _scan_allow_json() -> dict:

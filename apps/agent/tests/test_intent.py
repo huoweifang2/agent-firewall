@@ -1,6 +1,6 @@
 """Tests for IntentNode — keyword-based classifier."""
 
-from src.agent.nodes.intent import classify_intent
+from agent_runtime.application.runtime.nodes.intent import classify_intent
 
 
 class TestClassifyIntent:

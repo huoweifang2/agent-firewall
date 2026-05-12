@@ -9,7 +9,7 @@ Covers:
 
 from __future__ import annotations
 
-from src.agent.security.message_builder import (
+from agent_runtime.domain.security.message_builder import (
     SYSTEM_PROMPT_TEMPLATE,
     USER_INPUT_PREFIX,
     build_messages,
@@ -17,7 +17,7 @@ from src.agent.security.message_builder import (
     wrap_tool_results,
     wrap_user_message,
 )
-from src.agent.security.sanitizer import (
+from agent_runtime.domain.security.sanitizer import (
     STRIP_CODEPOINTS,
     sanitize_chat_history,
     sanitize_user_input,
@@ -564,8 +564,8 @@ class TestInputNodeSanitization:
     """Test that input_node sanitizes user message early."""
 
     def test_input_node_strips_role_spoofing(self):
-        from src.agent.nodes.input import input_node
-        from src.session import session_store
+        from agent_runtime.application.runtime.nodes.input import input_node
+        from agent_runtime.infrastructure.session import session_store
 
         session_store._sessions.clear()
         state = {
@@ -578,8 +578,8 @@ class TestInputNodeSanitization:
         assert "evil now" in result["message"]
 
     def test_input_node_strips_control_chars(self):
-        from src.agent.nodes.input import input_node
-        from src.session import session_store
+        from agent_runtime.application.runtime.nodes.input import input_node
+        from agent_runtime.infrastructure.session import session_store
 
         session_store._sessions.clear()
         state = {
@@ -593,8 +593,8 @@ class TestInputNodeSanitization:
         assert "helloworld" in result["message"]
 
     def test_input_node_normal_message_preserved(self):
-        from src.agent.nodes.input import input_node
-        from src.session import session_store
+        from agent_runtime.application.runtime.nodes.input import input_node
+        from agent_runtime.infrastructure.session import session_store
 
         session_store._sessions.clear()
         state = {

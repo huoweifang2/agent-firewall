@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from src.red_team.evaluators import (
+from proxy_service.domain.red_team.evaluators import (
     evaluate_scenario,
     exact_match,
     get_detector,
@@ -15,9 +15,9 @@ from src.red_team.evaluators import (
     regex_detector,
     tool_call_detect,
 )
-from src.red_team.schemas import Scenario
-from src.red_team.schemas.dataclasses import EvalResult, RawTargetResponse, ToolCall
-from src.red_team.schemas.models import (
+from proxy_service.domain.red_team.schemas import Scenario
+from proxy_service.domain.red_team.schemas.dataclasses import EvalResult, RawTargetResponse, ToolCall
+from proxy_service.domain.red_team.schemas.models import (
     ExactMatchConfig,
     HeuristicConfig,
     JsonAssertionConfig,

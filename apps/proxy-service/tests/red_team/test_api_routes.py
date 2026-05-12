@@ -12,7 +12,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.red_team.persistence.models import BenchmarkRun, BenchmarkScenarioResult
+from proxy_service.infrastructure.persistence.red_team.models import BenchmarkRun, BenchmarkScenarioResult
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -26,13 +26,13 @@ async def app(session: AsyncSession):
     """Create a FastAPI app with DB dependency overridden to use test session."""
     from fastapi import FastAPI
 
-    from src.red_team.api.routes import router
+    from proxy_service.interfaces.http.routers.benchmark import router
 
     test_app = FastAPI()
     test_app.include_router(router, prefix="/v1")
 
     # Override the DB dependency
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async def _override_db():
         yield session
@@ -370,8 +370,8 @@ class TestSSEStream:
         """SSE endpoint returns text/event-stream and streams events."""
         import asyncio
 
-        from src.red_team.api.routes import _progress_emitter
-        from src.red_team.progress.events import RunCompleteEvent
+        from proxy_service.domain.red_team.progress.events import RunCompleteEvent
+        from proxy_service.interfaces.http.routers.benchmark import _progress_emitter
 
         run = await _seed_run(session, status="running")
 

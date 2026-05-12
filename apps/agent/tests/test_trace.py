@@ -22,7 +22,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.agent.trace.accumulator import TraceAccumulator
+from agent_runtime.domain.trace.accumulator import TraceAccumulator
 
 # ── Unit: TraceAccumulator ────────────────────────────────────────────
 
@@ -303,10 +303,10 @@ class TestNodeTraceIntegration:
             "api_key": None,
         }
 
-    @patch("src.agent.nodes.input.session_store")
-    @patch("src.agent.nodes.input.get_limits_service")
+    @patch("agent_runtime.application.runtime.nodes.input.session_store")
+    @patch("agent_runtime.application.runtime.nodes.input.get_limits_service")
     def test_input_node_starts_trace(self, mock_limits_svc, mock_store):
-        from src.agent.nodes.input import input_node
+        from agent_runtime.application.runtime.nodes.input import input_node
 
         mock_store.get_history.return_value = []
         limits = MagicMock()
@@ -328,7 +328,7 @@ class TestNodeTraceIntegration:
         assert trace["model"] == "qwen"
 
     def test_intent_node_records_intent(self):
-        from src.agent.nodes.intent import intent_node
+        from agent_runtime.application.runtime.nodes.intent import intent_node
 
         t = TraceAccumulator()
         t.start(session_id="s1")
@@ -339,9 +339,9 @@ class TestNodeTraceIntegration:
         assert result["trace"]["intent_confidence"] > 0
 
     @pytest.mark.asyncio
-    @patch("src.agent.nodes.tools.execute_tool_call")
+    @patch("agent_runtime.application.runtime.nodes.tools.execute_tool_call")
     async def test_tool_executor_records_execution(self, mock_exec):
-        from src.agent.nodes.tools import tool_executor_node
+        from agent_runtime.application.runtime.nodes.tools import tool_executor_node
 
         mock_exec.return_value = '{"status": "shipped"}'
 
@@ -363,10 +363,10 @@ class TestNodeTraceIntegration:
         assert execs[0]["tool"] == "getOrderStatus"
         assert result["trace"]["counters"]["tool_calls"] == 1
 
-    @patch("src.agent.nodes.pre_tool_gate.get_rbac_service")
-    @patch("src.agent.nodes.pre_tool_gate.get_limits_service")
+    @patch("agent_runtime.application.runtime.nodes.pre_tool_gate.get_rbac_service")
+    @patch("agent_runtime.application.runtime.nodes.pre_tool_gate.get_limits_service")
     def test_pre_tool_gate_records_decisions(self, mock_limits, mock_rbac):
-        from src.agent.nodes.pre_tool_gate import pre_tool_gate_node
+        from agent_runtime.application.runtime.nodes.pre_tool_gate import pre_tool_gate_node
 
         # RBAC: allow getOrderStatus
         rbac = MagicMock()
@@ -403,7 +403,7 @@ class TestNodeTraceIntegration:
         assert decs[0]["decision"] == "ALLOW"
 
     def test_post_tool_gate_records_decisions(self):
-        from src.agent.nodes.post_tool_gate import post_tool_gate_node
+        from agent_runtime.application.runtime.nodes.post_tool_gate import post_tool_gate_node
 
         t = TraceAccumulator()
         t.start(session_id="s1")
@@ -428,10 +428,10 @@ class TestNodeTraceIntegration:
         assert posts[0]["decision"] == "REDACT"
         assert posts[0]["pii_count"] > 0
 
-    @patch("src.agent.nodes.input.session_store")
-    @patch("src.agent.nodes.input.get_limits_service")
+    @patch("agent_runtime.application.runtime.nodes.input.session_store")
+    @patch("agent_runtime.application.runtime.nodes.input.get_limits_service")
     def test_input_records_limit_hit(self, mock_limits_svc, mock_store):
-        from src.agent.nodes.input import input_node
+        from agent_runtime.application.runtime.nodes.input import input_node
 
         mock_store.get_history.return_value = []
         limits = MagicMock()
@@ -453,7 +453,7 @@ class TestNodeTraceIntegration:
         assert result["trace"]["limits_hit"] == "session_max_turns"
 
     def test_memory_node_finalizes_trace(self):
-        from src.agent.nodes.memory import memory_node
+        from agent_runtime.application.runtime.nodes.memory import memory_node
 
         t = TraceAccumulator()
         t.start(session_id="s1")
@@ -471,7 +471,7 @@ class TestNodeTraceIntegration:
             "trace": t.data,
         }
 
-        with patch("src.agent.nodes.memory.session_store"):
+        with patch("agent_runtime.application.runtime.nodes.memory.session_store"):
             result = memory_node(state)
 
         trace = result["trace"]
@@ -486,7 +486,7 @@ class TestNodeTraceIntegration:
 
 class TestSchemaTraceField:
     def test_response_includes_trace_dict(self):
-        from src.schemas import AgentChatResponse
+        from agent_runtime.interfaces.http.schemas import AgentChatResponse
 
         trace_data = {
             "trace_id": "abc-123",
@@ -501,7 +501,7 @@ class TestSchemaTraceField:
         assert resp.trace["trace_id"] == "abc-123"
 
     def test_response_trace_defaults_to_empty(self):
-        from src.schemas import AgentChatResponse
+        from agent_runtime.interfaces.http.schemas import AgentChatResponse
 
         resp = AgentChatResponse(response="Hello", session_id="s1")
         assert resp.trace == {}

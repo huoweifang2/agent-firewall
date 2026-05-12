@@ -24,13 +24,17 @@ import pytest
 import yaml
 from httpx import ASGITransport, AsyncClient
 
-from src.control_plane.seed import REFERENCE_AGENT, seed_reference_agent, seed_reference_tools_and_roles
-from src.control_plane.services.integration_kit import (
+from proxy_service.application.control_plane.integration_kit import (
     build_kit_context,
     generate_integration_kit,
     get_jinja_env,
 )
-from src.main import app
+from proxy_service.bootstrap.main import app
+from proxy_service.infrastructure.persistence.control_plane_seed import (
+    REFERENCE_AGENT,
+    seed_reference_agent,
+    seed_reference_tools_and_roles,
+)
 
 
 @pytest.fixture
@@ -137,7 +141,7 @@ async def test_jinja2_env_loads(client):
 async def test_context_builder_demo_agent(client):
     """build_kit_context(demo_id) has all required keys."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         ctx = await build_kit_context(uuid.UUID(ref["id"]), db)
@@ -161,7 +165,7 @@ async def test_context_builder_demo_agent(client):
 async def test_context_builder_tools_populated(client):
     """Context tools list matches DB tools."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         ctx = await build_kit_context(uuid.UUID(ref["id"]), db)
@@ -175,7 +179,7 @@ async def test_context_builder_tools_populated(client):
 async def test_context_builder_roles_populated(client):
     """Context roles list matches DB roles."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         ctx = await build_kit_context(uuid.UUID(ref["id"]), db)
@@ -187,7 +191,7 @@ async def test_context_builder_roles_populated(client):
 @pytest.mark.asyncio
 async def test_context_builder_nonexistent_agent(client):
     """build_kit_context('bad-id') raises ValueError."""
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         with pytest.raises(ValueError, match="not found"):
@@ -199,7 +203,7 @@ async def test_context_builder_nonexistent_agent(client):
 async def test_context_builder_agent_no_tools(client):
     """Agent with 0 tools → context.tools = [] (no crash)."""
     agent = await _create_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         ctx = await build_kit_context(uuid.UUID(agent["id"]), db)
@@ -216,7 +220,7 @@ async def test_context_builder_agent_no_tools(client):
 async def test_rbac_template_renders(client):
     """rbac.yaml renders without error via kit."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -229,7 +233,7 @@ async def test_rbac_template_renders(client):
 async def test_rbac_template_valid_yaml(client):
     """rbac.yaml output is parseable YAML."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -242,8 +246,8 @@ async def test_rbac_template_valid_yaml(client):
 async def test_rbac_template_matches_generator(client):
     """rbac.yaml from kit == direct generator output."""
     ref = await _seed_ref_agent(client)
-    from src.control_plane.services.config_gen import generate_rbac_yaml
-    from src.db.session import get_db
+    from proxy_service.application.control_plane.config_gen import generate_rbac_yaml
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -257,7 +261,7 @@ async def test_rbac_template_matches_generator(client):
 async def test_rbac_template_empty_tools(client):
     """0 tools → valid YAML."""
     agent = await _create_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(agent["id"]), db)
@@ -275,7 +279,7 @@ async def test_rbac_template_empty_tools(client):
 async def test_limits_template_renders(client):
     """limits.yaml renders without error."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -287,7 +291,7 @@ async def test_limits_template_renders(client):
 async def test_limits_template_valid_yaml(client):
     """limits.yaml is parseable YAML."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -300,8 +304,8 @@ async def test_limits_template_valid_yaml(client):
 async def test_limits_template_matches_generator(client):
     """limits.yaml from kit == direct generator output."""
     ref = await _seed_ref_agent(client)
-    from src.control_plane.services.config_gen import generate_limits_yaml
-    from src.db.session import get_db
+    from proxy_service.application.control_plane.config_gen import generate_limits_yaml
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -314,7 +318,7 @@ async def test_limits_template_matches_generator(client):
 async def test_limits_template_per_tool_rates(client):
     """Per-tool rate_limit present when defined."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -333,7 +337,7 @@ async def test_limits_template_per_tool_rates(client):
 async def test_policy_template_renders(client):
     """policy.yaml renders without error."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -345,7 +349,7 @@ async def test_policy_template_renders(client):
 async def test_policy_template_valid_yaml(client):
     """policy.yaml is parseable YAML."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -358,8 +362,8 @@ async def test_policy_template_valid_yaml(client):
 async def test_policy_template_matches_generator(client):
     """policy.yaml from kit == direct generator output."""
     ref = await _seed_ref_agent(client)
-    from src.control_plane.services.config_gen import generate_policy_yaml
-    from src.db.session import get_db
+    from proxy_service.application.control_plane.config_gen import generate_policy_yaml
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -372,7 +376,7 @@ async def test_policy_template_matches_generator(client):
 async def test_policy_template_all_scanners(client):
     """All scanner toggles present in policy.yaml."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -391,7 +395,7 @@ async def test_policy_template_all_scanners(client):
 async def test_openclaw_template_renders(client):
     """OpenClaw template renders without error."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -405,7 +409,7 @@ async def test_openclaw_template_renders(client):
 async def test_openclaw_ast_parse(client):
     """ast.parse(output) — syntactically valid Python."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -419,7 +423,7 @@ async def test_openclaw_ast_parse(client):
 async def test_openclaw_uses_agent_firewall_base_url(client):
     """OpenClaw integration routes through Agent-Firewall."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -433,7 +437,7 @@ async def test_openclaw_uses_agent_firewall_base_url(client):
 async def test_openclaw_imports_openai_client(client):
     """OpenClaw kit exposes an OpenAI-compatible client pointing at the firewall."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -447,7 +451,7 @@ async def test_openclaw_imports_openai_client(client):
 async def test_openclaw_has_firewall_runtime_comment(client):
     """Generated OpenClaw kit names the protected runtime route."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -461,7 +465,7 @@ async def test_openclaw_has_firewall_runtime_comment(client):
 async def test_openclaw_tool_names_stay_in_yaml(client):
     """Agent tool names are represented in generated policy YAML, not framework code."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -476,7 +480,7 @@ async def test_openclaw_tool_names_stay_in_yaml(client):
 async def test_openclaw_role_names_stay_in_yaml(client):
     """Agent role names are represented in RBAC YAML."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -489,7 +493,7 @@ async def test_openclaw_role_names_stay_in_yaml(client):
 async def test_openclaw_has_inline_comments(client):
     """≥5 inline comments present."""
     ref = await _seed_ref_agent(client)
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -509,7 +513,7 @@ async def test_env_template_renders(client):
     """Template renders without error."""
     ref = await _seed_ref_agent(client)
 
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -524,7 +528,7 @@ async def test_env_parseable(client):
 
     ref = await _seed_ref_agent(client)
 
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -546,7 +550,7 @@ async def test_env_has_required_vars(client):
     """AGENT_FIREWALL_URL, AGENT_ID, POLICY, MODE present."""
     ref = await _seed_ref_agent(client)
 
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -561,7 +565,7 @@ async def test_env_provider_key_commented(client):
     """DEEPSEEK_API_KEY is documented but commented out."""
     ref = await _seed_ref_agent(client)
 
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -582,7 +586,7 @@ async def test_security_template_renders(client):
     """Template renders without error."""
     ref = await _seed_ref_agent(client)
 
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -595,7 +599,7 @@ async def test_security_ast_parse(client):
     """ast.parse(output) — syntactically valid Python."""
     ref = await _seed_ref_agent(client)
 
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -610,7 +614,7 @@ async def test_security_has_5_test_functions(client):
     """5 functions starting with test_."""
     ref = await _seed_ref_agent(client)
 
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -628,7 +632,7 @@ async def test_security_rbac_test_uses_agent_roles(client):
     """Test has unknown-role block + authorized-role check."""
     ref = await _seed_ref_agent(client)
 
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -645,7 +649,7 @@ async def test_security_injection_test_uses_agent_tool(client):
     """Test references injection detection config."""
     ref = await _seed_ref_agent(client)
 
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -659,7 +663,7 @@ async def test_security_pii_test_present(client):
     """PII redaction test function present."""
     ref = await _seed_ref_agent(client)
 
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -678,7 +682,7 @@ async def test_readme_template_renders(client):
     """Template renders without error."""
     ref = await _seed_ref_agent(client)
 
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -692,7 +696,7 @@ async def test_readme_has_agent_name(client):
     """Agent name appears in rendered README."""
     ref = await _seed_ref_agent(client)
 
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)
@@ -705,7 +709,7 @@ async def test_readme_has_integration_steps(client):
     """Step 1, Step 2, Step 3 present."""
     ref = await _seed_ref_agent(client)
 
-    from src.db.session import get_db
+    from proxy_service.infrastructure.persistence.session import get_db
 
     async for db in get_db():
         kit = await generate_integration_kit(uuid.UUID(ref["id"]), db)

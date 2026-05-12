@@ -7,7 +7,7 @@ import os
 import yaml
 
 _BASE = os.path.join(os.path.dirname(__file__), os.pardir)
-PACK_PATH = os.path.join(_BASE, "src/red_team/packs/data/core_security.yaml")
+PACK_PATH = os.path.join(_BASE, "src/proxy_service/domain/red_team/packs/data/core_security.yaml")
 ATTACKS_GLOB = os.path.join(_BASE, "data/red-team/attacks/*.json")
 
 

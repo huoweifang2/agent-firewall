@@ -7,12 +7,12 @@ from datetime import UTC, datetime
 
 import pytest
 
-from src.red_team.export.business_impact import (
+from proxy_service.domain.red_team.export.business_impact import (
     CATEGORY_BUSINESS_IMPACT,
     get_business_impact,
     get_executive_risk_summary,
 )
-from src.red_team.export.renderer import (
+from proxy_service.infrastructure.red_team.export.renderer import (
     _build_categories,
     _format_latency,
     _human_category,
@@ -215,7 +215,7 @@ class TestPdfRender:
 
     def test_pdf_generates(self, sample_run: dict, sample_scenarios: list[dict]) -> None:
         """PDF should be generated without errors."""
-        from src.red_team.export.renderer import render_pdf_report
+        from proxy_service.infrastructure.red_team.export.renderer import render_pdf_report
 
         pdf_bytes = render_pdf_report(sample_run, sample_scenarios)
         assert isinstance(pdf_bytes, bytes)
@@ -225,7 +225,7 @@ class TestPdfRender:
 
     def test_pdf_not_empty_with_no_failures(self, sample_run: dict) -> None:
         """PDF works even when all scenarios pass."""
-        from src.red_team.export.renderer import render_pdf_report
+        from proxy_service.infrastructure.red_team.export.renderer import render_pdf_report
 
         scenarios = [
             _make_scenario("PI-001", "prompt_injection", "medium", True),
@@ -237,7 +237,7 @@ class TestPdfRender:
 
     def test_no_auth_secrets_in_pdf(self, sample_run: dict, sample_scenarios: list[dict]) -> None:
         """PDF must not contain auth credentials from target_config."""
-        from src.red_team.export.renderer import render_pdf_report
+        from proxy_service.infrastructure.red_team.export.renderer import render_pdf_report
 
         run = _make_run(target_config={"auth_header": "Bearer secret123", "endpoint_url": "https://example.com"})
         pdf_bytes = render_pdf_report(run, sample_scenarios)
@@ -246,7 +246,7 @@ class TestPdfRender:
 
     def test_scoring_simplified(self, sample_run: dict, sample_scenarios: list[dict]) -> None:
         """Report should show simple score as main, weighted in appendix."""
-        from src.red_team.export.renderer import render_pdf_report
+        from proxy_service.infrastructure.red_team.export.renderer import render_pdf_report
 
         # We can only verify the PDF is generated — content checking
         # requires PDF text extraction which is not worth adding as dep.

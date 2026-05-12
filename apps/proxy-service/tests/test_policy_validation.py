@@ -8,8 +8,8 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from pydantic import ValidationError
 
-from src.main import app
-from src.schemas.policy_config import VALID_NODES, PolicyConfigSchema, ThresholdsSchema
+from proxy_service.bootstrap.main import app
+from proxy_service.interfaces.http.schemas.policy_config import VALID_NODES, PolicyConfigSchema, ThresholdsSchema
 
 
 @pytest.fixture

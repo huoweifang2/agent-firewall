@@ -8,8 +8,8 @@ import uuid
 
 import pytest
 
-from src.red_team.progress.emitter import ProgressEmitter
-from src.red_team.progress.events import (
+from proxy_service.domain.red_team.progress.emitter import ProgressEmitter
+from proxy_service.domain.red_team.progress.events import (
     ProgressEventType,
     RunCancelledEvent,
     RunCompleteEvent,
@@ -20,7 +20,7 @@ from src.red_team.progress.events import (
     event_type_for,
     is_terminal,
 )
-from src.red_team.progress.formatter import format_sse
+from proxy_service.domain.red_team.progress.formatter import format_sse
 
 # ---------------------------------------------------------------------------
 # Helpers

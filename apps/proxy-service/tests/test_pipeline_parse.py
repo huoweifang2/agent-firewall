@@ -5,9 +5,9 @@ from __future__ import annotations
 import asyncio
 import hashlib
 
-from src.pipeline.nodes import timed_node
-from src.pipeline.nodes.parse import parse_node
-from src.pipeline.state import PipelineState
+from proxy_service.domain.firewall.pipeline.nodes import timed_node
+from proxy_service.domain.firewall.pipeline.nodes.parse import parse_node
+from proxy_service.domain.firewall.pipeline.state import PipelineState
 
 # ── PipelineState ──────────────────────────────────────────────────────
 

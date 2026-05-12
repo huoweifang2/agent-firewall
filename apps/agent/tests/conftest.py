@@ -12,11 +12,11 @@ from fastapi.testclient import TestClient
 os.environ["MODE"] = "real"
 os.environ["TELEGRAM_BRIDGE_ENABLED"] = "false"
 
-from src.config import get_settings  # noqa: E402
+from agent_runtime.infrastructure.config import get_settings  # noqa: E402
 
 get_settings.cache_clear()
 
-from src.main import app  # noqa: E402
+from agent_runtime.bootstrap.main import app  # noqa: E402
 
 
 @pytest.fixture

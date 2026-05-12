@@ -7,7 +7,7 @@ import json
 import httpx
 import pytest
 
-from src.red_team.engine.http_client.client import HttpResponse, TargetEndpoint, send_prompt
+from proxy_service.domain.red_team.engine.http_client.client import HttpResponse, TargetEndpoint, send_prompt
 
 # ---------------------------------------------------------------------------
 # Helpers

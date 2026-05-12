@@ -13,8 +13,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.red_team.secrets.encryption import decrypt, encrypt
-from src.red_team.secrets.store import EncryptedColumnSecretStore, SecretStore, is_encrypted_ref
+from proxy_service.domain.red_team.secrets.encryption import decrypt, encrypt
+from proxy_service.domain.red_team.secrets.store import EncryptedColumnSecretStore, SecretStore, is_encrypted_ref
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -62,7 +62,7 @@ def test_missing_key_generates_dev_key(monkeypatch: pytest.MonkeyPatch):
     """When BENCHMARK_SECRET_KEY is unset, a random dev key is auto-generated."""
     monkeypatch.delenv("BENCHMARK_SECRET_KEY", raising=False)
     # Reset the cached dev key so we get a fresh one
-    import src.red_team.secrets.encryption as _enc
+    import proxy_service.domain.red_team.secrets.encryption as _enc
 
     monkeypatch.setattr(_enc, "_DEV_KEY", None)
     # Should NOT raise — dev key is auto-generated
@@ -103,7 +103,7 @@ async def test_encrypted_column_store_retrieve_invalid():
 
 async def test_encrypted_stored_in_db():
     """When auth_header is in target_config, service encrypts it."""
-    from src.red_team.api.service import BenchmarkService
+    from proxy_service.application.red_team.service import BenchmarkService
 
     mock_session = AsyncMock(spec=AsyncSession)
     mock_session.flush = AsyncMock()
@@ -148,8 +148,8 @@ async def test_encrypted_stored_in_db():
 
 async def test_auth_stripped_from_api_response():
     """get_run_safe masks auth_secret_ref in target_config."""
-    from src.red_team.api.service import BenchmarkService
-    from src.red_team.persistence.models import BenchmarkRun
+    from proxy_service.application.red_team.service import BenchmarkService
+    from proxy_service.infrastructure.persistence.red_team.models import BenchmarkRun
 
     fake_run = BenchmarkRun(
         id=uuid.uuid4(),
@@ -177,7 +177,7 @@ async def test_auth_stripped_from_api_response():
 
 def test_plaintext_never_in_logs():
     """strip_auth_from_config replaces auth_secret_ref with ***."""
-    from src.red_team.api.service import strip_auth_from_config
+    from proxy_service.application.red_team.service import strip_auth_from_config
 
     config = {
         "endpoint_url": "https://api.example.com",
@@ -197,8 +197,8 @@ def test_plaintext_never_in_logs():
 
 async def test_auth_deleted_after_ttl():
     """cleanup_expired_secrets nulls out auth_secret_ref after 24h."""
-    from src.red_team.api.service import cleanup_expired_secrets
-    from src.red_team.persistence.models import BenchmarkRun
+    from proxy_service.application.red_team.service import cleanup_expired_secrets
+    from proxy_service.infrastructure.persistence.red_team.models import BenchmarkRun
 
     old_run = BenchmarkRun(
         id=uuid.uuid4(),
@@ -231,8 +231,8 @@ async def test_auth_deleted_after_ttl():
 
 async def test_http_client_receives_decrypted():
     """decrypt_auth_for_run returns decrypted plaintext for run engine."""
-    from src.red_team.api.service import BenchmarkService
-    from src.red_team.persistence.models import BenchmarkRun
+    from proxy_service.application.red_team.service import BenchmarkService
+    from proxy_service.infrastructure.persistence.red_team.models import BenchmarkRun
 
     # Encrypt a known value
     secret = "Bearer sk-for-http-client"
@@ -261,7 +261,7 @@ async def test_http_client_receives_decrypted():
 
 def test_auth_stripped_from_export():
     """Export JSON should not contain auth_secret_ref."""
-    from src.red_team.api.service import strip_auth_from_config
+    from proxy_service.application.red_team.service import strip_auth_from_config
 
     config = {
         "endpoint_url": "https://api.example.com",

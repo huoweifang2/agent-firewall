@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from src.red_team.engine.json_text_extractor import detect_text_paths, extract_text
+from proxy_service.domain.red_team.engine.json_text_extractor import detect_text_paths, extract_text
 
 # ---------------------------------------------------------------------------
 # Happy paths

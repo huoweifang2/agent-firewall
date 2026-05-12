@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from src.red_team.scoring import (
+from proxy_service.domain.red_team.scoring import (
     ScenarioOutcome,
     ScenarioResult,
     ScoreResult,

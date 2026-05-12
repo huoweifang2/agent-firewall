@@ -7,10 +7,10 @@ import uuid
 import pytest
 from sqlalchemy import select
 
-from src.db.session import async_session
-from src.models.denylist import DenylistPhrase
-from src.models.policy import Policy
-from src.services.denylist import DenylistHit, _get_phrases, _load_phrases_from_db, check_denylist
+from proxy_service.application.services.denylist import DenylistHit, _get_phrases, _load_phrases_from_db, check_denylist
+from proxy_service.infrastructure.persistence.models.denylist import DenylistPhrase
+from proxy_service.infrastructure.persistence.models.policy import Policy
+from proxy_service.infrastructure.persistence.session import async_session
 
 # ── helpers ──────────────────────────────────────────────────────────
 
@@ -65,7 +65,7 @@ async def _cleanup_test_phrases(policy_id: uuid.UUID, phrases: list[str]) -> Non
 # Also invalidate Redis cache for the policy
 async def _flush_cache(policy_name: str) -> None:
     try:
-        from src.db.session import get_redis
+        from proxy_service.infrastructure.persistence.session import get_redis
 
         redis = await get_redis()
         await redis.delete(f"denylist:{policy_name}")

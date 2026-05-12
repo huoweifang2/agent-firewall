@@ -39,12 +39,12 @@ Telegram Bridge has been verified as one real ingress adapter for tool workflows
 ## Important Files
 
 - `start-local.sh`: starts proxy, agent, and frontend.
-- `apps/proxy-service/src/routers/scan.py`: scan-only firewall endpoint.
-- `apps/proxy-service/src/routers/interventions.py`: approval queue API.
-- `apps/proxy-service/src/control_plane/seed.py`: seeds the protected Telegram OpenClaw gateway agent.
-- `apps/proxy-service/src/control_plane/services/runtime_spec.py`: builds runtime specs and normalizes legacy skill metadata shapes.
-- `apps/agent/src/agent/graph.py`: runtime graph runner.
-- `apps/agent/src/agent/telegram_bridge.py`: optional Telegram ingress adapter and approval continuation.
+- `apps/proxy-service/src/proxy_service/interfaces/http/routers/scan.py`: scan-only firewall endpoint.
+- `apps/proxy-service/src/proxy_service/interfaces/http/routers/interventions.py`: approval queue API.
+- `apps/proxy-service/src/proxy_service/infrastructure/persistence/control_plane_seed.py`: seeds the protected Telegram OpenClaw gateway agent.
+- `apps/proxy-service/src/proxy_service/application/control_plane/runtime_spec.py`: builds runtime specs and normalizes legacy skill metadata shapes.
+- `apps/agent/src/agent_runtime/application/runtime/graph.py`: runtime graph runner.
+- `apps/agent/src/agent_runtime/infrastructure/telegram_bridge.py`: optional Telegram ingress adapter and approval continuation.
 - `apps/frontend/app/pages/approvals.vue`: operator approval page.
 - `apps/frontend/app/components/app-nav-drawer.vue`: navigation order.
 

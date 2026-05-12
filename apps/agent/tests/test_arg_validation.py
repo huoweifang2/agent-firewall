@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.agent.validation.schemas import (
+from agent_runtime.domain.validation.schemas import (
     GetCustomerProfileArgs,
     GetInternalSecretsArgs,
     GetOrderStatusArgs,
@@ -18,7 +18,7 @@ from src.agent.validation.schemas import (
     _scan_injection,
     get_schema,
 )
-from src.agent.validation.validator import validate_tool_args
+from agent_runtime.domain.validation.validator import validate_tool_args
 
 # ══════════════════════════════════════════════════════════════════════
 # Schema Registry
@@ -315,21 +315,21 @@ class TestCheckArgsIntegration:
     """Test _check_args as used by the pre-tool gate."""
 
     def test_valid_args_pass(self):
-        from src.agent.nodes.pre_tool_gate import _check_args
+        from agent_runtime.application.runtime.nodes.pre_tool_gate import _check_args
 
         result, modified = _check_args("getOrderStatus", {"order_id": "ORD-001"})
         assert result["passed"] is True
         assert modified is None
 
     def test_invalid_args_fail(self):
-        from src.agent.nodes.pre_tool_gate import _check_args
+        from agent_runtime.application.runtime.nodes.pre_tool_gate import _check_args
 
         result, modified = _check_args("getOrderStatus", {"order_id": "HACK"})
         assert result["passed"] is False
         assert result["check"] == "schema"
 
     def test_injection_in_args_blocked(self):
-        from src.agent.nodes.pre_tool_gate import _check_args
+        from agent_runtime.application.runtime.nodes.pre_tool_gate import _check_args
 
         result, modified = _check_args(
             "searchKnowledgeBase",
@@ -339,7 +339,7 @@ class TestCheckArgsIntegration:
         assert "njection" in (result["detail"] or "")  # "Injection" or "injection"
 
     def test_sanitized_args_returned(self):
-        from src.agent.nodes.pre_tool_gate import _check_args
+        from agent_runtime.application.runtime.nodes.pre_tool_gate import _check_args
 
         result, modified = _check_args(
             "searchKnowledgeBase",
@@ -350,7 +350,7 @@ class TestCheckArgsIntegration:
             assert modified["query"] == "shipping question"
 
     def test_extra_fields_blocked(self):
-        from src.agent.nodes.pre_tool_gate import _check_args
+        from agent_runtime.application.runtime.nodes.pre_tool_gate import _check_args
 
         result, modified = _check_args(
             "getOrderStatus",

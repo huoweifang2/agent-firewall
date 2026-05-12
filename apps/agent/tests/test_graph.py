@@ -4,10 +4,10 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.agent.graph import build_agent_graph, get_agent_graph
+from agent_runtime.application.runtime.graph import build_agent_graph, get_agent_graph
 
-_SCAN_PATCH = "src.agent.nodes.llm_call._scan_via_proxy"
-_LLM_PATCH = "src.agent.nodes.llm_call.acompletion"
+_SCAN_PATCH = "agent_runtime.application.runtime.nodes.llm_call._scan_via_proxy"
+_LLM_PATCH = "agent_runtime.application.runtime.nodes.llm_call.acompletion"
 
 
 def _scan_allow(risk_score: float = 0.1, intent: str = "qa") -> dict:

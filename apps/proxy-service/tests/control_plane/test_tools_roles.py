@@ -14,12 +14,12 @@ import uuid
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.control_plane.seed import (
+from proxy_service.bootstrap.main import app
+from proxy_service.infrastructure.persistence.control_plane_seed import (
     REFERENCE_AGENT,
     seed_reference_agent,
     seed_reference_tools_and_roles,
 )
-from src.main import app
 
 
 @pytest.fixture

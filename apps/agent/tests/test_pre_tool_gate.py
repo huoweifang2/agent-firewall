@@ -6,7 +6,7 @@ Tests context risk detection for injection and exfiltration.
 
 from __future__ import annotations
 
-from src.agent.nodes.pre_tool_gate import (
+from agent_runtime.application.runtime.nodes.pre_tool_gate import (
     TOOLS_REQUIRING_CONFIRMATION,
     _check_args,
     _check_context_risk,
@@ -15,7 +15,7 @@ from src.agent.nodes.pre_tool_gate import (
     _evaluate_tool,
     pre_tool_gate_node,
 )
-from src.agent.state import AgentState
+from agent_runtime.domain.state import AgentState
 
 # ────────────────────────────────────────────────────────────────────────
 # Helpers

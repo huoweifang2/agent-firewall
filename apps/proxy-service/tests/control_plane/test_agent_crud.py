@@ -14,15 +14,15 @@ import uuid
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.control_plane.models import (
+from proxy_service.application.control_plane.risk import compute_risk_level, recommend_protection_level
+from proxy_service.bootstrap.main import app
+from proxy_service.domain.control_plane.models import (
     Agent,
     ProtectionLevel,
     RiskLevel,
 )
-from src.control_plane.schemas import AgentCreate, AgentUpdate
-from src.control_plane.seed import seed_control_plane, seed_reference_agent
-from src.control_plane.services.risk import compute_risk_level, recommend_protection_level
-from src.main import app
+from proxy_service.infrastructure.persistence.control_plane_seed import seed_control_plane, seed_reference_agent
+from proxy_service.interfaces.http.schemas.control_plane import AgentCreate, AgentUpdate
 
 
 @pytest.fixture

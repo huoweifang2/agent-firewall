@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.main import app
+from proxy_service.bootstrap.main import app
 
 
 @pytest.fixture
@@ -273,7 +273,7 @@ async def test_update_invalidates_redis_cache(client: AsyncClient):
     created = await _create_custom_policy(client, name=f"redis-{uuid.uuid4().hex[:8]}")
     pid = created["id"]
 
-    with patch("src.routers.policies.get_redis", new_callable=AsyncMock) as mock_redis:
+    with patch("proxy_service.interfaces.http.routers.policies.get_redis", new_callable=AsyncMock) as mock_redis:
         mock_redis_client = AsyncMock()
         mock_redis.return_value = mock_redis_client
 
@@ -291,7 +291,7 @@ async def test_delete_invalidates_redis_cache(client: AsyncClient):
     created = await _create_custom_policy(client, name=f"rdel-{uuid.uuid4().hex[:8]}")
     pid = created["id"]
 
-    with patch("src.routers.policies.get_redis", new_callable=AsyncMock) as mock_redis:
+    with patch("proxy_service.interfaces.http.routers.policies.get_redis", new_callable=AsyncMock) as mock_redis:
         mock_redis_client = AsyncMock()
         mock_redis.return_value = mock_redis_client
 

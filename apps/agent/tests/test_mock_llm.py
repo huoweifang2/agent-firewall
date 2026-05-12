@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from src.agent.mock_llm import (
+from agent_runtime.infrastructure.mock_llm import (
     GENERAL_RESPONSES,
     mock_agent_llm,
 )

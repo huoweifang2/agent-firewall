@@ -6,7 +6,7 @@ size truncation, evaluate_tool_output, and the post_tool_gate_node.
 
 from __future__ import annotations
 
-from src.agent.nodes.post_tool_gate import (
+from agent_runtime.application.runtime.nodes.post_tool_gate import (
     BLOCK_REPLACEMENT,
     MAX_TOOL_OUTPUT_SIZE,
     check_size,

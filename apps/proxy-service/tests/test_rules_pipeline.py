@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.pipeline.nodes.rules import SEVERITY_SCORE, rules_node
-from src.services.denylist import DenylistHit
+from proxy_service.application.services.denylist import DenylistHit
+from proxy_service.domain.firewall.pipeline.nodes.rules import SEVERITY_SCORE, rules_node
 
 
 def _make_hit(
@@ -43,7 +43,7 @@ class TestBlockAction:
     """Block action should set denylist_hit and add to rules_matched."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_block_sets_denylist_hit(self, mock_check):
         mock_check.return_value = [_make_hit(phrase="bad word", action="block")]
         result = await rules_node(_state())
@@ -51,7 +51,7 @@ class TestBlockAction:
         assert "denylist:bad word" in result["rules_matched"]
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_block_multiple(self, mock_check):
         mock_check.return_value = [
             _make_hit(phrase="p1", action="block"),
@@ -66,7 +66,7 @@ class TestFlagAction:
     """Flag action should create custom_flags entries."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_flag_creates_custom_flags(self, mock_check):
         mock_check.return_value = [
             _make_hit(
@@ -91,7 +91,7 @@ class TestScoreBoostAction:
     """Score boost action should accumulate in risk_flags.score_boost."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_single_score_boost(self, mock_check):
         mock_check.return_value = [
             _make_hit(action="score_boost", severity="high"),
@@ -100,7 +100,7 @@ class TestScoreBoostAction:
         assert result["risk_flags"]["score_boost"] == pytest.approx(0.3)
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_stacking_score_boosts(self, mock_check):
         mock_check.return_value = [
             _make_hit(phrase="p1", action="score_boost", severity="high"),
@@ -115,7 +115,7 @@ class TestMixedActions:
     """Mixed actions from different rules should all be processed."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_block_and_flag_and_boost(self, mock_check):
         mock_check.return_value = [
             _make_hit(phrase="block_me", action="block"),
@@ -133,7 +133,7 @@ class TestNoHits:
     """No denylist hits should not add flags."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.rules.check_denylist", new_callable=AsyncMock)
     async def test_clean_text(self, mock_check):
         mock_check.return_value = []
         result = await rules_node(_state())

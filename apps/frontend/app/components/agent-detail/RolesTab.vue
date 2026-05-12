@@ -192,7 +192,7 @@ watch([selectedRole, tools], () => {
 }, { immediate: true })
 
 function rebuildPermissionDraft() {
-  for (const key of Object.keys(permissionDraft)) delete permissionDraft[key]
+  for (const key of Object.keys(permissionDraft)) Reflect.deleteProperty(permissionDraft, key)
   const role = selectedRole.value
   for (const tool of tools.value) {
     const direct = role?.permissions.find(p => p.tool_id === tool.id)
@@ -295,4 +295,3 @@ function refreshAll() {
   overflow: hidden;
 }
 </style>
-

@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.pipeline.nodes.nemo_guardrails import (
+from proxy_service.domain.firewall.pipeline.nodes.nemo_guardrails import (
     KNOWN_RAILS,
     get_rails,
     nemo_guardrails_node,
@@ -72,7 +72,7 @@ class TestRoleBypassBlocked:
     """Role bypass attempt → blocked with nemo_role_bypass flag."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.nemo_guardrails.get_rails")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.nemo_guardrails.get_rails")
     async def test_role_bypass_blocked(self, mock_get_rails):
         mock_get_rails.return_value = _mock_rails_blocked("role_bypass")
 
@@ -90,7 +90,7 @@ class TestToolAbuseBlocked:
     """Tool abuse attempt → blocked with nemo_tool_abuse flag."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.nemo_guardrails.get_rails")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.nemo_guardrails.get_rails")
     async def test_tool_abuse_blocked(self, mock_get_rails):
         mock_get_rails.return_value = _mock_rails_blocked("tool_abuse")
 
@@ -108,7 +108,7 @@ class TestExfiltrationBlocked:
     """Exfiltration attempt → blocked."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.nemo_guardrails.get_rails")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.nemo_guardrails.get_rails")
     async def test_exfiltration_blocked(self, mock_get_rails):
         mock_get_rails.return_value = _mock_rails_blocked("exfiltration")
 
@@ -126,7 +126,7 @@ class TestCleanPromptAllowed:
     """Clean prompt → no risk flags."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.nemo_guardrails.get_rails")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.nemo_guardrails.get_rails")
     async def test_clean_no_flags(self, mock_get_rails):
         mock_get_rails.return_value = _mock_rails_safe()
 
@@ -146,7 +146,7 @@ class TestDisabledSkip:
     """enable_nemo_guardrails=False → node returns state without NeMo results."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.nemo_guardrails.get_settings")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.nemo_guardrails.get_settings")
     async def test_disabled_returns_state(self, mock_settings):
         settings = MagicMock()
         settings.enable_nemo_guardrails = False
@@ -181,8 +181,8 @@ class TestTimeoutGraceful:
     """Scan timeout → error logged, pipeline continues."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.nemo_guardrails.get_settings")
-    @patch("src.pipeline.nodes.nemo_guardrails.asyncio")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.nemo_guardrails.get_settings")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.nemo_guardrails.asyncio")
     async def test_timeout_graceful(self, mock_asyncio, mock_settings):
         settings = MagicMock()
         settings.enable_nemo_guardrails = True
@@ -207,7 +207,7 @@ class TestErrorIsolation:
     """Exception in NeMo → error logged, pipeline continues."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.nemo_guardrails._scan_message")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.nemo_guardrails._scan_message")
     async def test_exception_logged(self, mock_scan):
         mock_scan.side_effect = RuntimeError("NeMo internal error")
 
@@ -225,7 +225,7 @@ class TestErrorIsolation:
 class TestLazyInit:
     """Test singleton pattern for NeMo rails."""
 
-    @patch("src.pipeline.nodes.nemo_guardrails._build_rails")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.nemo_guardrails._build_rails")
     def test_first_call_builds(self, mock_build):
         mock_obj = MagicMock()
         mock_build.return_value = mock_obj
@@ -234,7 +234,7 @@ class TestLazyInit:
         assert result is mock_obj
         mock_build.assert_called_once()
 
-    @patch("src.pipeline.nodes.nemo_guardrails._build_rails")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.nemo_guardrails._build_rails")
     def test_second_call_reuses(self, mock_build):
         mock_obj = MagicMock()
         mock_build.return_value = mock_obj
@@ -245,7 +245,7 @@ class TestLazyInit:
         mock_build.assert_called_once()  # Only built once
 
     def test_reset_clears_singleton(self):
-        import src.pipeline.nodes.nemo_guardrails as mod
+        import proxy_service.domain.firewall.pipeline.nodes.nemo_guardrails as mod
 
         mod._rails_app = MagicMock()
         reset_rails()
@@ -291,7 +291,7 @@ class TestScanMessageParsing:
     """Test the response parsing logic of _scan_message."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.nemo_guardrails.get_rails")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.nemo_guardrails.get_rails")
     async def test_blocked_response_parsing(self, mock_get_rails):
         mock_rails = _mock_rails_blocked("social_engineering")
         mock_get_rails.return_value = mock_rails
@@ -303,7 +303,7 @@ class TestScanMessageParsing:
         assert result["risk_flags"]["nemo_blocked"] is True
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.nemo_guardrails.get_rails")
+    @patch("proxy_service.domain.firewall.pipeline.nodes.nemo_guardrails.get_rails")
     async def test_safe_response_no_flags(self, mock_get_rails):
         mock_rails = _mock_rails_safe()
         mock_get_rails.return_value = mock_rails
@@ -323,10 +323,10 @@ class TestParallelScannersIncludeNemo:
     """parallel_scanners_node dispatches NeMo when in policy nodes."""
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.scanners.nemo_guardrails_node", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.nemo_guardrails_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
     async def test_nemo_dispatched(self, mock_llm_guard, mock_nemo):
-        from src.pipeline.nodes.scanners import parallel_scanners_node
+        from proxy_service.domain.firewall.pipeline.nodes.scanners import parallel_scanners_node
 
         mock_llm_guard.return_value = {
             "risk_flags": {},
@@ -355,10 +355,10 @@ class TestParallelScannersIncludeNemo:
         assert "nemo_guardrails" in result["scanner_results"]
 
     @pytest.mark.asyncio
-    @patch("src.pipeline.nodes.scanners.nemo_guardrails_node", new_callable=AsyncMock)
-    @patch("src.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.nemo_guardrails_node", new_callable=AsyncMock)
+    @patch("proxy_service.domain.firewall.pipeline.nodes.scanners.llm_guard_node", new_callable=AsyncMock)
     async def test_nemo_not_dispatched_when_missing(self, mock_llm_guard, mock_nemo):
-        from src.pipeline.nodes.scanners import parallel_scanners_node
+        from proxy_service.domain.firewall.pipeline.nodes.scanners import parallel_scanners_node
 
         mock_llm_guard.return_value = {
             "risk_flags": {},
