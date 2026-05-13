@@ -69,16 +69,29 @@ def _extract_json_payload(stdout: str) -> Any:
     except json.JSONDecodeError:
         pass
 
+    best_payload: Any = None
+    best_length = -1
+    for payload, end in _json_candidates(text):
+        if end > best_length:
+            best_payload = payload
+            best_length = end
+    if best_length >= 0:
+        return best_payload
+    raise ValueError("OpenClaw output did not contain JSON")
+
+
+def _json_candidates(text: str) -> list[tuple[Any, int]]:
     decoder = json.JSONDecoder()
+    candidates: list[tuple[Any, int]] = []
     for idx, ch in enumerate(text):
         if ch not in "[{":
             continue
         try:
-            payload, _end = decoder.raw_decode(text[idx:])
-            return payload
+            payload, end = decoder.raw_decode(text[idx:])
         except json.JSONDecodeError:
             continue
-    raise ValueError("OpenClaw output did not contain JSON")
+        candidates.append((payload, end))
+    return candidates
 
 
 @dataclass(slots=True)
@@ -138,10 +151,12 @@ class OpenClawClient:
         return payload if isinstance(payload, list) else list(payload.get("agents", []))
 
     async def hooks(self) -> list[dict[str, Any]]:
-        payload = await self.run_json("hooks", "list", "--json")
-        hooks = payload.get("hooks", payload) if isinstance(payload, dict) else payload
-        if not isinstance(hooks, list):
-            raise RuntimeError("OpenClaw hooks output has an unexpected shape")
+        stdout = await self.run("hooks", "list", "--json")
+        payload = _extract_json_payload(stdout)
+        try:
+            hooks = _extract_openclaw_items(payload, primary_key="hooks", label="hooks")
+        except RuntimeError:
+            hooks = _extract_openclaw_item_candidates(stdout, label="hooks")
         return [hook for hook in hooks if isinstance(hook, dict)]
 
     async def models_status(self) -> dict[str, Any]:
@@ -149,10 +164,12 @@ class OpenClawClient:
         return payload if isinstance(payload, dict) else {"models": payload}
 
     async def skills(self, *, eligible_only: bool = True) -> list[dict[str, Any]]:
-        payload = await self.run_json("skills", "list", "--json")
-        skills = payload.get("skills", payload) if isinstance(payload, dict) else payload
-        if not isinstance(skills, list):
-            raise RuntimeError("OpenClaw skills output has an unexpected shape")
+        stdout = await self.run("skills", "list", "--json")
+        payload = _extract_json_payload(stdout)
+        try:
+            skills = _extract_openclaw_items(payload, primary_key="skills", label="skills")
+        except RuntimeError:
+            skills = _extract_openclaw_item_candidates(stdout, label="skills")
         if eligible_only:
             return [skill for skill in skills if isinstance(skill, dict) and bool(skill.get("eligible", False))]
         return [skill for skill in skills if isinstance(skill, dict)]
@@ -165,6 +182,75 @@ def get_openclaw_client() -> OpenClawClient:
         timeout_seconds=settings.openclaw_timeout_seconds,
         plugin_stage_dir=settings.openclaw_plugin_stage_dir,
     )
+
+
+def _extract_openclaw_items(payload: Any, *, primary_key: str, label: str) -> list[Any]:
+    """Extract list payloads from OpenClaw CLI JSON envelopes.
+
+    OpenClaw has used both raw lists and object envelopes. Some plugin-aware
+    commands can also wrap the useful list one level deeper, so keep this parser
+    permissive while still failing closed on non-list data.
+    """
+    if isinstance(payload, list):
+        return payload
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"OpenClaw {label} output has an unexpected shape")
+
+    candidates = (
+        payload.get(primary_key),
+        payload.get("items"),
+        payload.get("data"),
+        payload.get("result"),
+    )
+    for candidate in candidates:
+        if isinstance(candidate, list):
+            return candidate
+        if isinstance(candidate, dict):
+            nested = candidate.get(primary_key) or candidate.get("items")
+            if isinstance(nested, list):
+                return nested
+
+    raise RuntimeError(f"OpenClaw {label} output has an unexpected shape: {_payload_shape(payload)}")
+
+
+def _extract_openclaw_item_candidates(stdout: str, *, label: str) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for payload, _end in _json_candidates(stdout):
+        if not _looks_like_openclaw_item(payload):
+            continue
+        name = str(payload.get("name", ""))
+        if name in seen:
+            continue
+        seen.add(name)
+        items.append(payload)
+    if not items:
+        raise RuntimeError(f"OpenClaw {label} output has an unexpected shape")
+    return items
+
+
+def _looks_like_openclaw_item(value: Any) -> bool:
+    return (
+        isinstance(value, dict)
+        and isinstance(value.get("name"), str)
+        and any(key in value for key in ("eligible", "disabled", "source", "events", "missing"))
+    )
+
+
+def _payload_shape(value: Any) -> str:
+    if isinstance(value, dict):
+        parts = []
+        for key, item in value.items():
+            detail = type(item).__name__
+            if isinstance(item, list):
+                detail = f"list[{len(item)}]"
+            elif isinstance(item, dict):
+                detail = f"dict({','.join(str(k) for k in list(item.keys())[:5])})"
+            parts.append(f"{key}:{detail}")
+        return "dict{" + ", ".join(parts[:12]) + "}"
+    if isinstance(value, list):
+        return f"list[{len(value)}]"
+    return type(value).__name__
 
 
 async def get_openclaw_status() -> dict[str, Any]:

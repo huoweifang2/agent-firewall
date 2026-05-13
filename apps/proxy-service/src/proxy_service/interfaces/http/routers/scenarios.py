@@ -13,7 +13,17 @@ from proxy_service.interfaces.http.schemas.scenarios import ScenarioGroup
 
 router = APIRouter(prefix="/scenarios", tags=["scenarios"])
 
-_DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "scenarios"
+
+def _find_data_dir() -> Path:
+    """Locate scenario fixtures from either source or packaged layouts."""
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / "data" / "scenarios"
+        if candidate.is_dir():
+            return candidate
+    return Path(__file__).resolve().parent.parent.parent / "data" / "scenarios"
+
+
+_DATA_DIR = _find_data_dir()
 
 CatalogueKind = Literal["playground", "agent", "compare"]
 

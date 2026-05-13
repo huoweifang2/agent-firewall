@@ -5,7 +5,11 @@ import types
 import pytest
 
 from agent_runtime.application.runtime.nodes.llm_call import _build_runtime_tool_schemas
-from agent_runtime.infrastructure.openclaw_client import OpenClawClient, extract_json_payload
+from agent_runtime.infrastructure.openclaw_client import (
+    OpenClawClient,
+    _extract_openclaw_item_candidates,
+    extract_json_payload,
+)
 from agent_runtime.infrastructure.tools.hub import execute_tool_call
 from agent_runtime.infrastructure.tools.providers import openclaw
 
@@ -49,6 +53,23 @@ def test_derive_session_id_is_stable_and_namespaced():
 def test_extract_json_payload_tolerates_banner_text():
     payload = extract_json_payload('OpenClaw ready\n{"response":"ok"}\n')
     assert payload == {"response": "ok"}
+
+
+def test_extract_json_payload_prefers_full_envelope_over_nested_object():
+    payload = extract_json_payload('[skills] warning before JSON\n{\n  "skills": [\n    {"name": "weather"}\n  ]\n}\n')
+    assert payload == {"skills": [{"name": "weather"}]}
+
+
+def test_extract_openclaw_item_candidates_recovers_fragmented_skill_objects():
+    text = (
+        '[skills] warning inside stream\n{"name":"weather","eligible":true,"source":"openclaw-bundled"}\n'
+        '[skills] another warning\n{"name":"summarize","eligible":true,"source":"openclaw-bundled"}\n'
+    )
+
+    assert _extract_openclaw_item_candidates(text, label="skills") == [
+        {"name": "weather", "eligible": True, "source": "openclaw-bundled"},
+        {"name": "summarize", "eligible": True, "source": "openclaw-bundled"},
+    ]
 
 
 @pytest.mark.asyncio

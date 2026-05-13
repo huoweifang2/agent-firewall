@@ -5,7 +5,12 @@ import uuid
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from proxy_service.application.control_plane.openclaw import redact_openclaw_payload
+from proxy_service.application.control_plane.openclaw import (
+    _extract_json_payload,
+    _extract_openclaw_item_candidates,
+    _extract_openclaw_items,
+    redact_openclaw_payload,
+)
 from proxy_service.bootstrap.main import app
 from proxy_service.domain.control_plane.models import AgentSkill, SkillScope
 from proxy_service.infrastructure.persistence.session import async_session
@@ -147,6 +152,36 @@ def test_redact_openclaw_payload_removes_model_status_secrets():
     assert redacted["auth"]["providers"][0]["profiles"]["labels"] == []
     assert redacted["auth"]["shellEnvFallback"]["appliedKeys"] == []
     assert "sk-secret-value" not in str(redacted)
+
+
+def test_extract_openclaw_items_accepts_current_skills_envelope():
+    payload = {"workspaceDir": "/tmp/workspace", "managedSkillsDir": "/tmp/skills", "skills": [{"name": "weather"}]}
+
+    assert _extract_openclaw_items(payload, primary_key="skills", label="skills") == [{"name": "weather"}]
+
+
+def test_extract_openclaw_items_accepts_nested_items_envelope():
+    payload = {"result": {"items": [{"name": "weather"}]}}
+
+    assert _extract_openclaw_items(payload, primary_key="skills", label="skills") == [{"name": "weather"}]
+
+
+def test_extract_json_payload_prefers_full_envelope_over_nested_object():
+    text = '[skills] warning before JSON\n{\n  "skills": [\n    {"name": "weather"}\n  ]\n}\n'
+
+    assert _extract_json_payload(text) == {"skills": [{"name": "weather"}]}
+
+
+def test_extract_openclaw_item_candidates_recovers_fragmented_skill_objects():
+    text = (
+        '[skills] warning inside stream\n{"name":"weather","eligible":true,"source":"openclaw-bundled"}\n'
+        '[skills] another warning\n{"name":"summarize","eligible":true,"source":"openclaw-bundled"}\n'
+    )
+
+    assert _extract_openclaw_item_candidates(text, label="skills") == [
+        {"name": "weather", "eligible": True, "source": "openclaw-bundled"},
+        {"name": "summarize", "eligible": True, "source": "openclaw-bundled"},
+    ]
 
 
 @pytest.mark.asyncio

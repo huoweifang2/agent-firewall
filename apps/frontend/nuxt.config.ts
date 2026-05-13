@@ -12,15 +12,7 @@ export default defineNuxtConfig({
     'vuetify-nuxt-module',
     '@pinia/nuxt',
     '@nuxt/eslint',
-    '@nuxtjs/google-fonts',
   ],
-
-  googleFonts: {
-    families: {
-      Lora: [400, 500, 600, 700]
-    },
-    display: 'swap',
-  },
 
   css: ['~/assets/global.scss'],
 

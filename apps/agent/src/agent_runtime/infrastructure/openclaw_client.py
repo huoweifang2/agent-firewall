@@ -123,8 +123,11 @@ class OpenClawClient:
         return payload if isinstance(payload, list) else list(payload.get("agents", []))
 
     async def list_skills(self, *, eligible_only: bool = True) -> list[dict[str, Any]]:
-        payload = await self.run_json("skills", "list", "--json")
+        stdout = await self.run("skills", "list", "--json")
+        payload = extract_json_payload(stdout)
         skills = payload.get("skills", payload) if isinstance(payload, dict) else payload
+        if not isinstance(skills, list):
+            skills = _extract_openclaw_item_candidates(stdout, label="skills")
         if not isinstance(skills, list):
             raise OpenClawError("OpenClaw skills output has an unexpected shape.")
         if eligible_only:
@@ -132,8 +135,11 @@ class OpenClawClient:
         return [item for item in skills if isinstance(item, dict)]
 
     async def list_hooks(self) -> list[dict[str, Any]]:
-        payload = await self.run_json("hooks", "list", "--json")
+        stdout = await self.run("hooks", "list", "--json")
+        payload = extract_json_payload(stdout)
         hooks = payload.get("hooks", payload) if isinstance(payload, dict) else payload
+        if not isinstance(hooks, list):
+            hooks = _extract_openclaw_item_candidates(stdout, label="hooks")
         if not isinstance(hooks, list):
             raise OpenClawError("OpenClaw hooks output has an unexpected shape.")
         return [item for item in hooks if isinstance(item, dict)]
@@ -178,13 +184,50 @@ def extract_json_payload(stdout: str) -> Any:
     except json.JSONDecodeError:
         pass
 
+    best_payload: Any = None
+    best_length = -1
+    for payload, end in _json_candidates(text):
+        if end > best_length:
+            best_payload = payload
+            best_length = end
+    if best_length >= 0:
+        return best_payload
+    raise OpenClawError("OpenClaw output did not contain JSON.")
+
+
+def _json_candidates(text: str) -> list[tuple[Any, int]]:
     decoder = json.JSONDecoder()
+    candidates: list[tuple[Any, int]] = []
     for idx, ch in enumerate(text):
         if ch not in "[{":
             continue
         try:
-            payload, _end = decoder.raw_decode(text[idx:])
-            return payload
+            payload, end = decoder.raw_decode(text[idx:])
         except json.JSONDecodeError:
             continue
-    raise OpenClawError("OpenClaw output did not contain JSON.")
+        candidates.append((payload, end))
+    return candidates
+
+
+def _extract_openclaw_item_candidates(stdout: str, *, label: str) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for payload, _end in _json_candidates(stdout):
+        if not _looks_like_openclaw_item(payload):
+            continue
+        name = str(payload.get("name", ""))
+        if name in seen:
+            continue
+        seen.add(name)
+        items.append(payload)
+    if not items:
+        raise OpenClawError(f"OpenClaw {label} output has an unexpected shape.")
+    return items
+
+
+def _looks_like_openclaw_item(value: Any) -> bool:
+    return (
+        isinstance(value, dict)
+        and isinstance(value.get("name"), str)
+        and any(key in value for key in ("eligible", "disabled", "source", "events", "missing"))
+    )

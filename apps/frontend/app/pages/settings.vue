@@ -124,7 +124,7 @@
         <span class="text-subtitle-1 font-weight-medium">OpenClaw Runtime</span>
       </div>
 
-      <v-row dense>
+      <v-row density="comfortable">
         <v-col cols="12" sm="6">
           <v-text-field
             :model-value="config?.openclaw_bin || ''"

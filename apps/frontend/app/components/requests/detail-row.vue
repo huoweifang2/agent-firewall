@@ -28,7 +28,7 @@
       </div>
 
       <!-- ═══ Two-column layout ═══ -->
-      <v-row dense>
+      <v-row density="comfortable">
         <!-- LEFT: Human-readable summary -->
         <v-col cols="12" md="5">
           <!-- Risk Flags -->
