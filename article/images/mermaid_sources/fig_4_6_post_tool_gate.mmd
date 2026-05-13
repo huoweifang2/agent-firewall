@@ -1,0 +1,26 @@
+flowchart LR
+  A["工具原始输出<br/>不可信"]:::provider
+  B["输出检查集合<br/>Injection / PII / Secrets / Size"]:::gate
+  C{"post-tool decision"}:::gate
+  D["PASS<br/>进入上下文"]:::allow
+  E["REDACT<br/>脱敏后进入上下文"]:::modify
+  F["TRUNCATE<br/>截断后进入上下文"]:::modify
+  G["BLOCK<br/>占位符替代原结果"]:::block
+
+  A --> B --> C
+  C --> D
+  C --> E
+  C --> F
+  C --> G
+
+classDef ingress fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef proxy fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef runtime fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#111827;
+classDef llm fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef gate fill:#ffedd5,stroke:#f97316,stroke-width:2px,color:#111827;
+classDef provider fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#111827;
+classDef audit fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#111827;
+classDef block fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef allow fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef modify fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef note fill:#ccfbf1,stroke:#0891b2,stroke-width:2px,color:#111827;

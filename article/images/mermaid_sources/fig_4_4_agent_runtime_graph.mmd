@@ -1,0 +1,48 @@
+flowchart LR
+  subgraph B1["上下文与策略解析"]
+    A["input_node<br/>用户消息"]:::ingress
+    B["load_context<br/>历史与 runtime spec"]:::runtime
+    C["resolve_role<br/>未知显式角色 fail-closed"]:::gate
+    D["policy_node<br/>策略与工具 allowlist"]:::proxy
+    A --> B --> C --> D
+  end
+  subgraph B2["模型调用与工具循环"]
+    E["llm_call_node<br/>模型调用前 /v1/scan"]:::llm
+    F{"工具计划?"}:::gate
+    G["pre_tool_gate_node<br/>执行前检查"]:::gate
+    H["tool_executor_node<br/>OpenClaw provider"]:::provider
+    I["post_tool_gate_node<br/>结果清洗"]:::gate
+    E --> F
+    F -->|有工具| G --> H --> I
+    I --> E
+  end
+  subgraph B3["回复与证据"]
+    J["response_node<br/>最终回复"]:::audit
+    K["memory_node<br/>会话记忆"]:::audit
+    T["TraceAccumulator<br/>全链路证据"]:::note
+    M["max_iterations = 3<br/>避免循环调用"]:::note
+    J --> K
+  end
+
+  D --> E
+  F -->|无工具| J
+  G -->|BLOCK / CONFIRM| J
+  E -->|输入 BLOCK| J
+  B -.-> T
+  E -.-> T
+  G -.-> T
+  H -.-> T
+  I -.-> T
+  M -.约束.-> F
+
+classDef ingress fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef proxy fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef runtime fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#111827;
+classDef llm fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef gate fill:#ffedd5,stroke:#f97316,stroke-width:2px,color:#111827;
+classDef provider fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#111827;
+classDef audit fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#111827;
+classDef block fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef allow fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef modify fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef note fill:#ccfbf1,stroke:#0891b2,stroke-width:2px,color:#111827;

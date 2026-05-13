@@ -1,0 +1,25 @@
+flowchart LR
+  A["触发暂停<br/>input_block / tool_block / confirmation"]:::block
+  B["pending<br/>等待人工审批"]:::modify
+  C["approved<br/>允许重放"]:::allow
+  D["completed<br/>执行完成"]:::audit
+  E["rejected<br/>不重放"]:::block
+  F["failed<br/>执行失败"]:::block
+  G["approved_intervention_id<br/>重放时复核"]:::note
+
+  A --> B
+  B -->|批准| C --> G --> D
+  B -->|拒绝| E
+  C -->|执行异常| F
+
+classDef ingress fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef proxy fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef runtime fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#111827;
+classDef llm fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef gate fill:#ffedd5,stroke:#f97316,stroke-width:2px,color:#111827;
+classDef provider fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#111827;
+classDef audit fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#111827;
+classDef block fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef allow fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef modify fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef note fill:#ccfbf1,stroke:#0891b2,stroke-width:2px,color:#111827;

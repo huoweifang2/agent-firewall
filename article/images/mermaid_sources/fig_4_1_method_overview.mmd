@@ -1,0 +1,44 @@
+flowchart LR
+  subgraph A1["模型调用前"]
+    U["用户消息"]:::ingress
+    N["输入解析<br/>会话加载"]:::runtime
+    S["Proxy /v1/scan<br/>风险判断"]:::proxy
+    U --> N --> S
+  end
+  subgraph A2["工具执行前"]
+    L["LLM 回复<br/>或工具计划"]:::llm
+    P["pre-tool gate<br/>RBAC / Schema / 限额"]:::gate
+    L --> P
+  end
+  subgraph A3["工具执行后"]
+    X["Provider<br/>OpenClaw / MCP slot"]:::provider
+    Q["post-tool gate<br/>PII / Secrets / 注入"]:::gate
+    R["最终回复"]:::audit
+    X --> Q --> R
+  end
+  IB["input_block<br/>模型前阻断"]:::block
+  TC["tool_block / confirmation<br/>真实工具前暂停"]:::block
+  OB["output_block / redact / truncate<br/>结果进入上下文前处理"]:::modify
+  TR["Trace / Audit<br/>记录输入、计划、门控、执行、清洗"]:::note
+
+  S -->|ALLOW / MODIFY| L
+  P -->|ALLOW| X
+  S -->|BLOCK| IB --> TR
+  P -->|BLOCK / CONFIRM| TC --> TR
+  Q -->|BLOCK / REDACT / TRUNCATE| OB --> R
+  S -.-> TR
+  P -.-> TR
+  X -.-> TR
+  Q -.-> TR
+
+classDef ingress fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef proxy fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef runtime fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#111827;
+classDef llm fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef gate fill:#ffedd5,stroke:#f97316,stroke-width:2px,color:#111827;
+classDef provider fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#111827;
+classDef audit fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#111827;
+classDef block fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef allow fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef modify fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef note fill:#ccfbf1,stroke:#0891b2,stroke-width:2px,color:#111827;

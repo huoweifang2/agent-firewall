@@ -22,7 +22,9 @@ def resolve_effective_role(requested_role: str | None, runtime_spec: dict[str, A
     if runtime_spec is None:
         return requested_role or "customer"
     role_names = [role.get("name", "") for role in runtime_spec.get("roles", [])]
-    if requested_role and requested_role in role_names:
+    if requested_role:
+        if requested_role in role_names:
+            return requested_role
         return requested_role
     default_role = runtime_spec.get("default_role")
     if isinstance(default_role, str) and default_role:

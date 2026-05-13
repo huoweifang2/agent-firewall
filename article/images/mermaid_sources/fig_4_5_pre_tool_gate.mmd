@@ -1,0 +1,26 @@
+flowchart LR
+  A["模型工具计划<br/>tool name + args"]:::llm
+  B["执行前检查集合<br/>RBAC / Schema / Context risk<br/>Limits / Confirmation"]:::gate
+  C{"pre-tool decision"}:::gate
+  D["ALLOW<br/>直接执行"]:::allow
+  E["MODIFY<br/>清洗参数后执行"]:::modify
+  F["BLOCK<br/>真实工具不执行"]:::block
+  G["REQUIRE_CONFIRMATION<br/>进入审批队列"]:::block
+
+  A --> B --> C
+  C --> D
+  C --> E
+  C --> F
+  C --> G
+
+classDef ingress fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef proxy fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef runtime fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#111827;
+classDef llm fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef gate fill:#ffedd5,stroke:#f97316,stroke-width:2px,color:#111827;
+classDef provider fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#111827;
+classDef audit fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#111827;
+classDef block fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef allow fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef modify fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef note fill:#ccfbf1,stroke:#0891b2,stroke-width:2px,color:#111827;

@@ -1,0 +1,37 @@
+flowchart LR
+  subgraph S["风险信号"]
+    A["Intent<br/>越权 / 泄露 / 注入"]:::runtime
+    B["Rules<br/>denylist / 编码 / 长度"]:::proxy
+    C["Scanners<br/>LLM Guard / NeMo"]:::llm
+    D["PII / Secrets<br/>敏感实体"]:::gate
+    E["score_boost<br/>自定义风险提升"]:::audit
+  end
+  F["风险聚合<br/>risk_score 0-1"]:::gate
+  G{"决策规则"}:::gate
+  H["BLOCK<br/>denylist 或 risk >= max_risk"]:::block
+  I["MODIFY<br/>PII mask / 参数清洗"]:::modify
+  J["ALLOW<br/>无高风险信号"]:::allow
+  K["解释字段<br/>flags / reason / intent"]:::note
+
+  A --> F
+  B --> F
+  C --> F
+  D --> F
+  E --> F
+  F --> G
+  G --> H
+  G --> I
+  G --> J
+  F --> K
+
+classDef ingress fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef proxy fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef runtime fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#111827;
+classDef llm fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef gate fill:#ffedd5,stroke:#f97316,stroke-width:2px,color:#111827;
+classDef provider fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#111827;
+classDef audit fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#111827;
+classDef block fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef allow fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef modify fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef note fill:#ccfbf1,stroke:#0891b2,stroke-width:2px,color:#111827;

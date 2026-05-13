@@ -1,0 +1,49 @@
+flowchart LR
+  subgraph I["入口层"]
+    T["Telegram Bridge<br/>外部消息适配"]:::ingress
+    O["其他入口<br/>统一调用 /agent/chat"]:::ingress
+  end
+  subgraph R["Agent Runtime :8002"]
+    R1["运行图<br/>会话 / 角色 / 策略"]:::runtime
+    R2["LLM 调用<br/>DeepSeek"]:::llm
+    R3["pre / post gate<br/>工具前后门控"]:::gate
+  end
+  subgraph C["工具生态"]
+    C1["OpenClaw skills / hooks"]:::provider
+    C2["MCP provider slot<br/>扩展边界"]:::provider
+  end
+  subgraph P["Proxy Service :8000"]
+    P1["/v1/scan<br/>scan-only 输入扫描"]:::proxy
+    P2["Control Plane<br/>runtime spec"]:::proxy
+    P3["/v1/interventions<br/>审批队列"]:::proxy
+  end
+  subgraph F["Frontend :3000 本地控制台"]
+    F1["Attack / Compare"]:::runtime
+    F2["Approvals / Audit"]:::runtime
+    F3["Trace / Settings"]:::runtime
+  end
+  S1["SQLite + Memory<br/>Trace / Audit / Intervention"]:::audit
+
+  T --> R1
+  O --> R1
+  R1 --> P1 --> R2 --> R3
+  R3 --> C1 --> R3
+  R3 -.未来扩展.-> C2
+  P2 --> R1
+  P3 --> R3
+  F --> P
+  F --> R
+  R1 --> S1
+  P1 --> S1
+
+classDef ingress fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef proxy fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef runtime fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#111827;
+classDef llm fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef gate fill:#ffedd5,stroke:#f97316,stroke-width:2px,color:#111827;
+classDef provider fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#111827;
+classDef audit fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#111827;
+classDef block fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef allow fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef modify fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef note fill:#ccfbf1,stroke:#0891b2,stroke-width:2px,color:#111827;

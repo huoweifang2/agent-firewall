@@ -1,0 +1,30 @@
+flowchart LR
+  A["外部消息入口<br/>Telegram / 后续入口"]:::ingress
+  B["模型前控制点<br/>/agent/chat + /v1/scan"]:::proxy
+  C["工具计划控制点<br/>LLM plan + pre-tool gate"]:::gate
+  D["工具输出控制点<br/>OpenClaw skill + post-tool gate"]:::provider
+  E["Trace / Audit<br/>证据落盘"]:::audit
+  N1["边界 1<br/>入口不可信"]:::block
+  N2["边界 2<br/>工具计划不可信"]:::block
+  N3["边界 3<br/>工具结果不可信"]:::block
+  L["控制原则<br/>三类跨边界数据均先检查再进入下一阶段"]:::note
+
+  A --> B --> C --> D --> E
+  N1 -.-> B
+  N2 -.-> C
+  N3 -.-> D
+  L -.-> B
+  L -.-> C
+  L -.-> D
+
+classDef ingress fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef proxy fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef runtime fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#111827;
+classDef llm fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef gate fill:#ffedd5,stroke:#f97316,stroke-width:2px,color:#111827;
+classDef provider fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#111827;
+classDef audit fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#111827;
+classDef block fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef allow fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef modify fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef note fill:#ccfbf1,stroke:#0891b2,stroke-width:2px,color:#111827;

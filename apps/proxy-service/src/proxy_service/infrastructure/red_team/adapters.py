@@ -25,7 +25,7 @@ from proxy_service.domain.red_team.progress.events import (
     ScenarioSkippedEvent,
     ScenarioStartEvent,
 )
-from proxy_service.domain.red_team.schemas.dataclasses import RawTargetResponse
+from proxy_service.domain.red_team.schemas.dataclasses import RawTargetResponse, ToolCall
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -51,8 +51,9 @@ _MAX_RESPONSE_BODY_BYTES = 512 * 1024
 class RealHttpClient:
     """Send prompts to target endpoints via httpx.
 
-    For local agent targets the chat payload includes ``role`` and ``session_id``
-    required by the agent runtime.
+    For local agent targets the chat payload includes ``user_role`` and
+    ``session_id`` required by the agent runtime. ``agent_id`` may be passed
+    through target_config when benchmarking a specific Control Plane agent.
     """
 
     async def send_prompt(self, prompt: str, target_config: dict[str, Any]) -> HttpResponse:
@@ -83,9 +84,11 @@ class RealHttpClient:
         elif "/agent/chat" in endpoint_url:
             payload: dict[str, Any] = {
                 "message": prompt,
-                "role": target_config.get("benchmark_role", "customer"),
+                "user_role": target_config.get("benchmark_role", "customer"),
                 "session_id": f"benchmark-{uuid.uuid4().hex[:8]}",
             }
+            if target_config.get("agent_id"):
+                payload["agent_id"] = target_config["agent_id"]
         else:
             # OpenAI-style messages array — the industry standard for chat APIs
             messages: list[dict[str, str]] = []
@@ -115,12 +118,35 @@ class RealHttpClient:
         if len(body) > _MAX_RESPONSE_BODY_BYTES:
             body = body[:_MAX_RESPONSE_BODY_BYTES]
 
+        normalized_headers = {k.lower(): v for k, v in resp.headers.items()}
+        if "/agent/chat" in endpoint_url:
+            self._merge_agent_firewall_headers(body, normalized_headers)
+
         return HttpResponse(
             status_code=resp.status_code,
             body=body,
-            headers={k.lower(): v for k, v in resp.headers.items()},
+            headers=normalized_headers,
             latency_ms=latency_ms,
         )
+
+    @staticmethod
+    def _merge_agent_firewall_headers(body: str, headers: dict[str, str]) -> None:
+        """Expose /agent/chat firewall decisions as benchmark protection signals."""
+        try:
+            parsed = json.loads(body)
+        except (json.JSONDecodeError, ValueError):
+            return
+        if not isinstance(parsed, dict):
+            return
+        firewall = parsed.get("firewall_decision")
+        if not isinstance(firewall, dict):
+            return
+        decision = firewall.get("decision")
+        if decision:
+            headers.setdefault("x-decision", str(decision))
+        risk_score = firewall.get("risk_score")
+        if risk_score is not None:
+            headers.setdefault("x-risk-score", str(risk_score))
 
 
 class ProtectedHttpClient:
@@ -249,7 +275,7 @@ class SimpleNormalizer:
         return RawTargetResponse(
             body_text=str(body_text),
             parsed_json=parsed_json,
-            tool_calls=None,
+            tool_calls=self._extract_tool_calls(parsed_json),
             status_code=http_response.status_code,
             latency_ms=http_response.latency_ms,
             raw_body=body,
@@ -288,6 +314,47 @@ class SimpleNormalizer:
                 if isinstance(first, str) and first:
                     return first
         return ""
+
+    @classmethod
+    def _extract_tool_calls(cls, parsed_json: object) -> list[ToolCall] | None:
+        """Extract common tool-call shapes from agent/provider responses."""
+        if not isinstance(parsed_json, dict):
+            return None
+
+        calls: list[ToolCall] = []
+
+        # Agent-Firewall /agent/chat response shape.
+        tools_called = parsed_json.get("tools_called")
+        if isinstance(tools_called, list):
+            for item in tools_called:
+                if not isinstance(item, dict):
+                    continue
+                name = item.get("tool") or item.get("name")
+                if not name:
+                    continue
+                args = item.get("args") if isinstance(item.get("args"), dict) else {}
+                calls.append(ToolCall(name=str(name), arguments=args))
+
+        # OpenAI-compatible response shape.
+        choices = parsed_json.get("choices")
+        if isinstance(choices, list):
+            for choice in choices:
+                if not isinstance(choice, dict):
+                    continue
+                message = choice.get("message")
+                if not isinstance(message, dict):
+                    continue
+                tool_calls = message.get("tool_calls")
+                if not isinstance(tool_calls, list):
+                    continue
+                for item in tool_calls:
+                    if not isinstance(item, dict):
+                        continue
+                    function = item.get("function")
+                    if isinstance(function, dict) and function.get("name"):
+                        calls.append(ToolCall(name=str(function["name"]), arguments={}))
+
+        return calls or None
 
     @staticmethod
     def _strip_sse_frames(raw: str) -> str:

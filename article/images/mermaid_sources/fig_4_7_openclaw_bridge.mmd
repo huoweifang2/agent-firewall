@@ -1,0 +1,27 @@
+flowchart LR
+  A["runtime spec<br/>provider_type=openclaw"]:::runtime
+  B["tool_protection<br/>gate flag 优先级"]:::gate
+  C["build_scoped_prompt<br/>限定 skill 与参数"]:::proxy
+  D["OpenClaw CLI/runtime<br/>openclaw agent ..."]:::provider
+  E["CLI 输出解析<br/>JSON / envelope / logs"]:::llm
+  F["provider result<br/>stdout / structured data"]:::provider
+  G["post-tool gate<br/>清洗后回流"]:::gate
+  H["session 派生<br/>agent-firewall-&lt;hash&gt;"]:::note
+  I["异常处理<br/>timeout / stderr / HTTP 502"]:::block
+
+  A --> B --> C --> D --> E --> F --> G
+  H -.注入运行参数.-> D
+  D -.失败.-> I
+  E -.容忍插件日志和包络.-> F
+
+classDef ingress fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef proxy fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef runtime fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#111827;
+classDef llm fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef gate fill:#ffedd5,stroke:#f97316,stroke-width:2px,color:#111827;
+classDef provider fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#111827;
+classDef audit fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#111827;
+classDef block fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef allow fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef modify fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef note fill:#ccfbf1,stroke:#0891b2,stroke-width:2px,color:#111827;

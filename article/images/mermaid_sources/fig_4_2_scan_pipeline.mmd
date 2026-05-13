@@ -1,0 +1,30 @@
+flowchart LR
+  A["parse_node<br/>消息规范化"]:::runtime
+  B["intent_node<br/>意图分类"]:::runtime
+  C["rules_node<br/>denylist / 编码 / 长度"]:::proxy
+  D["parallel_scanners_node<br/>LLM Guard / NeMo"]:::llm
+  E["decision_node<br/>风险聚合"]:::gate
+  F["request audit<br/>请求审计"]:::audit
+  X["request-local<br/>denylist_hits 共享状态"]:::note
+  G["ALLOW<br/>HTTP 200"]:::allow
+  H["MODIFY<br/>HTTP 200"]:::modify
+  I["BLOCK<br/>HTTP 403"]:::block
+
+  A --> B --> C --> D --> E --> F
+  C -.共享命中.-> X
+  B -.复用命中.-> X
+  E --> G
+  E --> H
+  E --> I
+
+classDef ingress fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef proxy fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef runtime fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#111827;
+classDef llm fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef gate fill:#ffedd5,stroke:#f97316,stroke-width:2px,color:#111827;
+classDef provider fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#111827;
+classDef audit fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#111827;
+classDef block fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef allow fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef modify fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef note fill:#ccfbf1,stroke:#0891b2,stroke-width:2px,color:#111827;

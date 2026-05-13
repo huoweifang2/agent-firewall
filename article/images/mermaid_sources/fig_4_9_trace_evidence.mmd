@@ -1,0 +1,26 @@
+flowchart LR
+  A["请求元数据<br/>session / role / policy / model"]:::runtime
+  B["输入扫描证据<br/>intent / risk / decision"]:::proxy
+  C["工具计划与 pre-tool<br/>tool / args / checks"]:::gate
+  D["工具执行与 post-tool<br/>provider / latency / sanitization"]:::provider
+  E["最终回复<br/>errors / counters"]:::audit
+  F["Trace-run<br/>可复核证据链"]:::note
+  G["审计回答<br/>哪层拦截 / 是否执行 / 结果是否进入上下文"]:::note
+
+  A --> B --> C --> D --> E
+  B -.-> F
+  C -.-> F
+  D -.-> F
+  E -.-> F --> G
+
+classDef ingress fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef proxy fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef runtime fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#111827;
+classDef llm fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef gate fill:#ffedd5,stroke:#f97316,stroke-width:2px,color:#111827;
+classDef provider fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#111827;
+classDef audit fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#111827;
+classDef block fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
+classDef allow fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
+classDef modify fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
+classDef note fill:#ccfbf1,stroke:#0891b2,stroke-width:2px,color:#111827;

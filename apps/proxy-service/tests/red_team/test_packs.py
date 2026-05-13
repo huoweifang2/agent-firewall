@@ -482,3 +482,34 @@ class TestAgentThreatsPack:
             assert AgentType.TOOL_CALLING in scenario.applicable_to, (
                 f"Scenario {scenario.id} should be applicable to tool_calling"
             )
+
+
+class TestPublicAgentSecurityMappedPack:
+    def test_loads_with_expected_count(self) -> None:
+        pack = load_pack("public_agent_security_mapped", packs_dir=_DATA_DIR)
+        assert pack.name == "public_agent_security_mapped"
+        assert pack.scenario_count == 40
+        assert len(pack.scenarios) == 40
+
+    def test_all_scenarios_are_safe_to_execute_and_tool_calling(self) -> None:
+        pack = load_pack("public_agent_security_mapped", packs_dir=_DATA_DIR)
+        for scenario in pack.scenarios:
+            assert scenario.mutating is False, f"{scenario.id}: mapped public pack must be non-mutating"
+            assert AgentType.TOOL_CALLING in scenario.applicable_to, (
+                f"{scenario.id}: mapped public pack targets the tool-calling OpenClaw path"
+            )
+
+    def test_uses_only_deterministic_detectors(self) -> None:
+        pack = load_pack("public_agent_security_mapped", packs_dir=_DATA_DIR)
+        for scenario in pack.scenarios:
+            assert scenario.detector.type != DetectorType.LLM_JUDGE, (
+                f"{scenario.id}: public mapped pack must avoid llm_judge for reproducibility"
+            )
+
+    def test_source_mapping_tags_present(self) -> None:
+        pack = load_pack("public_agent_security_mapped", packs_dir=_DATA_DIR)
+        tags = {tag for scenario in pack.scenarios for tag in scenario.tags}
+        assert "agentdojo_mapped" in tags
+        assert "toolemu_mapped" in tags
+        assert "asb_mapped" in tags
+        assert "safe_control" in tags
