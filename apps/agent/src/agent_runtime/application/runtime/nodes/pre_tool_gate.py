@@ -13,53 +13,21 @@ Returns a GateDecision per tool: ALLOW | BLOCK | MODIFY | REQUIRE_CONFIRMATION.
 
 from __future__ import annotations
 
-import re
 from typing import Any
 
 import structlog
 
-from agent_runtime.application.runtime_access import get_runtime_tool, role_can_use_tool
+from agent_runtime.application.runtime.tool_protection import is_tool_gate_enabled
+from agent_runtime.application.runtime_access import role_can_use_tool
 from agent_runtime.domain.limits.config import get_limits_for_role
 from agent_runtime.domain.limits.service import get_limits_service
 from agent_runtime.domain.rbac.service import get_rbac_service
+from agent_runtime.domain.security.gate_patterns import EXFILTRATION_PATTERNS, PRE_TOOL_INJECTION_PATTERNS
 from agent_runtime.domain.state import AgentState, CheckResult, GateDecision
 from agent_runtime.domain.trace.accumulator import TraceAccumulator
 from agent_runtime.domain.validation.validator import validate_tool_args
 
 logger = structlog.get_logger()
-
-# ── Injection / abuse patterns in tool arguments ──────────────────────
-
-INJECTION_PATTERNS: list[re.Pattern[str]] = [
-    re.compile(p, re.IGNORECASE)
-    for p in [
-        r"ignore\s+(all\s+)?previous\s+instructions",
-        r"you\s+are\s+now\b",
-        r"new\s+system\s+prompt",
-        r"reveal\s+(your\s+)?(system\s+)?prompt",
-        r"disregard\s+(all\s+)?(prior|previous|above)",
-        r"override\s+(all\s+)?rules",
-        r"act\s+as\s+(an?\s+)?unrestricted",
-        r"do\s+anything\s+now",
-        r"jailbreak",
-        r"<\|im_start\|>",
-        r"\[INST\]",
-        r"<<SYS>>",
-        r"###\s*(system|assistant)\s*:",
-    ]
-]
-
-# Patterns suggesting data exfiltration intent
-EXFILTRATION_PATTERNS: list[re.Pattern[str]] = [
-    re.compile(p, re.IGNORECASE)
-    for p in [
-        r"(list|show|get|dump|export)\s+(all|every)\s+(user|customer|record|data|secret|key|password)",
-        r"(enumerate|extract|download)\s+.*\b(database|table|record)",
-        r"bulk\s+(export|download|extract)",
-        r"select\s+\*\s+from",
-        r"(DROP|DELETE|TRUNCATE|ALTER)\s+(TABLE|DATABASE)",
-    ]
-]
 
 # Tools that require human confirmation — now driven by RBAC config.
 # This set is kept for backward-compat in tests; real check uses RBAC service below.
@@ -161,7 +129,7 @@ def _check_context_risk(
             risk_signals.append(f"exfiltration: {pattern.pattern[:60]}")
 
     # Injection signals in user message itself
-    for pattern in INJECTION_PATTERNS:
+    for pattern in PRE_TOOL_INJECTION_PATTERNS:
         if pattern.search(message):
             risk_signals.append(f"injection_in_message: {pattern.pattern[:60]}")
 
@@ -270,23 +238,7 @@ def _check_confirmation(
 
 
 def is_tool_protected(tool_name: str, x_middlewares: str, runtime_spec: dict[str, Any] | None = None) -> bool:
-    import json
-
-    tool_spec = get_runtime_tool(runtime_spec, tool_name)
-    if isinstance(tool_spec, dict) and isinstance(tool_spec.get("pre_gate_enabled"), bool):
-        return bool(tool_spec["pre_gate_enabled"])
-
-    try:
-        mws = json.loads(x_middlewares or "[]")
-        for mw in mws:
-            # We match external tool prefixes like ASANA_ when middleware names are app-level.
-            app_prefix = mw.get("name", "").upper() + "_"
-            if tool_name.upper().startswith(app_prefix):
-                return mw.get("protected", False)
-    except Exception:
-        pass
-    # default to protected for internal tools or if unknown
-    return True
+    return is_tool_gate_enabled(tool_name, x_middlewares, runtime_spec, gate="pre")
 
 
 def _evaluate_tool(

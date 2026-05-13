@@ -8,6 +8,7 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
+    "test": "tsx --test \"tests/**/*.test.ts\"",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
@@ -34,7 +35,8 @@
     "@nuxtjs/google-fonts": "^3.2.0",
     "@types/dompurify": "3.0.5",
     "eslint": "9.39.4",
-    "sass-embedded": "1.97.3"
+    "sass-embedded": "1.97.3",
+    "tsx": "4.21.0"
   },
   "overrides": {
     "serialize-javascript": ">=7.0.3"

@@ -89,6 +89,7 @@ cp apps/agent/.env.example apps/agent/.env.local
 ```bash
 make lint
 make test
+cd apps/frontend && npm test
 make frontend-build
 ```
 
@@ -100,6 +101,15 @@ openclaw agents list --json
 openclaw skills list --json
 openclaw hooks list --json
 ```
+
+## 文档
+
+- [文档索引](docs/README.md)
+- [项目结构](docs/project/STRUCTURE.md)
+- [架构概览](docs/architecture/ARCHITECTURE.md)
+- [威胁模型](docs/architecture/THREAT_MODEL.md)
+- [已知问题](docs/project/KNOWN_ISSUES.md)
+- [中文说明书](docs/guides/中文说明书.md)
 
 ## 安全边界
 

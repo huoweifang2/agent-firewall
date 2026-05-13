@@ -89,6 +89,7 @@ The default local database is SQLite at `~/.openclaw/agent-firewall.sqlite`; Red
 ```bash
 make lint
 make test
+cd apps/frontend && npm test
 make frontend-build
 ```
 
@@ -100,6 +101,15 @@ openclaw agents list --json
 openclaw skills list --json
 openclaw hooks list --json
 ```
+
+## Documentation
+
+- [Documentation index](docs/README.md)
+- [Project structure](docs/project/STRUCTURE.md)
+- [Architecture overview](docs/architecture/ARCHITECTURE.md)
+- [Threat model](docs/architecture/THREAT_MODEL.md)
+- [Known issues](docs/project/KNOWN_ISSUES.md)
+- [中文说明书](docs/guides/中文说明书.md)
 
 ## Security Notes
 

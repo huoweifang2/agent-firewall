@@ -1,25 +1,14 @@
-import axios from 'axios'
-import type { AxiosInstance } from 'axios'
 import type { AgentChatRequest, AgentChatResponse } from '~/types/agent'
 import { detectProviderClient, getKey } from '~/composables/useApiKeys'
-
-const baseURL = import.meta.env.NUXT_PUBLIC_AGENT_API_BASE ?? 'http://localhost:8002'
+import { AGENT_API_BASE_URL, createCorrelatedJsonClient, newCorrelationId } from '~/services/http'
+import { readJsonSseEvents } from '~/services/sse'
 
 export interface AgentStreamEvent {
   event: string
   data: Record<string, unknown>
 }
 
-const agentApi: AxiosInstance = axios.create({
-  baseURL,
-  timeout: 60_000,
-  headers: { 'Content-Type': 'application/json' },
-})
-
-agentApi.interceptors.request.use((config) => {
-  config.headers['x-correlation-id'] = crypto.randomUUID()
-  return config
-})
+const agentApi = createCorrelatedJsonClient(AGENT_API_BASE_URL, 60_000)
 
 export const agentService = {
   async getOpenClawConfig(): Promise<{
@@ -83,7 +72,7 @@ export const agentService = {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       Accept: 'text/event-stream',
-      'x-correlation-id': crypto.randomUUID()
+      'x-correlation-id': newCorrelationId(),
     }
 
     if (request.model) {
@@ -94,7 +83,7 @@ export const agentService = {
       }
     }
 
-    const response = await fetch(`${baseURL}/agent/chat`, {
+    const response = await fetch(`${AGENT_API_BASE_URL}/agent/chat`, {
       method: 'POST',
       headers,
       body: JSON.stringify(request)
@@ -112,38 +101,8 @@ export const agentService = {
       throw new Error(`Chat API failed: ${response.status} ${errText}`)
     }
 
-    if (!response.body) {
-      throw new Error('No response body')
-    }
-
-    const reader = response.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      buffer += decoder.decode(value, { stream: true })
-      
-      const lines = buffer.split('\n\n')
-      buffer = lines.pop() || ''
-      
-      for (const chunk of lines) {
-        if (!chunk.trim()) continue
-        const eventMatch = chunk.match(/event:\s*(.+)/)
-        const dataMatch = chunk.match(/data:\s*(.+)/)
-        
-        if (eventMatch && dataMatch) {
-          const event = eventMatch[1].trim()
-          try {
-            const data = JSON.parse(dataMatch[1].trim())
-            yield { event, data }
-          }
-          catch {
-            console.error('Failed to parse SSE data:', dataMatch[1])
-          }
-        }
-      }
+    for await (const event of readJsonSseEvents(response)) {
+      yield event
     }
   },
 }

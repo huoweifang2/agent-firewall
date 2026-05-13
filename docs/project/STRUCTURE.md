@@ -8,6 +8,8 @@ Agent-Firewall is a local monorepo for an OpenClaw safety shell. It wraps OpenCl
 - `apps/agent`: FastAPI protected runtime, message ingress adapters including Telegram Bridge, OpenClaw/MCP providers, traces.
 - `apps/frontend`: Nuxt/Vuetify operator console at `localhost:3000`.
 - `docs/architecture`: current architecture docs.
+- `docs/project`: project structure and maintenance notes.
+- `docs/guides`: longer operator or language-specific guides.
 - `article`: thesis/article material, kept separate from product runtime.
 
 ## Runtime Flow
@@ -40,11 +42,18 @@ Telegram Bridge has been verified as one real ingress adapter for tool workflows
 
 - `start-local.sh`: starts proxy, agent, and frontend.
 - `apps/proxy-service/src/proxy_service/interfaces/http/routers/scan.py`: scan-only firewall endpoint.
+- `apps/proxy-service/src/proxy_service/domain/firewall/pipeline/state.py`: request-local pipeline state, including cached `denylist_hits`.
+- `apps/proxy-service/src/proxy_service/domain/firewall/pipeline/nodes/intent_patterns.py`: proxy intent pattern catalog used by the scan pipeline.
 - `apps/proxy-service/src/proxy_service/interfaces/http/routers/interventions.py`: approval queue API.
+- `apps/proxy-service/src/proxy_service/interfaces/http/routers/control_plane/teams.py`: main-agent/subagent team view with bulk count aggregation.
 - `apps/proxy-service/src/proxy_service/infrastructure/persistence/control_plane_seed.py`: seeds the protected Telegram OpenClaw gateway agent.
 - `apps/proxy-service/src/proxy_service/application/control_plane/runtime_spec.py`: builds runtime specs and normalizes legacy skill metadata shapes.
 - `apps/agent/src/agent_runtime/application/runtime/graph.py`: runtime graph runner.
+- `apps/agent/src/agent_runtime/application/runtime/tool_protection.py`: shared pre/post gate enablement logic.
+- `apps/agent/src/agent_runtime/domain/security/gate_patterns.py`: shared pre/post gate scanner pattern catalog.
 - `apps/agent/src/agent_runtime/infrastructure/telegram_bridge.py`: optional Telegram ingress adapter and approval continuation.
+- `apps/frontend/app/services/http.ts`: shared frontend API base URL and correlated JSON client helper.
+- `apps/frontend/app/services/sse.ts`: shared frontend SSE parser and OpenAI-compatible streaming consumer.
 - `apps/frontend/app/pages/approvals.vue`: operator approval page.
 - `apps/frontend/app/components/app-nav-drawer.vue`: navigation order.
 
@@ -55,5 +64,6 @@ make setup
 ./start-local.sh
 make lint
 make test
+cd apps/frontend && npm test
 make frontend-build
 ```

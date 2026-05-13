@@ -1,4 +1,6 @@
 import { api } from './api'
+import { API_BASE_URL } from './http'
+import { consumeOpenAIStream } from './sse'
 import { detectProviderClient, getKey } from '~/composables/useApiKeys'
 import type {
   ChatCompletionRequest,
@@ -60,8 +62,6 @@ export async function streamChat(
   options: StreamOptions,
   callbacks: StreamCallbacks,
 ): Promise<Response> {
-  const baseURL = import.meta.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:8000'
-
   // Browser keys are optional now. DeepSeek normally resolves server-side from
   // .env/.openclaw; localStorage remains a dev override when present.
   const model = options.body.model ?? ''
@@ -75,7 +75,7 @@ export async function streamChat(
   }
 
   const endpoint = options.url ?? '/v1/chat/completions'
-  const response = await fetch(`${baseURL}${endpoint}`, {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -103,42 +103,7 @@ export async function streamChat(
     throw errorBody
   }
 
-  const reader = response.body!.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ''
-
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-
-    buffer += decoder.decode(value, { stream: true })
-    const lines = buffer.split('\n')
-    buffer = lines.pop() ?? ''
-
-    for (const line of lines) {
-      const trimmed = line.trim()
-      if (!trimmed || !trimmed.startsWith('data: ')) continue
-
-      const data = trimmed.slice(6)
-      if (data === '[DONE]') {
-        callbacks.onDone()
-        return response
-      }
-
-      try {
-        const chunk = JSON.parse(data)
-        const content = chunk.choices?.[0]?.delta?.content
-        if (content) {
-          callbacks.onToken(content)
-        }
-      } catch {
-        // Skip malformed chunks
-      }
-    }
-  }
-
-  callbacks.onDone()
-  return response
+  return consumeOpenAIStream(response, callbacks)
 }
 
 /**
@@ -196,42 +161,7 @@ export async function streamChatDirect(
     throw errorBody
   }
 
-  const reader = response.body!.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ''
-
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-
-    buffer += decoder.decode(value, { stream: true })
-    const lines = buffer.split('\n')
-    buffer = lines.pop() ?? ''
-
-    for (const line of lines) {
-      const trimmed = line.trim()
-      if (!trimmed || !trimmed.startsWith('data: ')) continue
-
-      const data = trimmed.slice(6)
-      if (data === '[DONE]') {
-        callbacks.onDone()
-        return response
-      }
-
-      try {
-        const chunk = JSON.parse(data)
-        const content = chunk.choices?.[0]?.delta?.content
-        if (content) {
-          callbacks.onToken(content)
-        }
-      } catch {
-        // Skip malformed chunks
-      }
-    }
-  }
-
-  callbacks.onDone()
-  return response
+  return consumeOpenAIStream(response, callbacks)
 }
 
 // ─── Pipeline decision extraction ───

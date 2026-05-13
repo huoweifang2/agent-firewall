@@ -32,6 +32,7 @@ class PipelineState(TypedDict, total=False):
     risk_flags: dict[str, Any]  # {"injection": 0.8, "pii": ["EMAIL"], …}
     risk_score: float  # Aggregated 0.0–1.0
     rules_matched: list[str]  # ["denylist:bomb", "length_exceeded"]
+    denylist_hits: list[Any]  # Cached DenylistHit list shared by intent/rules nodes
     scanner_results: dict[str, Any]  # Results from LLM Guard, Presidio (Step 07)
 
     # ── Decision ──────────────────────────────────────────────────────

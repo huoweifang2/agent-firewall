@@ -20,7 +20,9 @@
 - `provider_type=mcp`: executes the declarative MCP provider endpoint.
 - `provider_type=internal`: limited local helper tools and subagent orchestration.
 
-All provider calls flow through pre-tool and post-tool gates unless the runtime spec explicitly disables a gate for that tool.
+All provider calls flow through pre-tool and post-tool gates unless the runtime spec explicitly disables a gate for that tool. The shared tool-protection helper applies the current priority order: runtime-spec `pre_gate_enabled` / `post_gate_enabled` flags first, legacy middleware protection metadata second, and unknown tools default to protected.
+
+Pre-tool and post-tool nodes share gate regex catalogs through `agent_runtime/domain/security/gate_patterns.py`; the nodes themselves keep the orchestration and decision logic.
 
 The local Telegram tool validation used `provider_type=openclaw` with the `openclaw_summarize` protected tool. Trace records should show pre-tool decisions, tool execution metadata, post-tool decisions, and the final response; raw tokens and chat identifiers must not be copied into documentation or UI previews.
 

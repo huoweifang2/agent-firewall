@@ -8,7 +8,7 @@ Tracked issues for the Agent-Firewall project, prioritised by impact.
 
 ### ISS-001: ~~LLM Guard threshold singleton — no hot-reload~~ ✅ RESOLVED
 
-**Component:** `apps/proxy-service/src/pipeline/nodes/llm_guard.py`
+**Component:** `apps/proxy-service/src/proxy_service/domain/firewall/pipeline/nodes/llm_guard.py`
 
 **Status:** Fixed. `get_scanners()` now tracks the thresholds used at init
 time (`_active_thresholds`). On every call, the requested thresholds are
@@ -21,7 +21,7 @@ automatically. No container restart required.
 
 ### ISS-002: ~~Cold start ~50 s on first request~~ ✅ RESOLVED
 
-**Component:** `apps/proxy-service/src/main.py`
+**Component:** `apps/proxy-service/src/proxy_service/bootstrap/main.py`
 
 **Status:** Fixed. ML models (LLM Guard, NeMo, Presidio) are now preloaded
 in the background via `asyncio.create_task(_preload_scanners())` during
@@ -67,7 +67,8 @@ detection in the output filter, or hide the chip until implemented.
 
 ### ISS-005: Intent classifier is keyword-only — easily evaded
 
-**Component:** `apps/proxy-service/src/pipeline/nodes/intent.py`
+**Component:** `apps/proxy-service/src/proxy_service/domain/firewall/pipeline/nodes/intent.py`,
+`apps/proxy-service/src/proxy_service/domain/firewall/pipeline/nodes/intent_patterns.py`
 
 Intent classification uses pure substring matching (`if keyword in text`).
 Paraphrasing an attack easily bypasses it (e.g., "show me your instructions"
@@ -86,7 +87,7 @@ NeMo embeddings for intent classification.
 
 ### ISS-006: NeMo Guardrails returns hardcoded score (0.85)
 
-**Component:** `apps/proxy-service/src/pipeline/nodes/nemo_guardrails.py`
+**Component:** `apps/proxy-service/src/proxy_service/domain/firewall/pipeline/nodes/nemo_guardrails.py`
 
 When NeMo matches an attack intent, the node always reports a risk score of
 0.85 regardless of the actual cosine similarity. The real similarity score
@@ -102,7 +103,7 @@ and use it as the per-rail score.
 
 ### ISS-007: Output filter system-prompt leak detection is minimal
 
-**Component:** `apps/proxy-service/src/pipeline/nodes/output_filter.py`
+**Component:** `apps/proxy-service/src/proxy_service/domain/firewall/pipeline/nodes/output_filter.py`
 
 System prompt leak detection checks only 4 hardcoded string fragments.
 An LLM can easily leak the system prompt using different wording.
@@ -142,7 +143,7 @@ defaults, so they can be overridden per-policy.
 
 ### ISS-009: Presidio score threshold is env-var-only
 
-**Component:** `apps/proxy-service/src/pipeline/nodes/presidio.py`
+**Component:** `apps/proxy-service/src/proxy_service/domain/firewall/pipeline/nodes/presidio.py`
 
 The PII detection confidence threshold comes from `settings.presidio_score_threshold`
 (environment variable), not from per-policy config. All policies share the
@@ -159,7 +160,7 @@ with the env var as fallback.
 
 ### ISS-010: Secret detection regex patterns are limited
 
-**Component:** `apps/proxy-service/src/pipeline/nodes/output_filter.py`
+**Component:** `apps/proxy-service/src/proxy_service/domain/firewall/pipeline/nodes/output_filter.py`
 
 Only 5 regex patterns for secret detection (OpenAI keys, GitHub tokens,
 Bearer tokens, private keys, passwords). Missing: AWS keys, Azure keys,
@@ -172,7 +173,7 @@ Slack tokens, database connection strings, JWTs, etc.
 
 ### ISS-011: Langfuse `trace` AttributeError in demo mode
 
-**Component:** `apps/proxy-service/src/services/langfuse_client.py`
+**Component:** `apps/proxy-service/src/proxy_service/application/services/langfuse_client.py`
 
 In demo mode (no Langfuse server), each request logs
 `AttributeError: 'Langfuse' object has no attribute 'trace'`. Non-blocking
@@ -185,7 +186,8 @@ in demo mode.
 
 ### ISS-012: Obfuscated and multilingual prompts bypass all scanners
 
-**Component:** `apps/proxy-service/src/pipeline/nodes/intent.py`, all scanner nodes
+**Component:** `apps/proxy-service/src/proxy_service/domain/firewall/pipeline/nodes/intent.py`,
+`apps/proxy-service/src/proxy_service/domain/firewall/pipeline/nodes/intent_patterns.py`, all scanner nodes
 
 The pre-LLM pipeline (keyword classifier, LLM Guard ONNX, NeMo FastEmbed,
 Presidio spaCy) fails to detect attack prompts that use text obfuscation or
@@ -222,7 +224,7 @@ Once fixed, remove the `xfail` markers from `test_scenario_deterministic.py`
 
 ### ISS-013: ~~Telegram Bridge used OpenClaw runtime id for Control Plane runtime-spec lookup~~ ✅ RESOLVED
 
-**Component:** `apps/agent/src/agent/telegram_bridge.py`, local `~/.openclaw/agent-firewall.json`
+**Component:** `apps/agent/src/agent_runtime/infrastructure/telegram_bridge.py`, local `~/.openclaw/agent-firewall.json`
 
 **Status:** Fixed in local configuration. The Telegram Bridge must call `/agent/chat`
 with the Control Plane agent UUID. OpenClaw runtime ids such as `coder` are valid
@@ -238,8 +240,8 @@ OpenClaw provider execution, post-tool gate, trace persistence, and Telegram rep
 
 ### ISS-014: ~~Legacy skill metadata shape breaks runtime-spec validation~~ ✅ RESOLVED
 
-**Component:** `apps/proxy-service/src/control_plane/seed.py`,
-`apps/proxy-service/src/control_plane/services/runtime_spec.py`
+**Component:** `apps/proxy-service/src/proxy_service/infrastructure/persistence/control_plane_seed.py`,
+`apps/proxy-service/src/proxy_service/application/control_plane/runtime_spec.py`
 
 **Status:** Fixed. Seeded skills now store `constraints` and `output_contract` as
 dictionaries. The runtime-spec builder also normalizes old SQLite rows where
@@ -250,4 +252,3 @@ validation, preventing Telegram Bridge and OpenClaw tool workflows from starting
 
 **Verification:** Added a regression test for legacy metadata normalization in
 `tests/control_plane/test_openclaw_tools.py`.
-

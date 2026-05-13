@@ -1,5 +1,5 @@
-import axios from 'axios'
-import type { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios'
+import type { AxiosError } from 'axios'
+import { API_BASE_URL, createCorrelatedJsonClient, warnIfInsecureProductionBase } from './http'
 import type { ApiError } from '~/types/api'
 
 export interface AppError {
@@ -40,26 +40,10 @@ function mapApiError(error: AxiosError<ApiError>): AppError {
   }
 }
 
-const baseURL = import.meta.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:8000'
-
 // Block insecure API base in production — auth tokens must not travel over plain HTTP.
-if (import.meta.env.PROD && !baseURL.startsWith('https://')) {
-  console.error('[api] NUXT_PUBLIC_API_BASE must use https:// in production')
-}
+warnIfInsecureProductionBase('NUXT_PUBLIC_API_BASE', API_BASE_URL)
 
-const api: AxiosInstance = axios.create({
-  baseURL,
-  timeout: 30_000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
-
-// Request interceptor — attach correlation ID
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  config.headers['x-correlation-id'] = crypto.randomUUID()
-  return config
-})
+const api = createCorrelatedJsonClient(API_BASE_URL, 30_000)
 
 // Response interceptor — map errors
 api.interceptors.response.use(

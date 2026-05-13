@@ -7,7 +7,7 @@ Agent-Firewall is a local safety shell around an OpenClaw runtime. It places det
 - **Message ingress adapters (`apps/agent`)**: send external messages into the protected runtime. Telegram Bridge is the currently implemented chat adapter.
 - **Proxy Service (`apps/proxy-service`)**: owns `/v1/scan`, request audit logs, `/v1/interventions`, and the Agent Control Plane for bot-agent registrations, OpenClaw discovery, runtime specs, roles, tools, skills, rollout, and trace metadata.
 - **Agent Runtime (`apps/agent`)**: executes the runtime graph, applies pre-tool and post-tool gates, calls OpenClaw skills/MCP providers, and forwards traces.
-- **Frontend (`apps/frontend`)**: operator console for Attack Playground, Approvals / Audit, Bot Agents, Skills & Hooks, Trace / Audit, and Runtime Settings.
+- **Frontend (`apps/frontend`)**: operator console for Attack Playground, Approvals / Audit, Bot Agents, Skills & Hooks, Trace / Audit, and Runtime Settings. Shared HTTP clients and SSE parsing live under `apps/frontend/app/services/`.
 
 ## Main Flow
 

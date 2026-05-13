@@ -17,8 +17,12 @@ do not execute tools.
 ```bash
 npm install
 npm run dev
+npm test
 npm run build
 ```
+
+Shared API clients live in `app/services/http.ts`; shared SSE parsing and
+OpenAI-compatible stream consumption live in `app/services/sse.ts`.
 
 The frontend expects:
 

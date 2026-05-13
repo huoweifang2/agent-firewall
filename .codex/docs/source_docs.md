@@ -1,11 +1,12 @@
 # Source Docs Map
 
-Use this file as the reading-order bridge from `STRUCTURE.md` into the longer human-written docs.
+Use this file as the reading-order bridge from `docs/project/STRUCTURE.md` into the longer human-written docs.
 
 ## Current-System Docs
 
+- `docs/project/STRUCTURE.md:1` for the repository shape and important runtime files.
 - `docs/architecture/ARCHITECTURE.md:1` for the overall system, deployment shape, data stores, and product surfaces.
-- `docs/architecture/AGENT_PIPELINE.md:1` when working on the agent-demo execution path.
+- `docs/architecture/AGENT_PIPELINE.md:1` when working on the protected agent runtime execution path.
 - `docs/architecture/PROXY_FIREWALL_PIPELINE.md:1` when working on proxy request scanning, routing, or policy enforcement.
 - `docs/architecture/THREAT_MODEL.md:1` when the task depends on security assumptions, trust boundaries, or attack classes.
 

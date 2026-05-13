@@ -6,11 +6,16 @@ The proxy service exposes `POST /v1/scan` for scan-only enforcement. It does not
 
 1. Parse OpenAI-compatible messages.
 2. Extract the latest user message.
-3. Classify intent and attack category.
-4. Apply policy rules and scanners.
-5. Aggregate risk.
-6. Return `ALLOW`, `MODIFY`, or `BLOCK`.
-7. Write an audit row to `requests`.
+3. Build shared scan context for policy metadata and request-local denylist hits.
+4. Classify intent and attack category.
+5. Apply policy rules and scanners.
+6. Aggregate risk.
+7. Return `ALLOW`, `MODIFY`, or `BLOCK`.
+8. Write an audit row to `requests`.
+
+The intent and rules nodes share the same request-local `denylist_hits` value in
+`PipelineState`, so one request does not repeat denylist loading or regex matching
+inside the scan pipeline.
 
 ## Intervention API
 

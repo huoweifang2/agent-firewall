@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/vue-query'
-import axios from 'axios'
+import { api } from '~/services/api'
 import type {
   AgentTraceSummary,
   AgentTraceListResponse,
@@ -7,14 +7,6 @@ import type {
   AgentTraceExport,
   AgentTraceFilters,
 } from '~/types/agentTrace'
-
-const baseURL = import.meta.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:8000'
-
-const agentTracesApi = axios.create({
-  baseURL,
-  timeout: 15_000,
-  headers: { 'Content-Type': 'application/json' },
-})
 
 export function useAgentTraces(agentId: Ref<string | null>) {
   const filters = ref<AgentTraceFilters>({
@@ -45,7 +37,7 @@ export function useAgentTraces(agentId: Ref<string | null>) {
       if (f.date_from) params.set('from', f.date_from)
       if (f.date_to) params.set('to', f.date_to)
 
-      const { data: resp } = await agentTracesApi.get<AgentTraceListResponse>(
+      const { data: resp } = await api.get<AgentTraceListResponse>(
         `/v1/agents/${agentId.value}/traces/runs?${params.toString()}`,
       )
       return resp
@@ -61,7 +53,7 @@ export function useAgentTraces(agentId: Ref<string | null>) {
 
   async function fetchDetail(traceId: string): Promise<AgentTraceDetail> {
     if (!agentId.value) throw new Error('No agent selected')
-    const { data: resp } = await agentTracesApi.get<AgentTraceDetail>(
+    const { data: resp } = await api.get<AgentTraceDetail>(
       `/v1/agents/${agentId.value}/traces/runs/${traceId}`,
     )
     return resp
@@ -69,7 +61,7 @@ export function useAgentTraces(agentId: Ref<string | null>) {
 
   async function fetchExport(traceId: string): Promise<AgentTraceExport> {
     if (!agentId.value) throw new Error('No agent selected')
-    const { data: resp } = await agentTracesApi.get<AgentTraceExport>(
+    const { data: resp } = await api.get<AgentTraceExport>(
       `/v1/agents/${agentId.value}/traces/runs/${traceId}`,
     )
     return resp

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from proxy_service.application.services.denylist import check_denylist
+from proxy_service.application.services.denylist import DenylistHit, check_denylist
 from proxy_service.domain.firewall.pipeline.nodes import timed_node
 from proxy_service.domain.firewall.pipeline.state import PipelineState
 
@@ -40,6 +40,13 @@ def excessive_special_chars(text: str) -> bool:
 # ── Node ──────────────────────────────────────────────────────────────
 
 
+async def _denylist_hits_for_state(state: PipelineState, text: str, policy_name: str) -> list[DenylistHit]:
+    cached = state.get("denylist_hits")
+    if isinstance(cached, list):
+        return [hit for hit in cached if isinstance(hit, DenylistHit)]
+    return await check_denylist(text, policy_name)
+
+
 @timed_node("rules")
 async def rules_node(state: PipelineState) -> PipelineState:
     """Run deterministic rule checks and populate rules_matched / risk_flags."""
@@ -50,7 +57,7 @@ async def rules_node(state: PipelineState) -> PipelineState:
 
     # 1. Denylist — returns DenylistHit with action/severity
     policy_name = state.get("policy_name", "balanced")
-    denylist_hits = await check_denylist(text, policy_name)
+    denylist_hits = await _denylist_hits_for_state(state, text, policy_name)
     for hit in denylist_hits:
         if hit.action == "block":
             matched.append(f"denylist:{hit.phrase}")
@@ -90,4 +97,4 @@ async def rules_node(state: PipelineState) -> PipelineState:
         matched.append("excessive_special_chars")
         risk_flags["special_chars"] = True
 
-    return {**state, "rules_matched": matched, "risk_flags": risk_flags}
+    return {**state, "denylist_hits": denylist_hits, "rules_matched": matched, "risk_flags": risk_flags}

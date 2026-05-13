@@ -24,6 +24,7 @@ from proxy_service.domain.control_plane.models import (
     AgentSkill,
     AgentStatus,
     AgentTool,
+    AgentTraceRun,
     RoleToolPermission,
     RolloutMode,
     Sensitivity,
@@ -60,25 +61,32 @@ def _binding_to_read(binding: AgentDelegation) -> DelegationRead:
     )
 
 
-async def _counts(db: AsyncSession, agent_id: uuid.UUID) -> tuple[int, int, int, object | None]:
-    tools = (
-        await db.execute(select(func.count()).select_from(AgentTool).where(AgentTool.agent_id == agent_id))
-    ).scalar_one()
-    roles = (
-        await db.execute(select(func.count()).select_from(AgentRole).where(AgentRole.agent_id == agent_id))
-    ).scalar_one()
-    skills = (
-        await db.execute(select(func.count()).select_from(AgentSkill).where(AgentSkill.agent_id == agent_id))
-    ).scalar_one()
-    try:
-        from proxy_service.domain.control_plane.models import AgentTraceRun
+async def _count_by_agent(
+    db: AsyncSession,
+    model: type[AgentTool] | type[AgentRole] | type[AgentSkill],
+    agent_ids: set[uuid.UUID],
+) -> dict[uuid.UUID, int]:
+    if not agent_ids:
+        return {}
+    rows = (
+        await db.execute(
+            select(model.agent_id, func.count()).where(model.agent_id.in_(agent_ids)).group_by(model.agent_id)
+        )
+    ).all()
+    return {agent_id: int(count) for agent_id, count in rows}
 
-        last_trace = (
-            await db.execute(select(func.max(AgentTraceRun.timestamp)).where(AgentTraceRun.agent_id == agent_id))
-        ).scalar_one_or_none()
-    except Exception:
-        last_trace = None
-    return int(tools), int(roles), int(skills), last_trace
+
+async def _last_trace_by_agent(db: AsyncSession, agent_ids: set[uuid.UUID]) -> dict[uuid.UUID, object | None]:
+    if not agent_ids:
+        return {}
+    rows = (
+        await db.execute(
+            select(AgentTraceRun.agent_id, func.max(AgentTraceRun.timestamp))
+            .where(AgentTraceRun.agent_id.in_(agent_ids))
+            .group_by(AgentTraceRun.agent_id)
+        )
+    ).all()
+    return {agent_id: last_trace for agent_id, last_trace in rows}
 
 
 @router.get("/agent-teams", response_model=AgentTeamsResponse)
@@ -92,41 +100,58 @@ async def list_agent_teams(
         .order_by(Agent.is_reference.desc(), Agent.created_at.desc())
     )
     main_agents = list(result.scalars().all())
-    items: list[AgentTeamRead] = []
+    main_ids = {main.id for main in main_agents}
+    bindings_by_parent: dict[uuid.UUID, list[AgentDelegation]] = {agent_id: [] for agent_id in main_ids}
 
-    for main in main_agents:
+    if main_ids:
         bindings_result = await db.execute(
             select(AgentDelegation)
-            .where(AgentDelegation.parent_agent_id == main.id)
+            .where(AgentDelegation.parent_agent_id.in_(main_ids))
             .options(selectinload(AgentDelegation.child_agent))
             .order_by(AgentDelegation.sort_order, AgentDelegation.created_at)
         )
-        sub_entries: list[AgentTeamSubAgent] = []
         for binding in bindings_result.scalars().unique().all():
+            bindings_by_parent.setdefault(binding.parent_agent_id, []).append(binding)
+
+    all_agent_ids = set(main_ids)
+    for bindings in bindings_by_parent.values():
+        for binding in bindings:
+            child = binding.child_agent
+            if child is not None and child.status != AgentStatus.ARCHIVED:
+                all_agent_ids.add(child.id)
+
+    tool_counts = await _count_by_agent(db, AgentTool, all_agent_ids)
+    role_counts = await _count_by_agent(db, AgentRole, all_agent_ids)
+    skill_counts = await _count_by_agent(db, AgentSkill, all_agent_ids)
+    last_traces = await _last_trace_by_agent(db, all_agent_ids)
+
+    items: list[AgentTeamRead] = []
+
+    for main in main_agents:
+        sub_entries: list[AgentTeamSubAgent] = []
+        for binding in bindings_by_parent.get(main.id, []):
             child = binding.child_agent
             if child is None or child.status == AgentStatus.ARCHIVED:
                 continue
-            c_tools, c_roles, c_skills, c_last_trace = await _counts(db, child.id)
             sub_entries.append(
                 AgentTeamSubAgent(
                     agent=AgentRead.model_validate(child),
                     binding=_binding_to_read(binding),
-                    tools_count=c_tools,
-                    roles_count=c_roles,
-                    skills_count=c_skills,
-                    last_trace_at=c_last_trace,
+                    tools_count=tool_counts.get(child.id, 0),
+                    roles_count=role_counts.get(child.id, 0),
+                    skills_count=skill_counts.get(child.id, 0),
+                    last_trace_at=last_traces.get(child.id),
                 )
             )
 
-        m_tools, m_roles, m_skills, m_last_trace = await _counts(db, main.id)
         items.append(
             AgentTeamRead(
                 main_agent=AgentRead.model_validate(main),
                 sub_agents=sub_entries,
-                tools_count=m_tools,
-                roles_count=m_roles,
-                skills_count=m_skills,
-                last_trace_at=m_last_trace,
+                tools_count=tool_counts.get(main.id, 0),
+                roles_count=role_counts.get(main.id, 0),
+                skills_count=skill_counts.get(main.id, 0),
+                last_trace_at=last_traces.get(main.id),
             )
         )
 

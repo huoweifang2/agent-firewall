@@ -14,12 +14,12 @@ The sanitized result is what goes to the LLM — never the raw output.
 
 from __future__ import annotations
 
-import re
 from typing import Any
 
 import structlog
 
-from agent_runtime.application.runtime_access import get_runtime_tool
+from agent_runtime.application.runtime.tool_protection import is_tool_gate_enabled
+from agent_runtime.domain.security.gate_patterns import PII_PATTERNS, POST_TOOL_INJECTION_PATTERNS, SECRETS_PATTERNS
 from agent_runtime.domain.state import AgentState, PostGateResult, ToolCallRecord
 from agent_runtime.domain.trace.accumulator import TraceAccumulator
 
@@ -32,159 +32,6 @@ MAX_TOOL_OUTPUT_SIZE = 4000  # Characters — truncate above this
 PII_REPLACEMENT_TAG = "[PII:{entity_type}]"
 SECRET_REPLACEMENT = "[SECRET:REDACTED]"
 BLOCK_REPLACEMENT = "[BLOCKED: Tool output contained potentially unsafe content and was not forwarded.]"
-
-# ── PII Patterns ──────────────────────────────────────────────────────
-# Lightweight regex-based PII detection (no Presidio dependency).
-# Each entry: (entity_type, compiled regex)
-
-PII_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    (
-        "EMAIL",
-        re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"),
-    ),
-    (
-        "PHONE",
-        re.compile(
-            r"(?<!\d)"  # not preceded by digit
-            r"(?:\+?1[-.\s]?)?"  # optional country code
-            r"(?:\(?\d{3}\)?[-.\s]?)"  # area code
-            r"\d{3}[-.\s]?\d{4}"
-            r"(?!\d)",  # not followed by digit
-        ),
-    ),
-    (
-        "SSN",
-        re.compile(r"\b\d{3}-\d{2}-\d{4}\b"),
-    ),
-    (
-        "CREDIT_CARD",
-        re.compile(
-            r"\b(?:4\d{3}|5[1-5]\d{2}|3[47]\d{2}|6(?:011|5\d{2}))"
-            r"[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{3,4}\b"
-        ),
-    ),
-    (
-        "IP_ADDRESS",
-        re.compile(
-            r"\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}"
-            r"(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b"
-        ),
-    ),
-    (
-        "IBAN",
-        re.compile(
-            r"\b[A-Z]{2}\d{2}\s?[\dA-Z]{4}\s?[\dA-Z]{4}\s?[\dA-Z]{4}"
-            r"(?:\s?[\dA-Z]{4}){0,4}\s?[\dA-Z]{1,4}\b"
-        ),
-    ),
-]
-
-# ── Secrets Patterns ──────────────────────────────────────────────────
-
-SECRETS_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    (
-        "API_KEY",
-        re.compile(
-            r"\b(?:sk|pk|api|key|token|secret|access)[_-]"
-            r"[A-Za-z0-9]{16,}\b",
-            re.IGNORECASE,
-        ),
-    ),
-    (
-        "AWS_KEY",
-        re.compile(r"\b(?:AKIA|ABIA|ACCA)[A-Z0-9]{16}\b"),
-    ),
-    (
-        "GENERIC_SECRET",
-        re.compile(
-            r"(?:password|passwd|pwd|secret|token|api_key|apikey|access_key|private_key)"
-            r"\s*[:=]\s*['\"]?[^\s'\"]{8,}",
-            re.IGNORECASE,
-        ),
-    ),
-    (
-        "JWT",
-        re.compile(r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b"),
-    ),
-    (
-        "CONNECTION_STRING",
-        re.compile(
-            r"(?:postgres|mysql|mongodb|redis|amqp)://[^\s\"']+",
-            re.IGNORECASE,
-        ),
-    ),
-    (
-        "PRIVATE_KEY",
-        re.compile(
-            r"-----BEGIN\s(?:RSA\s)?PRIVATE\sKEY-----",
-        ),
-    ),
-]
-
-# ── Injection Patterns (indirect prompt injection in tool output) ─────
-
-INJECTION_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    (
-        "ignore_instructions",
-        re.compile(r"ignore\s+(all\s+)?previous\s+instructions", re.IGNORECASE),
-    ),
-    (
-        "role_switch",
-        re.compile(r"you\s+are\s+now\b", re.IGNORECASE),
-    ),
-    (
-        "new_system_prompt",
-        re.compile(r"new\s+system\s+prompt", re.IGNORECASE),
-    ),
-    (
-        "reveal_prompt",
-        re.compile(r"reveal\s+(your\s+)?(system\s+)?prompt", re.IGNORECASE),
-    ),
-    (
-        "disregard",
-        re.compile(r"disregard\s+(all\s+)?(prior|previous|above)", re.IGNORECASE),
-    ),
-    (
-        "override_rules",
-        re.compile(r"override\s+(all\s+)?rules", re.IGNORECASE),
-    ),
-    (
-        "act_as_unrestricted",
-        re.compile(r"act\s+as\s+(an?\s+)?unrestricted", re.IGNORECASE),
-    ),
-    (
-        "do_anything_now",
-        re.compile(r"do\s+anything\s+now", re.IGNORECASE),
-    ),
-    (
-        "jailbreak",
-        re.compile(r"\bjailbreak\b", re.IGNORECASE),
-    ),
-    (
-        "special_token_im",
-        re.compile(r"<\|im_start\|>"),
-    ),
-    (
-        "special_token_inst",
-        re.compile(r"\[INST\]"),
-    ),
-    (
-        "special_token_sys",
-        re.compile(r"<<SYS>>"),
-    ),
-    (
-        "role_header",
-        re.compile(r"###\s*(system|assistant)\s*:", re.IGNORECASE),
-    ),
-    (
-        "pretend_to_be",
-        re.compile(r"pretend\s+to\s+be\b", re.IGNORECASE),
-    ),
-    (
-        "do_not_follow",
-        re.compile(r"do\s+not\s+follow\s+(your\s+)?instructions", re.IGNORECASE),
-    ),
-]
 
 # Injection score thresholds
 INJECTION_BLOCK_THRESHOLD = 0.4  # Block if score >= this
@@ -242,7 +89,7 @@ def scan_injection(text: str) -> tuple[float, list[str]]:
     """
     matched: list[str] = []
 
-    for pattern_name, pattern in INJECTION_PATTERNS:
+    for pattern_name, pattern in POST_TOOL_INJECTION_PATTERNS:
         if pattern.search(text):
             matched.append(pattern_name)
 
@@ -274,21 +121,7 @@ def check_size(text: str, max_size: int = MAX_TOOL_OUTPUT_SIZE) -> tuple[str, bo
 
 
 def is_tool_protected(tool_name: str, x_middlewares: str, runtime_spec: dict[str, Any] | None = None) -> bool:
-    import json
-
-    tool_spec = get_runtime_tool(runtime_spec, tool_name)
-    if isinstance(tool_spec, dict) and isinstance(tool_spec.get("post_gate_enabled"), bool):
-        return bool(tool_spec["post_gate_enabled"])
-
-    try:
-        mws = json.loads(x_middlewares or "[]")
-        for mw in mws:
-            app_prefix = mw.get("name", "").upper() + "_"
-            if tool_name.upper().startswith(app_prefix):
-                return mw.get("protected", False)
-    except Exception:
-        pass
-    return True
+    return is_tool_gate_enabled(tool_name, x_middlewares, runtime_spec, gate="post")
 
 
 def evaluate_tool_output(
@@ -297,6 +130,10 @@ def evaluate_tool_output(
     x_middlewares: str = "[]",
     runtime_spec: dict[str, Any] | None = None,
 ) -> tuple[str, PostGateResult]:
+    """Run all scanners on a single tool result.
+
+    Returns (sanitized_result, post_gate_result).
+    """
     if not is_tool_protected(tool_name, x_middlewares, runtime_spec):
         return raw_result, {
             "decision": "PASS",
@@ -307,10 +144,7 @@ def evaluate_tool_output(
             "tokens_truncated": 0,
             "blocked": False,
         }
-    """Run all scanners on a single tool result.
 
-    Returns (sanitized_result, post_gate_result).
-    """
     original_length = len(raw_result)
     working = raw_result
     total_redactions = 0
