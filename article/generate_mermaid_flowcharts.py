@@ -29,17 +29,17 @@ TMP_DIR = Path("/tmp/agent-firewall-mermaid-render")
 CHROME = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
 
 CLASS_DEFS = """
-classDef ingress fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
-classDef proxy fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
-classDef runtime fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#111827;
-classDef llm fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
-classDef gate fill:#ffedd5,stroke:#f97316,stroke-width:2px,color:#111827;
-classDef provider fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#111827;
-classDef audit fill:#f1f5f9,stroke:#475569,stroke-width:2px,color:#111827;
-classDef block fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111827;
-classDef allow fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#111827;
-classDef modify fill:#fef3c7,stroke:#ca8a04,stroke-width:2px,color:#111827;
-classDef note fill:#ccfbf1,stroke:#0891b2,stroke-width:2px,color:#111827;
+classDef ingress fill:#fee2e2,stroke:#dc2626,stroke-width:3px,color:#111827;
+classDef proxy fill:#dcfce7,stroke:#16a34a,stroke-width:3px,color:#111827;
+classDef runtime fill:#dbeafe,stroke:#2563eb,stroke-width:3px,color:#111827;
+classDef llm fill:#fef3c7,stroke:#ca8a04,stroke-width:3px,color:#111827;
+classDef gate fill:#ffedd5,stroke:#f97316,stroke-width:3px,color:#111827;
+classDef provider fill:#ede9fe,stroke:#7c3aed,stroke-width:3px,color:#111827;
+classDef audit fill:#f1f5f9,stroke:#475569,stroke-width:3px,color:#111827;
+classDef block fill:#fee2e2,stroke:#dc2626,stroke-width:3px,color:#111827;
+classDef allow fill:#dcfce7,stroke:#16a34a,stroke-width:3px,color:#111827;
+classDef modify fill:#fef3c7,stroke:#ca8a04,stroke-width:3px,color:#111827;
+classDef note fill:#ccfbf1,stroke:#0891b2,stroke-width:3px,color:#111827;
 """
 
 
@@ -56,8 +56,8 @@ def chart(body: str) -> str:
 
 
 FIGURES = [
-    FlowFigure("fig_2_1_trust_boundaries", 2100, 1200, chart("""
-        flowchart LR
+    FlowFigure("fig_2_1_trust_boundaries", 1900, 3000, chart("""
+        flowchart TB
           A["外部消息入口<br/>Telegram / 后续入口"]:::ingress
           B["模型前控制点<br/>/agent/chat + /v1/scan"]:::proxy
           C["工具计划控制点<br/>LLM plan + pre-tool gate"]:::gate
@@ -76,8 +76,8 @@ FIGURES = [
           L -.-> C
           L -.-> D
     """)),
-    FlowFigure("fig_3_1_architecture", 2300, 1300, chart("""
-        flowchart LR
+    FlowFigure("fig_3_1_architecture", 2200, 3400, chart("""
+        flowchart TB
           subgraph I["入口层"]
             T["Telegram Bridge<br/>外部消息适配"]:::ingress
             O["其他入口<br/>统一调用 /agent/chat"]:::ingress
@@ -115,8 +115,8 @@ FIGURES = [
           R1 --> S1
           P1 --> S1
     """)),
-    FlowFigure("fig_4_1_method_overview", 2100, 1200, chart("""
-        flowchart LR
+    FlowFigure("fig_4_1_method_overview", 2000, 3300, chart("""
+        flowchart TB
           subgraph A1["模型调用前"]
             U["用户消息"]:::ingress
             N["输入解析<br/>会话加载"]:::runtime
@@ -149,8 +149,8 @@ FIGURES = [
           X -.-> TR
           Q -.-> TR
     """)),
-    FlowFigure("fig_4_2_scan_pipeline", 2200, 1050, chart("""
-        flowchart LR
+    FlowFigure("fig_4_2_scan_pipeline", 1900, 3100, chart("""
+        flowchart TB
           A["parse_node<br/>消息规范化"]:::runtime
           B["intent_node<br/>意图分类"]:::runtime
           C["rules_node<br/>denylist / 编码 / 长度"]:::proxy
@@ -169,8 +169,8 @@ FIGURES = [
           E --> H
           E --> I
     """)),
-    FlowFigure("fig_4_3_risk_decision", 2100, 1150, chart("""
-        flowchart LR
+    FlowFigure("fig_4_3_risk_decision", 2100, 3200, chart("""
+        flowchart TB
           subgraph S["风险信号"]
             A["Intent<br/>越权 / 泄露 / 注入"]:::runtime
             B["Rules<br/>denylist / 编码 / 长度"]:::proxy
@@ -196,8 +196,8 @@ FIGURES = [
           G --> J
           F --> K
     """)),
-    FlowFigure("fig_4_4_agent_runtime_graph", 2200, 1250, chart("""
-        flowchart LR
+    FlowFigure("fig_4_4_agent_runtime_graph", 2200, 3600, chart("""
+        flowchart TB
           subgraph B1["上下文与策略解析"]
             A["input_node<br/>用户消息"]:::ingress
             B["load_context<br/>历史与 runtime spec"]:::runtime
@@ -234,8 +234,8 @@ FIGURES = [
           I -.-> T
           M -.约束.-> F
     """)),
-    FlowFigure("fig_4_5_pre_tool_gate", 2000, 1150, chart("""
-        flowchart LR
+    FlowFigure("fig_4_5_pre_tool_gate", 1900, 3000, chart("""
+        flowchart TB
           A["模型工具计划<br/>tool name + args"]:::llm
           B["执行前检查集合<br/>RBAC / Schema / Context risk<br/>Limits / Confirmation"]:::gate
           C{"pre-tool decision"}:::gate
@@ -250,8 +250,8 @@ FIGURES = [
           C --> F
           C --> G
     """)),
-    FlowFigure("fig_4_6_post_tool_gate", 2000, 1150, chart("""
-        flowchart LR
+    FlowFigure("fig_4_6_post_tool_gate", 1900, 3000, chart("""
+        flowchart TB
           A["工具原始输出<br/>不可信"]:::provider
           B["输出检查集合<br/>Injection / PII / Secrets / Size"]:::gate
           C{"post-tool decision"}:::gate
@@ -266,25 +266,37 @@ FIGURES = [
           C --> F
           C --> G
     """)),
-    FlowFigure("fig_4_7_openclaw_bridge", 2100, 1200, chart("""
-        flowchart LR
-          A["runtime spec<br/>provider_type=openclaw"]:::runtime
-          B["tool_protection<br/>gate flag 优先级"]:::gate
-          C["build_scoped_prompt<br/>限定 skill 与参数"]:::proxy
-          D["OpenClaw CLI/runtime<br/>openclaw agent ..."]:::provider
-          E["CLI 输出解析<br/>JSON / envelope / logs"]:::llm
-          F["provider result<br/>stdout / structured data"]:::provider
-          G["post-tool gate<br/>清洗后回流"]:::gate
+    FlowFigure("fig_4_7_openclaw_bridge", 2100, 3400, chart("""
+        flowchart TB
+          subgraph S1["受保护工具配置"]
+            direction TB
+            A["runtime spec<br/>provider_type=openclaw"]:::runtime
+            B["tool_protection<br/>gate flag 优先级"]:::gate
+            C["build_scoped_prompt<br/>限定 skill 与参数"]:::proxy
+            A --> B --> C
+          end
+          subgraph S2["OpenClaw 执行"]
+            direction TB
+            D["OpenClaw CLI/runtime<br/>openclaw agent ..."]:::provider
+            E["CLI 输出解析<br/>JSON / envelope / logs"]:::llm
+            F["provider result<br/>stdout / structured data"]:::provider
+            D --> E --> F
+          end
+          subgraph S3["结果回流与异常处理"]
+            direction TB
+            G["post-tool gate<br/>清洗后回流"]:::gate
+            I["异常处理<br/>timeout / stderr / HTTP 502"]:::block
+          end
           H["session 派生<br/>agent-firewall-&lt;hash&gt;"]:::note
-          I["异常处理<br/>timeout / stderr / HTTP 502"]:::block
 
-          A --> B --> C --> D --> E --> F --> G
+          C --> D
+          F --> G
           H -.注入运行参数.-> D
           D -.失败.-> I
           E -.容忍插件日志和包络.-> F
     """)),
-    FlowFigure("fig_4_8_intervention_state", 2000, 1050, chart("""
-        flowchart LR
+    FlowFigure("fig_4_8_intervention_state", 1900, 2800, chart("""
+        flowchart TB
           A["触发暂停<br/>input_block / tool_block / confirmation"]:::block
           B["pending<br/>等待人工审批"]:::modify
           C["approved<br/>允许重放"]:::allow
@@ -298,21 +310,33 @@ FIGURES = [
           B -->|拒绝| E
           C -->|执行异常| F
     """)),
-    FlowFigure("fig_4_9_trace_evidence", 2100, 1200, chart("""
-        flowchart LR
-          A["请求元数据<br/>session / role / policy / model"]:::runtime
-          B["输入扫描证据<br/>intent / risk / decision"]:::proxy
-          C["工具计划与 pre-tool<br/>tool / args / checks"]:::gate
-          D["工具执行与 post-tool<br/>provider / latency / sanitization"]:::provider
-          E["最终回复<br/>errors / counters"]:::audit
-          F["Trace-run<br/>可复核证据链"]:::note
-          G["审计回答<br/>哪层拦截 / 是否执行 / 结果是否进入上下文"]:::note
+    FlowFigure("fig_4_9_trace_evidence", 2100, 3400, chart("""
+        flowchart TB
+          subgraph S1["请求与输入证据"]
+            direction TB
+            A["请求元数据<br/>session / role / policy / model"]:::runtime
+            B["输入扫描证据<br/>intent / risk / decision"]:::proxy
+            A --> B
+          end
+          subgraph S2["工具链证据"]
+            direction TB
+            C["工具计划与 pre-tool<br/>tool / args / checks"]:::gate
+            D["工具执行与 post-tool<br/>provider / latency / sanitization"]:::provider
+            C --> D
+          end
+          subgraph S3["回复与审计"]
+            direction TB
+            E["最终回复<br/>errors / counters"]:::audit
+            F["Trace-run<br/>可复核证据链"]:::note
+            G["审计回答<br/>哪层拦截 / 是否执行 / 结果是否进入上下文"]:::note
+            E --> F --> G
+          end
 
-          A --> B --> C --> D --> E
+          B --> C
+          D --> E
           B -.-> F
           C -.-> F
           D -.-> F
-          E -.-> F --> G
     """)),
 ]
 
@@ -354,8 +378,13 @@ def html_for(code: str, target_width: int) -> str:
   <style>
     html, body {{ margin: 0; padding: 0; background: #ffffff; }}
     body {{ font-family: \"Arial Unicode MS\", \"PingFang SC\", \"Helvetica Neue\", Arial, sans-serif; }}
-    #diagram {{ padding: 48px; display: inline-block; background: #ffffff; }}
+    #diagram {{ padding: 56px; display: inline-block; background: #ffffff; }}
     svg {{ max-width: none !important; height: auto !important; }}
+    svg .cluster-label, svg .cluster-label span, svg .cluster-label div {{
+      font-size: 30px !important;
+      line-height: 1.15 !important;
+      font-weight: 700 !important;
+    }}
   </style>
 </head>
 <body>
@@ -366,7 +395,7 @@ def html_for(code: str, target_width: int) -> str:
       startOnLoad: false,
       securityLevel: 'loose',
       theme: 'base',
-      flowchart: {{ htmlLabels: true, curve: 'basis', nodeSpacing: 75, rankSpacing: 88, padding: 20 }},
+      flowchart: {{ htmlLabels: true, curve: 'basis', nodeSpacing: 58, rankSpacing: 72, padding: 12 }},
       themeVariables: {{
         background: '#ffffff',
         mainBkg: '#eff6ff',
@@ -376,7 +405,7 @@ def html_for(code: str, target_width: int) -> str:
         lineColor: '#475569',
         textColor: '#111827',
         fontFamily: 'Arial Unicode MS, PingFang SC, Helvetica Neue, Arial, sans-serif',
-        fontSize: '22px',
+        fontSize: '48px',
         edgeLabelBackground: '#ffffff',
         clusterBkg: '#f8fafc',
         clusterBorder: '#94a3b8'
@@ -388,7 +417,14 @@ def html_for(code: str, target_width: int) -> str:
     if (svg) {{
       svg.removeAttribute('height');
       const targetWidth = Math.min({target_width}, window.innerWidth - 96);
-      svg.style.width = targetWidth + 'px';
+      let naturalWidth = targetWidth;
+      try {{
+        naturalWidth = svg.viewBox.baseVal.width || svg.getBBox().width || targetWidth;
+      }} catch (error) {{
+        naturalWidth = svg.getBoundingClientRect().width || targetWidth;
+      }}
+      const finalWidth = Math.min(targetWidth, Math.max(900, naturalWidth * 1.04));
+      svg.style.width = finalWidth + 'px';
       svg.style.height = 'auto';
       svg.style.display = 'block';
     }}

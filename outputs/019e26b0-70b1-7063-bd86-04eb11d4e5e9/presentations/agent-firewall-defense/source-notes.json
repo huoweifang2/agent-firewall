@@ -1,0 +1,32 @@
+{
+  "taskMode": "create",
+  "primaryDeckProfile": "engineering-platform",
+  "sourceOfTruth": "/Users/isaachuo/Agent-Firewall/article/PPT/（4）霍玮放-本科毕业论文（设计）.docx",
+  "outputPptx": "/Users/isaachuo/Agent-Firewall/article/PPT/Agent-Firewall-毕业论文答辩.pptx",
+  "figures": "/Users/isaachuo/Agent-Firewall/article/PPT/images",
+  "metrics": {
+    "mainJsonScenarios": 358,
+    "expectedBlock": 322,
+    "expectedModify": 16,
+    "expectedAllow": 20,
+    "yamlAssets": 147,
+    "directScore": "20/358",
+    "fastScore": "327/358",
+    "balancedScore": "331/358",
+    "strictScore": "331/358",
+    "paranoidScore": "344/358",
+    "agentGateTests": "125/125",
+    "chainReplay": "11/11",
+    "mappedBenchmark": "36/40",
+    "mappedInputBlocks": 15,
+    "mappedToolExecutions": 0
+  },
+  "visualSystem": {
+    "primary": "#2F7D4A",
+    "light": "#F4FAF6",
+    "accentGold": "#D8A23A",
+    "accentBlue": "#2F80ED",
+    "font": "Arial Unicode MS",
+    "logoPolicy": "No unofficial BFU emblem was recreated; text identity is used."
+  }
+}
