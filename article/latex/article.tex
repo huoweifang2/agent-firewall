@@ -151,7 +151,7 @@
 \captionsetup[figure]{labelformat=thesis}
 \captionsetup[table]{labelformat=thesis}
 
-\graphicspath{{figures/autofigure/pdf/}{figures/}}
+\graphicspath{{figures/}}
 
 \renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
 \renewcommand{\cfttoctitlefont}{\hfill\zihao{3}\bfseries\songti}
@@ -1020,25 +1020,17 @@ curl http://127.0.0.1:8000/v1/agents/<agent-id>/runtime-spec
 
 \section{图表生成}
 
-本文LaTeX正文中的结构图、流程图和示意图由\code{article/latex/generate\_autofigure\_figures.py}管理。该脚本会生成每张图的AutoFigure-Edit图稿说明，并默认使用Researcher风格的本地确定性渲染器输出可编辑SVG、预览PNG和LaTeX引用PDF；在配置\code{AUTOFIGURE\_EDIT\_DIR}、\code{OPENAI\_API\_KEY}和兼容\code{/v1}的\code{AUTOFIGURE\_BASE\_URL}后，也可调用外部AutoFigure-Edit CLI进行模型辅助重绘。数值图不使用AutoFigure生成，仍由\code{article/latex/generate\_figures.py}基于本地场景资产和论文固定口径绘制。推荐复现命令如下：
+本文LaTeX正文中的结构图、流程图和示意图由\code{article/generate\_excalidraw\_flowcharts.mjs}管理。该脚本基于论文中已有的流程图节点和系统事实生成可编辑\code{.excalidraw}源文件，并导出Markdown、LaTeX和DOCX链路可复用的PNG、SVG和PDF图稿。数值图仍由\code{article/latex/generate\_figures.py}基于本地场景资产和论文固定口径绘制。推荐复现命令如下：
 
 \begin{lstlisting}[language=bash]
+cd /Users/isaachuo/Agent-Firewall/article
+npm install
+npm run figures:excalidraw
 cd /Users/isaachuo/Agent-Firewall
-python3 article/latex/generate_autofigure_figures.py --preview-contact-sheet
 python3 article/latex/generate_figures.py
 \end{lstlisting}
 
-若需要调用真实AutoFigure-Edit，可先在仓库外部克隆该工具，并设置环境变量：
-
-\begin{lstlisting}[language=bash]
-export AUTOFIGURE_EDIT_DIR=/path/to/AutoFigure-Edit
-export OPENAI_API_KEY=<redacted>
-export AUTOFIGURE_BASE_URL=https://your-openai-compatible-provider.example/v1
-export AUTOFIGURE_REFERENCE_IMAGE_PATH=/path/to/style-reference.png
-python3 article/latex/generate_autofigure_figures.py --use-reference-image --force-autofigure
-\end{lstlisting}
-
-其中\code{AUTOFIGURE\_REFERENCE\_IMAGE\_PATH}用于指定目标风格参考图，\code{--preview-contact-sheet}会额外生成九张结构图的总览PNG，便于人工目检。本文结构图的提示词按Researcher/CycleResearcher式论文流程图风格组织：米白背景、虚线外框、彩色分区、左侧角色图标块、文件堆与工具图标、茶金色粗箭头和紧凑节点卡片；未配置真实AutoFigure-Edit时，本地确定性渲染器也按同一风格生成可编译PDF。
+Excalidraw源文件输出至\code{article/images/excalidraw\_sources/}，总览检查图输出为\code{article/images/excalidraw\_contact\_sheet.png}。结构图采用横向论文友好布局、语义配色和原生矢量图标，避免纵向长图插入论文后被压缩。
 
 论文DOCX定稿链路中的核心结构图与统计图由\code{article/docx/generate_publication_figures.py}生成。该命令用于DOCX定稿链路，与本文LaTeX图表不是同一生成路径。该脚本使用Matplotlib、SciencePlots和sciplot兼容构建环境，红队分布直接读取\code{apps/proxy-service/data/scenarios/}中的场景JSON，输出300 dpi论文风格PNG至\code{article/docx/generated_figures/}；DOCX构建脚本会在生成正文前自动刷新这些图像。推荐复现命令如下：
 
@@ -1065,7 +1057,7 @@ cd /Users/isaachuo/Agent-Firewall/article/docx
 \filepath{apps/agent/src/agent/tools/hub.py} & Internal、MCP、OpenClaw和子Agent委派统一执行入口。 \\
 \filepath{apps/agent/src/agent/subagents.py} & 子Agent创建与OpenClaw委派运行时。 \\
 \filepath{scripts/evaluation/run_agent_chain_cases.py} & Agent工具链离线回放与论文表格生成脚本。 \\
-\filepath{article/latex/generate_autofigure_figures.py} & LaTeX结构图、流程图和示意图的AutoFigure-Edit提示词与PDF生成脚本。 \\
+\filepath{article/generate_excalidraw_flowcharts.mjs} & Excalidraw结构图、流程图和示意图的可编辑源文件、PNG和PDF生成脚本。 \\
 \filepath{article/latex/generate_figures.py} & LaTeX数值图和结构化分析图生成脚本。 \\
 \filepath{apps/proxy-service/src/control_plane/services/runtime_spec.py} & Control Plane runtime spec构建与旧skill metadata归一化。 \\
 \filepath{apps/proxy-service/data/scenarios/} & 红队场景数据。 \\

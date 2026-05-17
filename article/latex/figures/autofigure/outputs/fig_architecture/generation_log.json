@@ -1,8 +1,0 @@
-{
-  "figure": "fig_architecture",
-  "renderer": "researcher_style_matplotlib",
-  "generated_at": "2026-05-09T02:23:11.440703+00:00",
-  "reason": "Deterministic local renderer used; external AutoFigure-Edit is optional.",
-  "style": "Researcher/CycleResearcher-inspired academic process art: warm paper, dashed frames, pastel panels, thick arrows, original vector icons",
-  "pdf": "figures/autofigure/pdf/fig_architecture.pdf"
-}

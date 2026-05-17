@@ -50,3 +50,4 @@ article/latex/*.toc
 article/docx/generated_figures/*.png
 article/docx/*.docx
 article/latex/figures/*.pdf
+article/images/.excalidraw_render_html/

@@ -38,7 +38,6 @@ OUT_PATH = DOCX_DIR / "霍玮放-本科毕业论文（设计）.docx"
 FIGURE_SCRIPT = DOCX_DIR / "generate_publication_figures.py"
 THESIS_VENV_PYTHON = DOCX_DIR / ".thesis-venv" / "bin" / "python"
 GRAPHIC_SEARCH_DIRS = [
-    LATEX_DIR / "figures" / "autofigure" / "pdf",
     LATEX_DIR / "figures",
 ]
 LATEX_FIGURE_RENDER_DIR = FIGURE_DIR / "latex_figures"

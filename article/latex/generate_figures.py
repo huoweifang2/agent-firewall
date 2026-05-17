@@ -4,7 +4,7 @@
 This script intentionally covers only figures whose values are derived from
 repo-local scenario assets or from the fixed experimental scope described in
 the paper. Architecture, flow, and schematic figures are handled by
-generate_autofigure_figures.py.
+article/generate_excalidraw_flowcharts.mjs.
 """
 
 from __future__ import annotations

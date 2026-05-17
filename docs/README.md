@@ -26,7 +26,7 @@ This directory keeps long-form project documentation outside the repository root
 ## Research Material
 
 - [Article draft](../article/article.md)
-- [Autofigure prompts](../article/latex/figures/autofigure/prompts)
+- [Excalidraw figure sources](../article/images/excalidraw_sources)
 
 ## Root Entrypoints
 
